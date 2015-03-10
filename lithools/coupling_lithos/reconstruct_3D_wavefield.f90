@@ -2,15 +2,32 @@ program reconstruct_3D_wavefield
 
   use precision_mod
   use constants_mod
+
   use mpi_mod
 
+  use inputs_outputs_mod, only: read_all_inputs
+
   implicit none
+
+  integer(kind=si) :: isim
 
   !*** Begin program (mpi)
   call begin_program
 
+  !*** Prepare reconstruction
+  if (myid == 0) then
+     call read_all_inputs(isim,nsim)
+     call determine_connectivity
+  end if
 
+  !*** Distribute on MPI process
+  call distribute_mpi
 
+  !*** Reconstruct wavefields
+  do isim=1,nsim
+     call reconstruct_velocity(isim)
+     call reconstruct_stress(isim)
+  end do
 
   !*** End the program (mpi)
   call finish_program
