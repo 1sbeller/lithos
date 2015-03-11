@@ -207,6 +207,8 @@ contains
        call def_rot_matrix_DG(meshcolat,meshlon,rot_mat_mesh,trans_rot_mat_mesh)
 !    case ('SEM')
 !       call def_rot_matrix_SEM(meshcolat,meshlon,rot_mat_mesh,trans_rot_mat_mesh)
+!!!        call def_rot_matrix_SEM(meshlat,meshlon,meshalpha,rot_mat_mesh,trans_rot_mat_mesh)
+
 !    case ('FD')
 !       call def_rot_matrix_FD(meshcolat,meshlon,rot_mat_mesh,trans_rot_mat_mesh)
     end select

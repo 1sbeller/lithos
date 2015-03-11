@@ -140,7 +140,13 @@ contains
        data_rec(irec,1)=tmp(1)
        data_rec(irec,2)=tmp(2)
        data_rec(irec,3)=tmp(3)
-              
+       
+
+       !*** For SEM (must add a test)
+       data_rec(irec,1)=tmp(2)
+       data_rec(irec,2)=tmp(3)
+       data_rec(irec,3)=tmp(1)
+       
     end do
 
   end subroutine rotate_back_to_local_cart
@@ -254,7 +260,16 @@ contains
        stress_rec(irec,4)=tmp1(1,2) 
        stress_rec(irec,5)=tmp1(1,3)
        stress_rec(irec,6)=tmp1(2,3)
-       
+
+
+       !*** For SEM (must add a test)
+       stress_rec(irec,1)=tmp1(2,2)
+       stress_rec(irec,2)=tmp1(3,3)
+       stress_rec(irec,3)=tmp1(1,1)
+       stress_rec(irec,4)=tmp1(2,3)
+       stress_rec(irec,5)=tmp1(2,1)
+       stress_rec(irec,6)=tmp1(3,1)
+        
     end do
     
   end subroutine rotate_back_to_local_cart_stress
@@ -380,6 +395,31 @@ contains
   end subroutine def_rot_matrix_DG
 !--------------------------------------------------------------------------------
 
+
+!================================================================================
+! Roation matrix for SEM mesh
+  subroutine def_rot_matrix_SEM(lat,lon,alpha,transrotmat,rotmat)
+
+    real(kind=dp), intent(in)                  :: lon, lat, alpha
+    real(kind=dp), dimension(3,3), intent(out) :: rotmat, transrotmat
+
+    rotmat(1,1) =  cos(lat) * cos(lon)
+    rotmat(1,2) =  cos(lat) * sin(lon)
+    rotmat(1,3) =  sin(lat)
+    rotmat(2,1) = -sin(lon) * cos(alpha) - sin(alpha) * sin(lat) * cos(lon)
+    rotmat(2,2) =  cos(lon) * cos(alpha) - sin(alpha) * sin(lat) * sin(lon)
+    rotmat(2,3) =  sin(alpha) * cos(lat)
+    rotmat(3,1) =  sin(lon) * sin(alpha) - cos(alpha) * sin(lat) * cos(lon)
+    rotmat(3,2) = -cos(lon) * sin(alpha) - cos(alpha) * sin(lat) * sin(lon)
+    rotmat(3,3) =  cos(alpha) * cos(lat)
+
+    transrotmat = transpose(rotmat)
+
+    write(*,*) 'MESH ROT SEM'
+    write(*,*) transrotmat
+
+  end subroutine def_rot_matrix_SEM
+!--------------------------------------------------------------------------------
 
 !================================================================================
 ! Rotate the box points
