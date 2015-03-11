@@ -3,8 +3,9 @@ program interpolate_3D_wavefield
   use precision_mod
   use constants_mod
   use mpi_int_mod
-  use interpolatation_parameters_mod
+  use interpolation_parameters_mod
   use interp_process_mod
+  use inputs_outputs_interp_mod
 
   implicit none
 
@@ -205,7 +206,7 @@ program interpolate_3D_wavefield
   end do
   deallocate(vpow)
   deallocate(stalta)
-  if (myid==0) write(*,6)'Done'
+  if (myid==0) write(6,*)'Done'
 
   !================================================================================
   ! Cut signal and convolve with stf
@@ -325,7 +326,7 @@ program interpolate_3D_wavefield
   do itnew = 1, ntnew
 
      !*** Compute sinc kernel
-     call comp_tab_sinc(itnew,dble(dtnew),dble(feold),ntold,tab_sinc)
+     call comp_tab_sinc(itnew,dtnew,feold,ntold,tab_sinc)
 
      do ipt = 1, nrec_to_store
 
@@ -416,7 +417,6 @@ program interpolate_3D_wavefield
         call MPI_allreduce(MPI_IN_PLACE,stress_inc,6*npts,MPICP,MPI_SUM,MPI_COMM_WORLD,ierr_mpi) 
         if (myid == 0) write(20)vel_inc2,stress_inc
      end select
-     end if
 
   end do
 

@@ -2,7 +2,7 @@ module interp_process_mod
 
   use precision_mod
   use constants_mod
-  use interpolatation_parameters_mod
+  use interpolation_parameters_mod
 
 contains
 
@@ -161,7 +161,7 @@ contains
     conv = 0.
 
     !*** Create filter kernel (may be done elsewhere)
-    call sinc_kernel(dt, dble(1./fmax), n1, ker)
+    call sinc_kernel(dt, 1./fmax, n1, ker)
     
     !*** Get taper
     taptap = tuckeywin(nt,0.05)

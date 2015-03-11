@@ -51,7 +51,7 @@ module interpolation_parameters_mod
   character(len=250), dimension(3) :: output_veloc_name
   character(len=250), dimension(6) :: output_stress_name
   integer(kind=si), dimension(:), allocatable ::  ivx, ivy, ivz, isxx, isyy, iszz, isxy, isxz, isyz
-  integer(kind=si) :: nbrec, ntime, istap, itime
+  integer(kind=si) :: nbrec, ntime, istap, itime, iptglob
 
   integer(kind=si) :: nptsa, nelx, nely, nelz, nelem, ngllx, nglly, ngllz, nlta, nsta, itbeg, itend
   real(kind=cp)    :: thres, alpha, tbeg, tend, fmax

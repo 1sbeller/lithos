@@ -3,6 +3,7 @@ module inputs_outputs_interp_mod
   use precision_mod
   use mpi_int_mod
   use interpolation_parameters_mod
+  use interp_process_mod
 
   implicit none
 
