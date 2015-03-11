@@ -2,9 +2,11 @@ module mpi_mod
   
   use mpi
   use precision_mod
+  use global_parameters_mod
+  use rotation_matrix_mod
 
   !*** Mpi variables
-  integer(kind=si) :: myid, nbproc, ierr_mpi
+  integer(kind=si) :: myid, nb_proc, ierr_mpi
 
   !*** MPI types
   integer :: mpidi, mpisi, mpisp, mpidp, mpicp, mpihp
@@ -25,7 +27,7 @@ contains
     !*** Get infos from communicator
     call MPI_init(ierr_mpi)
     call MPI_comm_rank(MPI_COMM_WORLD, myid,   ierr_mpi)
-    call MPI_comm_size(MPI_COMM_WORLD, nbproc, ierr_mpi)
+    call MPI_comm_size(MPI_COMM_WORLD, nb_proc, ierr_mpi)
     call MPI_barrier(MPI_COMM_WORLD, ierr_mpi)
 
     !*** Define mpi kinds
@@ -50,10 +52,107 @@ contains
 !--------------------------------------------------------------------------------
 
 
+!================================================================================
+! Allocate mpi arrays
+  subroutine alloc_all_mpi
 
+   call mpi_bcast(nsim,1,MPISI,0,MPI_COMM_WORLD,ierr_mpi)
+   call mpi_bcast(ntime,1,MPISI,0,MPI_COMM_WORLD,ierr_mpi)
+   call mpi_bcast(nbrec,1,MPISI,0,MPI_COMM_WORLD,ierr_mpi)
+   call mpi_bcast(nbproc,1,MPISI,0,MPI_COMM_WORLD,ierr_mpi) 
+   call mpi_bcast(ibeg,1,MPISI,0,MPI_COMM_WORLD,ierr_mpi)
+   call mpi_bcast(iend,1,MPISI,0,MPI_COMM_WORLD,ierr_mpi)
+   call mpi_bcast(nel,1,MPISI,0,MPI_COMM_WORLD,ierr_mpi)
+   call mpi_bcast(rot_mat,9,MPIDP,0,MPI_COMM_WORLD,ierr_mpi)
+   call mpi_bcast(trans_rot_mat,9,MPIDP,0,MPI_COMM_WORLD,ierr_mpi)
+   call mpi_bcast(rot_mat_mesh,9,MPIDP,0,MPI_COMM_WORLD,ierr_mpi)
+   call mpi_bcast(trans_rot_mat_mesh,9,MPIDP,0,MPI_COMM_WORLD,ierr_mpi)
+   
+   if (myid >  0) then 
+      allocate(reciever_geogr(3,nbrec),reciever_sph(3,nbrec),reciever_cyl(3,nbrec),reciever_interp_value(nbrec))
+      allocate(data_rec(nbrec,3),stress_rec(nbrec,6),stress_to_write(nbrec,6),strain_rec(nbrec,6))
+      allocate(f1(nbrec),f2(nbrec),phi(nbrec))
+      allocate(scoor(ibeg:iend,ibeg:iend,nel),zcoor(ibeg:iend,ibeg:iend,nel))
+      allocate(data_read(ibeg:iend,ibeg:iend,nel))
+      allocate(xi_rec(nbrec),eta_rec(nbrec))
+      allocate(rec2elm(nbrec))
+      allocate(src_type(nsim,2))
 
+   end if
+   allocate(stress_reduce(nbrec,9),data_reduce(nbrec,3))
 
+  end subroutine alloc_all_mpi
+!--------------------------------------------------------------------------------
 
+!================================================================================
+! Broacdact arrays
+  subroutine bcast_all_mpi
+    
+    ! single
+    call mpi_bcast(data_rec,3*nbrec,MPISP,0,MPI_COMM_WORLD,ierr_mpi)
+    call mpi_bcast(stress_to_write,3*nbrec,MPISP,0,MPI_COMM_WORLD,ierr_mpi)
+    call mpi_bcast(stress_rec,3*nbrec,MPISP,0,MPI_COMM_WORLD,ierr_mpi)
+    call mpi_bcast(strain_rec,3*nbrec,MPISP,0,MPI_COMM_WORLD,ierr_mpi)
+    call mpi_bcast(f1,nbrec,MPISP,0,MPI_COMM_WORLD,ierr_mpi)
+    call mpi_bcast(f2,nbrec,MPISP,0,MPI_COMM_WORLD,ierr_mpi)
+    call mpi_bcast(phi,nbrec,MPISP,0,MPI_COMM_WORLD,ierr_mpi)
 
+    ! double 
+    call mpi_bcast(scoor,(iend-ibeg+1)*(iend-ibeg+1)*nel,MPIDP,0,MPI_COMM_WORLD,ierr_mpi)
+    call mpi_bcast(zcoor,(iend-ibeg+1)*(iend-ibeg+1)*nel,MPIDP,0,MPI_COMM_WORLD,ierr_mpi)
+    call mpi_bcast(reciever_geogr,3*nbrec,MPIDP,0,MPI_COMM_WORLD,ierr_mpi)    
+    call mpi_bcast(reciever_sph,3*nbrec,MPIDP,0,MPI_COMM_WORLD,ierr_mpi)
+    call mpi_bcast(reciever_cyl,3*nbrec,MPIDP,0,MPI_COMM_WORLD,ierr_mpi)
+    call mpi_bcast(xi_rec,nbrec,MPIDP,0,MPI_COMM_WORLD,ierr_mpi)
+    call mpi_bcast(eta_rec,nbrec,MPIDP,0,MPI_COMM_WORLD,ierr_mpi)
+
+    ! integer
+    call mpi_bcast(rec2elm,nbrec,MPISI,0,MPI_COMM_WORLD,ierr_mpi)
+
+    ! character 
+     call mpi_bcast(src_type,10*2*nsim,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi)
+
+  end subroutine bcast_all_mpi
+!--------------------------------------------------------------------------------
+
+!================================================================================
+! Distribute array on procs
+  subroutine distrib_mpi
+
+    integer(kind=si) :: nb_by_pc, left   
+    
+    nb_by_pc=(nbrec/nb_proc)
+    left=nbrec-nb_by_pc*nb_proc
+    
+    if (myid < left) then
+      irecmin = (myid*(nb_by_pc+1)) + 1 
+      irecmax = irecmin + nb_by_pc
+    else
+      irecmin = myid*(nb_by_pc) + left + 1
+      irecmax = irecmin + nb_by_pc - 1   
+    end if
+ 
+  end subroutine distrib_mpi
+!--------------------------------------------------------------------------------
+
+!================================================================================
+! Reduce velocity
+  subroutine reduce_mpi_veloc
+
+    call mpi_reduce(data_rec,data_reduce,nbrec*3,MPISP,MPI_SUM,0,MPI_COMM_WORLD,ierr_mpi)
+    data_rec(:,:)=data_reduce(:,:)
+
+  end subroutine reduce_mpi_veloc
+!--------------------------------------------------------------------------------
+
+!================================================================================
+! Reduce stress
+  subroutine reduce_mpi_stress
+    
+    call mpi_reduce(stress_rec,stress_reduce,nbrec*9,MPISP,MPI_SUM,0,MPI_COMM_WORLD,ierr_mpi)
+    stress_rec(:,:)=stress_reduce(:,:)
+  
+  end subroutine reduce_mpi_stress
+!--------------------------------------------------------------------------------
 
 end module mpi_mod

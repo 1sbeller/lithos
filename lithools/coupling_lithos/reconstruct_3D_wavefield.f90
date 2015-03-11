@@ -4,8 +4,8 @@ program reconstruct_3D_wavefield
   use constants_mod
 
   use mpi_mod
-
   use inputs_outputs_mod, only: read_all_inputs
+  use interp_mesh_mod,    only: determine_connectivity
 
   implicit none
 
@@ -16,7 +16,7 @@ program reconstruct_3D_wavefield
 
   !*** Prepare reconstruction
   if (myid == 0) then
-     call read_all_inputs(isim,nsim)
+     call read_all_inputs(isim,nsim)  ! Rotations are defined here
      call determine_connectivity
   end if
 

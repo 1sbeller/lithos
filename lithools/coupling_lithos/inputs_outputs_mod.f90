@@ -6,6 +6,10 @@ module inputs_outputs
 
 contains
 
+!################################################################################
+!############################# INPUTS FILES #####################################
+!################################################################################
+
 !================================================================================
 ! Routine read_all_inputs used in the main program
   subroutine read_all_inputs(isim, nsim_to_send)
@@ -29,7 +33,7 @@ contains
 ! Read informations for each source of the axisem simulation
   subroutine read_info_simu(nsim_to_send)
   
-    use global_parameters, only :nsim,simdir,src_type,ntime,working_axisem_dir
+    use global_parameters_mod, only :nsim,simdir,src_type,ntime,working_axisem_dir
     
     integer(kind=si), intent(in) :: nsim_to_send
 
@@ -143,8 +147,8 @@ contains
 ! Read informations for reconstruction and from coupling
   subroutine read_reconstruction_inputs(isim)
       
-    use global_parameters
-    use rotation_matrix
+    use global_parameters_mod
+    use rotation_matrix_mod
 
     integer(kind=si), intent(in) :: isim
     
@@ -250,7 +254,7 @@ contains
 ! Read axisem mesh informations
   subroutine read_mesh(isim)
     
-    use global_parameters
+    use global_parameters_mod
     
     integer(kind=si), intent(in) :: isim
 
@@ -321,8 +325,43 @@ contains
 
 
 
+!################################################################################
+!############################## OUTPUTS FILES ###################################
+!################################################################################
+
+!================================================================================
+! Write output velocity files
+  subroutine write_veloc3D(ivx,ivy,ivz)
+    
+    use global_parameters_mod, only: data_rec
+    
+    integer(kind=si), intent(in) :: ivx, ivy, ivz
+
+    write(ivx) data_rec(:,1)
+    write(ivy) data_rec(:,2)
+    write(ivz) data_rec(:,3)
+
+  end subroutine write_veloc3D
+!--------------------------------------------------------------------------------
 
 
+!================================================================================
+! Write output stress files 
+  subroutine write_stress3D(isxx,isyy,iszz,isxy,isxz,isyz)
+
+    use global_parameters_mod, only: stress_rec
+
+    integer(kind=si), intent(in) :: isxx, isyy, iszz, isxy, isxz, isyz
+ 
+    write(isxx) stress_rec(:,1)
+    write(isyy) stress_rec(:,2)
+    write(iszz) stress_rec(:,3)
+    write(isxy) stress_rec(:,4)
+    write(isxz) stress_rec(:,5)
+    write(isyz) stress_rec(:,6)
+    
+  end subroutine write_stress3D
+!--------------------------------------------------------------------------------
 
 
 end module inputs_outputs
