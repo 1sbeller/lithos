@@ -136,17 +136,22 @@ contains
           end do
        end do
        
-       ! valocity in cartesian
-       data_rec(irec,1)=tmp(1)
-       data_rec(irec,2)=tmp(2)
-       data_rec(irec,3)=tmp(3)
-       
 
-       !*** For SEM (must add a test)
-       data_rec(irec,1)=tmp(2)
-       data_rec(irec,2)=tmp(3)
-       data_rec(irec,3)=tmp(1)
-       
+       select case (coup_tool)
+       case('DG')
+          ! valocity in cartesian
+          data_rec(irec,1)=tmp(1)
+          data_rec(irec,2)=tmp(2)
+          data_rec(irec,3)=tmp(3)
+       case('SEM')
+          data_rec(irec,1)=tmp(2)
+          data_rec(irec,2)=tmp(3)
+          data_rec(irec,3)=tmp(1)
+       case('FD')
+          data_rec(irec,1)=tmp(2)
+          data_rec(irec,2)=tmp(3)
+          data_rec(irec,3)=tmp(1)
+       end select
     end do
 
   end subroutine rotate_back_to_local_cart
@@ -252,24 +257,32 @@ contains
              end do
           end do
        end do
-       
-       ! stress in cartesian
-       stress_rec(irec,1)=tmp1(1,1)
-       stress_rec(irec,2)=tmp1(2,2)
-       stress_rec(irec,3)=tmp1(3,3)
-       stress_rec(irec,4)=tmp1(1,2) 
-       stress_rec(irec,5)=tmp1(1,3)
-       stress_rec(irec,6)=tmp1(2,3)
 
 
-       !*** For SEM (must add a test)
-       stress_rec(irec,1)=tmp1(2,2)
-       stress_rec(irec,2)=tmp1(3,3)
-       stress_rec(irec,3)=tmp1(1,1)
-       stress_rec(irec,4)=tmp1(2,3)
-       stress_rec(irec,5)=tmp1(2,1)
-       stress_rec(irec,6)=tmp1(3,1)
-        
+       select case (coup_tool)
+       case('DG')
+          ! stress in cartesian
+          stress_rec(irec,1)=tmp1(1,1)
+          stress_rec(irec,2)=tmp1(2,2)
+          stress_rec(irec,3)=tmp1(3,3)
+          stress_rec(irec,4)=tmp1(1,2) 
+          stress_rec(irec,5)=tmp1(1,3)
+          stress_rec(irec,6)=tmp1(2,3)
+       case('SEM')
+          stress_rec(irec,1)=tmp1(2,2)
+          stress_rec(irec,2)=tmp1(3,3)
+          stress_rec(irec,3)=tmp1(1,1)
+          stress_rec(irec,4)=tmp1(2,3)
+          stress_rec(irec,5)=tmp1(2,1)
+          stress_rec(irec,6)=tmp1(3,1)
+       case('FD')
+          stress_rec(irec,1)=tmp1(2,2)
+          stress_rec(irec,2)=tmp1(3,3)
+          stress_rec(irec,3)=tmp1(1,1)
+          stress_rec(irec,4)=tmp1(2,3)
+          stress_rec(irec,5)=tmp1(2,1)
+          stress_rec(irec,6)=tmp1(3,1)
+       end select
     end do
     
   end subroutine rotate_back_to_local_cart_stress

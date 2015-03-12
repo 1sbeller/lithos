@@ -45,13 +45,13 @@ module interpolation_parameters_mod
   real(kind=cp) :: vx, vy, vz, sxx, syy, szz, sxy, syz, sxz, nx, ny, nz, alpha_mesh
   real(kind=cp) :: tx, ty, tz, x, y, z, feold, dtold, dtnew, lat_src, lon_src, lat_mesh, lon_mesh
   real(kind=cp) :: sumx,sumy,sumz
-  character(len=250) :: input_field_name, output_field_name, input_point_file, fichier, dummy, rep
+  character(len=250) :: input_field_name, output_field_name, input_point_file, fichier, dummy, rep, stf_file
   character(len=3)   :: fwdtool
   character(len=250), dimension(:), allocatable :: working_axisem_dir
   character(len=250), dimension(3) :: output_veloc_name
   character(len=250), dimension(6) :: output_stress_name
   integer(kind=si), dimension(:), allocatable ::  ivx, ivy, ivz, isxx, isyy, iszz, isxy, isxz, isyz
-  integer(kind=si) :: nbrec, ntime, istap, itime, iptglob
+  integer(kind=si) :: nbrec, ntime, istap, itime, iptglob, isconv
 
   integer(kind=si) :: nptsa, nelx, nely, nelz, nelem, ngllx, nglly, ngllz, nlta, nsta, itbeg, itend
   real(kind=cp)    :: thres, alpha, tbeg, tend, fmax

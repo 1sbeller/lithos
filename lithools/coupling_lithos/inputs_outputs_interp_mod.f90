@@ -31,9 +31,11 @@ contains
 ! Read reconstruction parameters file and prepare the reading of data
   subroutine read_reconstruction_param
 
-    open(10,file='../reconstruction.par')
-    read(10,'(a)') input_point_file
-    read(10,*) lat_src,lon_src
+    open(10,file='../reconstruction.par',status='old') 
+    read(10,'(a)')fwdtool
+    read(10,'(a)')input_point_file
+    read(10,*)dummy
+    read(10,*)lat_src,lon_src
     read(10,*) lat_mesh,lon_mesh,alpha_mesh
     read(10,*) nsim
     close(10)
@@ -131,6 +133,7 @@ contains
     read(10,'(a)')rep
     read(10,*)nsta,nlta,thres
     read(10,*)istap,alpha
+    read(10,*)isconv,stf_file
     read(10,*)dummy
     read(10,*)fmax
     close(10)
