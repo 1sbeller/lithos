@@ -6,7 +6,7 @@ program reconstruct_3D_wavefield
   use mpi_mod
   use inputs_outputs_mod, only: read_all_inputs
   use interp_mesh_mod,    only: determine_connectivity
-
+  use post_process_wavefields_mod, only: reconstruct_velocity, reconstruct_stress
   implicit none
 
   integer(kind=si) :: isim

@@ -52,7 +52,7 @@ contains
 ! Find xi eta coordinate of point  
   subroutine find_xix_eta(nodes_crd,xi,eta,s_target,z_target)
 
-    real(kind=cp), dimension(ngnod,2), intent(in) :: nodes_crd
+    real(kind=cp), dimension(ngnod,2), intent(inout) :: nodes_crd
     real(kind=cp), intent(in)                       :: s_target, z_target
     real(kind=cp), intent(out)                    :: xi, eta
 
@@ -270,7 +270,7 @@ contains
     !     1 - - - 2 - - - 3 .
     !
     real(kind=cp), intent(in) ::xil, etal
-    real(kind=cp), dimension(8,2), intent(out) :: nodes_crd
+    real(kind=cp), dimension(8,2), intent(in) :: nodes_crd
 
     real(kind=cp), dimension(8,2) :: shpder
     integer(kind=si) :: inode
@@ -388,8 +388,8 @@ contains
        zcur=reciever_cyl(3,irec)
        do iel = 1, NEL
           !*** Element
-          smin=1d40
-          smax=-1d40
+          smin=1e30_cp
+          smax=-1e30_cp
           zmin=smin
           zmax=smax
           do inode=1,NGNOD

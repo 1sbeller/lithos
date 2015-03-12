@@ -336,17 +336,17 @@ contains
     smallval=1e-11
       
     ! This is the rotation matrix of Nissen-Meyer, Dahlen, Fournier, GJI 2007.
-    rot_mat(1,1) = dcos(srccolat) * dcos(srclon)
-    rot_mat(2,2) = dcos(srclon)
-    rot_mat(3,3) = dcos(srccolat)
-    rot_mat(2,1) = dcos(srccolat) * dsin(srclon)
-    rot_mat(3,1) = -dsin(srccolat)
-    rot_mat(3,2) = 0.d0
-    rot_mat(1,2) = -dsin(srclon)
-    rot_mat(1,3) = dsin(srccolat) * dcos(srclon)
-    rot_mat(2,3) = dsin(srccolat) * dsin(srclon)
+    rot_mat(1,1) = cos(srccolat) * cos(srclon)
+    rot_mat(2,2) = cos(srclon)
+    rot_mat(3,3) = cos(srccolat)
+    rot_mat(2,1) = cos(srccolat) * sin(srclon)
+    rot_mat(3,1) = -sin(srccolat)
+    rot_mat(3,2) = 0._cp
+    rot_mat(1,2) = -sin(srclon)
+    rot_mat(1,3) = sin(srccolat) * cos(srclon)
+    rot_mat(2,3) = sin(srccolat) * sin(srclon)
     
-    where (dabs(rot_mat)<smallval) rot_mat = 0.0
+    where (abs(rot_mat)<smallval) rot_mat = 0._cp
     
     trans_rot_mat = transpose(rot_mat)
     
@@ -400,8 +400,8 @@ contains
 ! Roation matrix for SEM mesh
   subroutine def_rot_matrix_SEM(lat,lon,alpha,transrotmat,rotmat)
 
-    real(kind=dp), intent(in)                  :: lon, lat, alpha
-    real(kind=dp), dimension(3,3), intent(out) :: rotmat, transrotmat
+    real(kind=cp), intent(in)                  :: lon, lat, alpha
+    real(kind=cp), dimension(3,3), intent(out) :: rotmat, transrotmat
 
     rotmat(1,1) =  cos(lat) * cos(lon)
     rotmat(1,2) =  cos(lat) * sin(lon)
@@ -427,20 +427,20 @@ contains
 
     real(kind=cp), dimension(3,3), intent(in) :: trans_rot_mat
     real(kind=cp), intent(inout) :: r,th,ph
-    real(kind=cp), dimension(3)  :: x_vec, x_vec_rot,
+    real(kind=cp), dimension(3)  :: x_vec, x_vec_rot
     real(kind=cp)                :: r_r, smallval_dble 
     
-    smallval_dble=0._dp !! 1e-11  ! a quoi sert ce truc? ! VM VM 
+    smallval_dble=0._cp !! 1e-11  ! a quoi sert ce truc? ! VM VM 
     !! verifier l'effet que çà peut avoir de le mettre a zero
     
-    x_vec(1) = r * dsin(th) * dcos(ph)
-    x_vec(2) = r * dsin(th) * dsin(ph)
-    x_vec(3) = r * dcos(th) 
+    x_vec(1) = r * sin(th) * cos(ph)
+    x_vec(2) = r * sin(th) * sin(ph)
+    x_vec(3) = r * cos(th) 
     
     x_vec_rot = matmul(trans_rot_mat,x_vec)
     
-    r_r = dsqrt(x_vec_rot(1)**2 + x_vec_rot(2)**2 + x_vec_rot(3)**2 )
-    th = dacos((x_vec_rot(3)  + smallval_dble )/ ( r_r + smallval_dble) )
+    r_r = sqrt(x_vec_rot(1)**2 + x_vec_rot(2)**2 + x_vec_rot(3)**2 )
+    th = acos((x_vec_rot(3)  + smallval_dble )/ ( r_r + smallval_dble) )
     ph = atan2(x_vec_rot(2),x_vec_rot(1))
     
   end subroutine rotate_box

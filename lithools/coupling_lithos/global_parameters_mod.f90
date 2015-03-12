@@ -10,6 +10,7 @@ module global_parameters_mod
   character(len=256) :: input_veloc_name(3), input_stress_name(6)
   character(len=256) :: output_veloc_name(3), output_stress_name(6)
   character(len=256) :: output_field_name, input_point_file
+  character(len=3)   :: coup_tool
 
   !*** Coordinates of source and mesh
   real(kind=cp) :: lat_src,lon_src,lat_mesh,lon_mesh

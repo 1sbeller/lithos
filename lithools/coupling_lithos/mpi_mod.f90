@@ -117,7 +117,7 @@ contains
 
 !================================================================================
 ! Distribute array on procs
-  subroutine distrib_mpi
+  subroutine distribute_mpi
 
     integer(kind=si) :: nb_by_pc, left   
     
@@ -132,7 +132,7 @@ contains
       irecmax = irecmin + nb_by_pc - 1   
     end if
  
-  end subroutine distrib_mpi
+  end subroutine distribute_mpi
 !--------------------------------------------------------------------------------
 
 !================================================================================

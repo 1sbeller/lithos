@@ -1,4 +1,4 @@
-module inputs_outputs
+module inputs_outputs_mod
 
   use precision_mod
 
@@ -14,13 +14,14 @@ contains
 ! Routine read_all_inputs used in the main program
   subroutine read_all_inputs(isim, nsim_to_send)
 
-    integer(kind=si), intent(in) :: isim nsim_to_send
+    integer(kind=si), intent(in) :: isim
+    integer(kind=si), intent(inout) :: nsim_to_send
 
     !*** Read simulations infos
     call read_info_simu(nsim_to_send)
 
     !*** Read coupling information
-    call read_coupling_info(isim)
+    call read_reconstruction_inputs(isim)
 
     !*** Read mesh infos
     call read_mesh(isim)
@@ -35,7 +36,7 @@ contains
   
     use global_parameters_mod, only :nsim,simdir,src_type,ntime,working_axisem_dir
     
-    integer(kind=si), intent(in) :: nsim_to_send
+    integer(kind=si), intent(inout) :: nsim_to_send
 
     logical :: use_netcdf
 
@@ -53,7 +54,7 @@ contains
     real(kind=cp), allocatable, dimension(:) :: srccolat_tmp, srclon_tmp, src_depth_tmp
     real(kind=cp), allocatable, dimension(:) :: shift_fact_tmp, magnitude
 
-    integer(kind=si), allocatable, dimension(:) :: ishift_deltat, ishift_seisdt, ishift_straind
+    integer(kind=si), allocatable, dimension(:) :: ishift_deltat, ishift_seisdt, ishift_straindt
     integer(kind=si), allocatable, dimension(:) :: ibeg, iend
     integer(kind=si), allocatable, dimension(:) :: nt, nt_strain, nrec_tmp, nt_seis_tmp
 
@@ -155,7 +156,7 @@ contains
     integer(kind=si) :: i
     
     real(kind=cp) :: srclon,  srclat,  srccolat
-    real(kind=cp) :: meshlon, meshlat, meshcolat
+    real(kind=cp) :: meshlon, meshlat, meshcolat, az_mesh
     
     !*** Read recontruction parameter file
     open(10,file='../reconstruction.par',status='old') 
@@ -201,15 +202,16 @@ contains
     
     !* For the mesh
     meshlon = lon_mesh * pi / 180.   
+    meshlat = lat_mesh * pi / 180.
     meshcolat =  (90. - lat_mesh) * pi / 180. 
     select case (coup_tool)
     case ('DG')
        call def_rot_matrix_DG(meshcolat,meshlon,rot_mat_mesh,trans_rot_mat_mesh)
-!    case ('SEM')
+    case ('SEM')
 !       call def_rot_matrix_SEM(meshcolat,meshlon,rot_mat_mesh,trans_rot_mat_mesh)
-!!!        call def_rot_matrix_SEM(meshlat,meshlon,meshalpha,rot_mat_mesh,trans_rot_mat_mesh)
-
-!    case ('FD')
+        call def_rot_matrix_SEM(meshlat,meshlon,az_mesh,rot_mat_mesh,trans_rot_mat_mesh)
+    case ('FD')
+        call def_rot_matrix_SEM(meshlat,meshlon,az_mesh,rot_mat_mesh,trans_rot_mat_mesh)
 !       call def_rot_matrix_FD(meshcolat,meshlon,rot_mat_mesh,trans_rot_mat_mesh)
     end select
     
@@ -366,4 +368,4 @@ contains
 !--------------------------------------------------------------------------------
 
 
-end module inputs_outputs
+end module inputs_outputs_mod

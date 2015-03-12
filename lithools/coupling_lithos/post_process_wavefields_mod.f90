@@ -173,13 +173,32 @@ contains
        close(ivz)
     end if
     
+  contains
+    
+    !================================================================================
+    ! Defines the 4 digit character string appended to any data or io file 
+    ! related to process myid
+    subroutine define_io_appendix(app,iproc)
+      
+      implicit none
+      
+      integer(kind=si), intent(in)  :: iproc
+      character(len=4), intent(out) :: app
+      
+      write(app,"(I4.4)") iproc
+      
+    end subroutine define_io_appendix
+    !--------------------------------------------------------------------------------
+    
+
+
   end subroutine reconstruct_velocity
 !--------------------------------------------------------------------------------
 
 
 !================================================================================
 ! Routine reconstructing the 3D velocity wavefield
-  subroutine read_stress_field_and_interpol(isim)
+  subroutine reconstruct_stress(isim)
   
     use mpi_mod
     use global_parameters_mod
@@ -419,7 +438,24 @@ contains
     close(isxz)
     close(isyz)
     
-  end subroutine read_stress_field_and_interpol
+ contains
+    
+    !================================================================================
+    ! Defines the 4 digit character string appended to any data or io file 
+    ! related to process myid
+    subroutine define_io_appendix(app,iproc)
+      
+      implicit none
+      
+      integer(kind=si), intent(in)  :: iproc
+      character(len=4), intent(out) :: app
+      
+      write(app,"(I4.4)") iproc
+      
+    end subroutine define_io_appendix
+    !--------------------------------------------------------------------------------
+    
+  end subroutine reconstruct_stress
 !--------------------------------------------------------------------------------  
 
 !================================================================================
@@ -450,6 +486,7 @@ contains
        
     end do
     
+ 
   end subroutine interpol_field
 !--------------------------------------------------------------------------------
 
@@ -490,7 +527,7 @@ contains
     use global_parameters_mod, only: f1, f2, phi, nbrec
     
     character(len=10), intent(in)  :: src_type
-    character(len=10), intent(out) :: Mcomp
+    character(len=10), intent(in) :: Mcomp
     integer(kind=si) :: irec
 
     select case (trim(src_type))
