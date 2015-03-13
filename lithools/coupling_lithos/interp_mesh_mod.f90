@@ -5,12 +5,12 @@ module interp_mesh_mod
 
   real(kind=cp) :: a, b, c, d, det_jacobian
 
-  real(kind=cp), dimension(NGLLX) :: hxir, hpxir, xigll, wxgll
-  real(kind=cp), dimension(NGLLY) :: hpetar, hetar, yigll, wygll
+  real(kind=dp), dimension(NGLLX) :: hxir, hpxir, xigll, wxgll
+  real(kind=dp), dimension(NGLLY) :: hpetar, hetar, yigll, wygll
 
-  real(kind=cp), parameter :: GAUSSALPHA=0._cp, GAUSSBETA=0._cp
-  real(kind=cp), parameter :: zero=0._cp, one=1._cp
-  real(kind=cp), parameter :: three=3._cp, quart=0.25_cp, half=0.5_cp
+  real(kind=dp), parameter :: GAUSSALPHA=0._dp, GAUSSBETA=0._dp
+  real(kind=dp), parameter :: zero=0._dp, one=1._dp
+  real(kind=dp), parameter :: three=3._dp, quart=0.25_dp, half=0.5_dp
 
 contains 
 
@@ -65,7 +65,7 @@ contains
     niter_newton=6
 
     !*** Find the closest node 
-    distmin=1e30_dp
+    distmin=1e20_dp
     iguess=1
     do inode = 1, ngnod
        dist=(nodes_crd(inode,1)-s_target)**2 + (nodes_crd(inode,2)-z_target)**2
@@ -308,8 +308,8 @@ contains
     
     integer(kind=si), intent(in) :: NGLL
     real(kind=cp),    intent(in) :: xi
-    real(kind=cp), dimension(NGLL), intent(in)  :: xigll
-    real(kind=cp), dimension(NGLL), intent(out) :: h, hprime
+    real(kind=dp), dimension(NGLL), intent(in)  :: xigll
+    real(kind=dp), dimension(NGLL), intent(out) :: h, hprime
     
     integer(kind=si) :: dgr, i, j
     real(kind=cp)    :: prod1, prod2
@@ -354,7 +354,7 @@ contains
     real(kind=cp) :: smin, smax, zmin, zmax
 
     real(kind=cp), dimension(NGNOD,2) :: nodes_crd
-    real(kind=cp), parameter          :: eps=1.e-3
+    real(kind=cp), parameter          :: eps=1.e-1  !!-3
 
     integer(kind=si), dimension(8) :: IGRIDs, IGRIDz
     integer(kind=si) :: irec, iel, inode
@@ -388,8 +388,8 @@ contains
        zcur=reciever_cyl(3,irec)
        do iel = 1, NEL
           !*** Element
-          smin=1e30_cp
-          smax=-1e30_cp
+          smin=1e25_cp
+          smax=-1e25_cp
           zmin=smin
           zmax=smax
           do inode=1,NGNOD
@@ -429,6 +429,7 @@ contains
          end if
       end do
       if (forgot_point > 0) write(*,*) 'forgot ', forgot_point,' points'
+      if (forgot_point > 0) stop
     end subroutine check_rec2elm
     !--------------------------------------------------
     

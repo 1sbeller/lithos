@@ -72,10 +72,12 @@ program interpolate_3D_wavefield
   !================================================================================
   ! Read AxiSEM reconstructed files
   !--------------------------------------------------
+  call MPI_barrier(MPI_COMM_WORLD,ierr_mpi)
   if (myid==0) write(6,*)'Read AxisEM files...'
   do itime=1,ntime
 
      if (myid == 0) then ! Read on master proc
+        write(6,*)'time ',100.*itime/ntime,'%'
         do isim=1,nsim
 
            read(ivx(isim))  data_tmp(:,1)
@@ -116,29 +118,29 @@ program interpolate_3D_wavefield
 
         do iproc=1,nb_proc-1
         
-           call mpi_send( vxold2(i_inf(myid+1):i_sup(myid+1),1),nb_received_sv(myid+1),MPICP,myid,etq,MPI_COMM_WORLD,ierr_mpi)
-           call mpi_send( vyold2(i_inf(myid+1):i_sup(myid+1),1),nb_received_sv(myid+1),MPICP,myid,etq,MPI_COMM_WORLD,ierr_mpi)
-           call mpi_send( vzold2(i_inf(myid+1):i_sup(myid+1),1),nb_received_sv(myid+1),MPICP,myid,etq,MPI_COMM_WORLD,ierr_mpi)
-           call mpi_send(sxxold2(i_inf(myid+1):i_sup(myid+1),1),nb_received_sv(myid+1),MPICP,myid,etq,MPI_COMM_WORLD,ierr_mpi)
-           call mpi_send(syyold2(i_inf(myid+1):i_sup(myid+1),1),nb_received_sv(myid+1),MPICP,myid,etq,MPI_COMM_WORLD,ierr_mpi)
-           call mpi_send(szzold2(i_inf(myid+1):i_sup(myid+1),1),nb_received_sv(myid+1),MPICP,myid,etq,MPI_COMM_WORLD,ierr_mpi)
-           call mpi_send(sxyold2(i_inf(myid+1):i_sup(myid+1),1),nb_received_sv(myid+1),MPICP,myid,etq,MPI_COMM_WORLD,ierr_mpi)
-           call mpi_send(sxzold2(i_inf(myid+1):i_sup(myid+1),1),nb_received_sv(myid+1),MPICP,myid,etq,MPI_COMM_WORLD,ierr_mpi)
-           call mpi_send(syzold2(i_inf(myid+1):i_sup(myid+1),1),nb_received_sv(myid+1),MPICP,myid,etq,MPI_COMM_WORLD,ierr_mpi)
+           call mpi_send( vxold2(i_inf(iproc+1):i_sup(iproc+1),1),nb_received_sv(iproc+1),MPICP,iproc,etq,MPI_COMM_WORLD,ierr_mpi)
+           call mpi_send( vyold2(i_inf(iproc+1):i_sup(iproc+1),1),nb_received_sv(iproc+1),MPICP,iproc,etq,MPI_COMM_WORLD,ierr_mpi)
+           call mpi_send( vzold2(i_inf(iproc+1):i_sup(iproc+1),1),nb_received_sv(iproc+1),MPICP,iproc,etq,MPI_COMM_WORLD,ierr_mpi)
+           call mpi_send(sxxold2(i_inf(iproc+1):i_sup(iproc+1),1),nb_received_sv(iproc+1),MPICP,iproc,etq,MPI_COMM_WORLD,ierr_mpi)
+           call mpi_send(syyold2(i_inf(iproc+1):i_sup(iproc+1),1),nb_received_sv(iproc+1),MPICP,iproc,etq,MPI_COMM_WORLD,ierr_mpi)
+           call mpi_send(szzold2(i_inf(iproc+1):i_sup(iproc+1),1),nb_received_sv(iproc+1),MPICP,iproc,etq,MPI_COMM_WORLD,ierr_mpi)
+           call mpi_send(sxyold2(i_inf(iproc+1):i_sup(iproc+1),1),nb_received_sv(iproc+1),MPICP,iproc,etq,MPI_COMM_WORLD,ierr_mpi)
+           call mpi_send(sxzold2(i_inf(iproc+1):i_sup(iproc+1),1),nb_received_sv(iproc+1),MPICP,iproc,etq,MPI_COMM_WORLD,ierr_mpi)
+           call mpi_send(syzold2(i_inf(iproc+1):i_sup(iproc+1),1),nb_received_sv(iproc+1),MPICP,iproc,etq,MPI_COMM_WORLD,ierr_mpi)
      
         end do
         
      else ! RECEIVE
      
-        call mpi_send( vxold1(:,itime),nb_received_sv(myid+1),MPICP,0,etq,MPI_COMM_WORLD,statut,ierr_mpi)
-        call mpi_send( vyold1(:,itime),nb_received_sv(myid+1),MPICP,0,etq,MPI_COMM_WORLD,statut,ierr_mpi)
-        call mpi_send( vzold1(:,itime),nb_received_sv(myid+1),MPICP,0,etq,MPI_COMM_WORLD,statut,ierr_mpi)
-        call mpi_send(sxxold1(:,itime),nb_received_sv(myid+1),MPICP,0,etq,MPI_COMM_WORLD,statut,ierr_mpi)
-        call mpi_send(syyold1(:,itime),nb_received_sv(myid+1),MPICP,0,etq,MPI_COMM_WORLD,statut,ierr_mpi)
-        call mpi_send(szzold1(:,itime),nb_received_sv(myid+1),MPICP,0,etq,MPI_COMM_WORLD,statut,ierr_mpi)
-        call mpi_send(sxyold1(:,itime),nb_received_sv(myid+1),MPICP,0,etq,MPI_COMM_WORLD,statut,ierr_mpi)
-        call mpi_send(sxzold1(:,itime),nb_received_sv(myid+1),MPICP,0,etq,MPI_COMM_WORLD,statut,ierr_mpi)
-        call mpi_send(syzold1(:,itime),nb_received_sv(myid+1),MPICP,0,etq,MPI_COMM_WORLD,statut,ierr_mpi)
+        call mpi_recv( vxold1(:,itime),nb_received_sv(myid+1),MPICP,0,etq,MPI_COMM_WORLD,statut,ierr_mpi)
+        call mpi_recv( vyold1(:,itime),nb_received_sv(myid+1),MPICP,0,etq,MPI_COMM_WORLD,statut,ierr_mpi)
+        call mpi_recv( vzold1(:,itime),nb_received_sv(myid+1),MPICP,0,etq,MPI_COMM_WORLD,statut,ierr_mpi)
+        call mpi_recv(sxxold1(:,itime),nb_received_sv(myid+1),MPICP,0,etq,MPI_COMM_WORLD,statut,ierr_mpi)
+        call mpi_recv(syyold1(:,itime),nb_received_sv(myid+1),MPICP,0,etq,MPI_COMM_WORLD,statut,ierr_mpi)
+        call mpi_recv(szzold1(:,itime),nb_received_sv(myid+1),MPICP,0,etq,MPI_COMM_WORLD,statut,ierr_mpi)
+        call mpi_recv(sxyold1(:,itime),nb_received_sv(myid+1),MPICP,0,etq,MPI_COMM_WORLD,statut,ierr_mpi)
+        call mpi_recv(sxzold1(:,itime),nb_received_sv(myid+1),MPICP,0,etq,MPI_COMM_WORLD,statut,ierr_mpi)
+        call mpi_recv(syzold1(:,itime),nb_received_sv(myid+1),MPICP,0,etq,MPI_COMM_WORLD,statut,ierr_mpi)
 
      end if
 
@@ -217,41 +219,49 @@ program interpolate_3D_wavefield
   tbeg = itbeg * dtold      !*** Starting time of cut signal
   tend = itend * dtold
   oldlen = itend-itbeg+1
-  
+
+
   if (myid==0) write(6,*)'Infos : itbeg, itend, tbeg, tend, oldlen'
   if (myid==0) write(6,*)itbeg, itend, tbeg, tend, oldlen
 
+  call MPI_barrier(MPI_COMM_WORLD,ierr_mpi)
+ 
+  if (itend > oldlen) then
+	write(6,*)'WARNING itend > olden will STOP'
+        stop 'itend > oldlen'
+  end if
+
   if (.not.allocated(vxold)) allocate(vxold(nrec_to_store,oldlen))
-  if (.not.allocated(vyold)) allocate(vyold(nrec_to_store,oldlen))
-  if (.not.allocated(vzold)) allocate(vzold(nrec_to_store,oldlen))
-  if (.not.allocated(sxxold)) allocate(sxxold(nrec_to_store,oldlen))
-  if (.not.allocated(syyold)) allocate(syyold(nrec_to_store,oldlen))
-  if (.not.allocated(szzold)) allocate(szzold(nrec_to_store,oldlen))
-  if (.not.allocated(syzold)) allocate(syzold(nrec_to_store,oldlen))
-  if (.not.allocated(sxzold)) allocate(sxzold(nrec_to_store,oldlen))
-  if (.not.allocated(sxyold)) allocate(sxyold(nrec_to_store,oldlen))
-
   vxold(:,:) = vxold1(:,itbeg:itend)
-  vyold(:,:) = vyold1(:,itbeg:itend)
-  vzold(:,:) = vzold1(:,itbeg:itend)
-  sxxold(:,:) = sxxold1(:,itbeg:itend)
-  syyold(:,:) = syyold1(:,itbeg:itend)
-  szzold(:,:) = szzold1(:,itbeg:itend)
-  syzold(:,:) = syzold1(:,itbeg:itend)
-  sxzold(:,:) = sxzold1(:,itbeg:itend)
-  sxyold(:,:) = sxyold1(:,itbeg:itend)
-
   deallocate(vxold1)
+  if (.not.allocated(vyold)) allocate(vyold(nrec_to_store,oldlen))
+  vyold(:,:) = vyold1(:,itbeg:itend)
   deallocate(vyold1)
+  if (.not.allocated(vzold)) allocate(vzold(nrec_to_store,oldlen))
+  vzold(:,:) = vzold1(:,itbeg:itend)
   deallocate(vzold1)
+  if (.not.allocated(sxxold)) allocate(sxxold(nrec_to_store,oldlen))
+  sxxold(:,:) = sxxold1(:,itbeg:itend)
   deallocate(sxxold1)
+  if (.not.allocated(syyold)) allocate(syyold(nrec_to_store,oldlen))
+  syyold(:,:) = syyold1(:,itbeg:itend)
   deallocate(syyold1)
+  if (.not.allocated(szzold)) allocate(szzold(nrec_to_store,oldlen))
+  szzold(:,:) = szzold1(:,itbeg:itend)
   deallocate(szzold1)
+  if (.not.allocated(syzold)) allocate(syzold(nrec_to_store,oldlen))
+  syzold(:,:) = syzold1(:,itbeg:itend)
   deallocate(syzold1)
+  if (.not.allocated(sxzold)) allocate(sxzold(nrec_to_store,oldlen))
+  sxzold(:,:) = sxzold1(:,itbeg:itend)
   deallocate(sxzold1)
+  if (.not.allocated(sxyold)) allocate(sxyold(nrec_to_store,oldlen))
+  sxyold(:,:) = sxyold1(:,itbeg:itend)
   deallocate(sxyold1)
 
   ntold = oldlen
+
+  call MPI_barrier(MPI_COMM_WORLD,ierr_mpi)
 
   !*** Convolve with stf (could also be a filter)
   !!!!! Allocate stf

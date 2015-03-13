@@ -38,6 +38,9 @@ contains
     call MPI_Type_create_f90_real(precision(dummycp), range(dummycp), mpicp, ierr_mpi)
     call MPI_Type_create_f90_real(precision(dummyhp), range(dummyhp), mpihp, ierr_mpi)    
 
+	print *,myid,' hello you im here'
+    call MPI_barrier(MPI_COMM_WORLD,ierr_mpi)
+
   end subroutine init_mpi
 !--------------------------------------------------------------------------------
 
@@ -45,7 +48,7 @@ contains
 ! Finalize mpi
   subroutine finalize_mpi
     
-    call MPI_barrier(MPI_COMM_WORLD, ierr_mpi)
+!    call MPI_barrier(MPI_COMM_WORLD, ierr_mpi)
     call MPI_finalize(ierr_mpi)
 
   end subroutine finalize_mpi

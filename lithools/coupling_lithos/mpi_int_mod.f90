@@ -107,6 +107,7 @@ contains
     call mpi_bcast(ntime,1,MPISI,0,MPI_COMM_WORLD,ierr_mpi)
     call mpi_bcast(nbrec,1,MPISI,0,MPI_COMM_WORLD,ierr_mpi)
     call mpi_bcast(npts,1,MPISI,0,MPI_COMM_WORLD,ierr_mpi)
+    call mpi_bcast(nptsa,1,MPISI,0,MPI_COMM_WORLD,ierr_mpi)
     call mpi_bcast(nsim,1,MPISI,0,MPI_COMM_WORLD,ierr_mpi)
     call mpi_bcast(ntold,1,MPISI,0,MPI_COMM_WORLD,ierr_mpi)
     call mpi_bcast(nlta,1,MPISI,0,MPI_COMM_WORLD,ierr_mpi)
@@ -115,6 +116,21 @@ contains
     call mpi_bcast(ntnew,1,MPISI,0,MPI_COMM_WORLD,ierr_mpi)
     call mpi_bcast(num_bnd_faces,1,MPISI,0,MPI_COMM_WORLD,ierr_mpi)
     call mpi_bcast(ngllsquare,1,MPISI,0,MPI_COMM_WORLD,ierr_mpi)
+    call mpi_bcast(ngllx,1,MPISI,0,MPI_COMM_WORLD,ierr_mpi)
+    call mpi_bcast(nglly,1,MPISI,0,MPI_COMM_WORLD,ierr_mpi)
+    call mpi_bcast(ngllz,1,MPISI,0,MPI_COMM_WORLD,ierr_mpi)
+    call mpi_bcast(nelem,1,MPISI,0,MPI_COMM_WORLD,ierr_mpi)
+
+       if(.not.allocated(loc2glob)) allocate(loc2glob(ngllx,nglly,ngllz,nelem))
+       if(.not.allocated(xcoord)) allocate(xcoord(nptsa))
+       if(.not.allocated(ycoord)) allocate(ycoord(nptsa))
+       if(.not.allocated(zcoord)) allocate(zcoord(nptsa))
+       if(.not.allocated(abs_bnd_ielem))       allocate(abs_bnd_ielem(num_bnd_faces))
+       if(.not.allocated(abs_bnd_ijk))         allocate(abs_bnd_ijk(3,ngllsquare,num_bnd_faces))
+       if(.not.allocated(abs_bnd_jacobian2Dw)) allocate(abs_bnd_jacobian2Dw(ngllsquare,num_bnd_faces))
+       if(.not.allocated(abs_bnd_normal))      allocate(abs_bnd_normal(3,ngllsquare,num_bnd_faces))
+
+
 
     call MPI_bcast(abs_bnd_ielem,num_bnd_faces,MPISI,0,MPI_COMM_WORLD,ierr_mpi)
     call MPI_bcast(abs_bnd_ijk,3*ngllsquare*num_bnd_faces,MPISI,0,MPI_COMM_WORLD,ierr_mpi)

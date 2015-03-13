@@ -14,7 +14,7 @@ contains
 ! Routine read_all_inputs used in the main program
   subroutine read_all_inputs(isim, nsim_to_send)
 
-    integer(kind=si), intent(in) :: isim
+    integer(kind=si), intent(inout) :: isim
     integer(kind=si), intent(inout) :: nsim_to_send
 
     !*** Read simulations infos
@@ -209,9 +209,9 @@ contains
        call def_rot_matrix_DG(meshcolat,meshlon,rot_mat_mesh,trans_rot_mat_mesh)
     case ('SEM')
 !       call def_rot_matrix_SEM(meshcolat,meshlon,rot_mat_mesh,trans_rot_mat_mesh)
-        call def_rot_matrix_SEM(meshlat,meshlon,az_mesh,rot_mat_mesh,trans_rot_mat_mesh)
+        call def_rot_matrix_SEM(meshlat,meshlon,az_mesh*pi/180,rot_mat_mesh,trans_rot_mat_mesh)
     case ('FD')
-        call def_rot_matrix_SEM(meshlat,meshlon,az_mesh,rot_mat_mesh,trans_rot_mat_mesh)
+        call def_rot_matrix_SEM(meshlat,meshlon,az_mesh*pi/180,rot_mat_mesh,trans_rot_mat_mesh)
 !       call def_rot_matrix_FD(meshcolat,meshlon,rot_mat_mesh,trans_rot_mat_mesh)
     end select
     

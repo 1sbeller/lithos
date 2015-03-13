@@ -15,14 +15,20 @@ program reconstruct_3D_wavefield
   call begin_program
 
   !*** Prepare reconstruction
+  isim=1
   if (myid == 0) then
      call read_all_inputs(isim,nsim)  ! Rotations are defined here
      call determine_connectivity
   end if
 
   !*** Distribute on MPI process
+  call alloc_all_mpi
+  call bcast_all_mpi
   call distribute_mpi
+  call MPI_barrier(MPI_COMM_WORLD, ierr_mpi)
 
+  print *,myid,'we have survived'
+  print *,myid,nsim
   !*** Reconstruct wavefields
   do isim=1,nsim
      call reconstruct_velocity(isim)

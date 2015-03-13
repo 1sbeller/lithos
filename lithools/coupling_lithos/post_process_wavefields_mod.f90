@@ -2,7 +2,7 @@ module post_process_wavefields_mod
 
   use precision_mod
   use constants_mod
-
+  use mpi_mod 
   implicit none
 
 contains
@@ -27,6 +27,9 @@ contains
     character(len=4)   :: appmynum
     character(len=256) :: fichier
 
+
+	print *,myid,'we fucking exist...'
+	call MPI_barrier(MPI_COMM_WORLD,ierr_mpi)
     allocate(iunit(0:nbproc-1,3))
         
 
@@ -81,23 +84,28 @@ contains
           do iproc=0, nbproc-1
              call define_io_appendix(appmynum,iproc)
              write(fichier,'(a6,a15,a1)') '/Data/',input_veloc_name(ifield),'_'
+	     print *,trim(working_axisem_dir)//trim(simdir(isim))//trim(fichier)//appmynum//'.bindat'
              open(unit=iunit(iproc,ifield), file=trim(working_axisem_dir)//trim(simdir(isim))//trim(fichier) &
                   //appmynum//'.bindat', &
                   FORM="UNFORMATTED", STATUS="UNKNOWN", POSITION="REWIND")
           end do
        end do
     end if
-    
+   
+!    call MPI_barrier(MPI_COMM_WORLD,ierr_mpi)
+ 
     !*** Read those files
     do itime=1,ntime
-       data_rec=0.
+       print *,'step: ',itime
+	data_rec=0.
        indx_stored=1
        !** us comp
        ifield=1
        if (myid ==0) then 
           do iproc=0, nbproc-1
+             print *,nb_stored(iproc),' stored'
              if (nb_stored(iproc) > 0) then
-                
+                print *,myid,iproc,nb_stored,ibeg,iend 
                 allocate(data_to_read(ibeg:iend,ibeg:iend, nb_stored(iproc)))
                 read(iunit(iproc,ifield))  data_to_read(ibeg:iend,ibeg:iend,:)
                 data_read(ibeg:iend, ibeg:iend, indx_stored(ifield):indx_stored(ifield)+nb_stored(iproc)-1) &
@@ -106,9 +114,12 @@ contains
                 
                 deallocate(data_to_read)
              end if
+		print *,myid,'DONE'
           end do
        end if
+       print *,myid,'here'
        call mpi_bcast(data_read,(iend-ibeg+1)*(iend-ibeg+1)*nel,MPISP,0,MPI_COMM_WORLD,ierr_mpi) 
+       print *,myid
        !* Interpolate us comp
        call interpol_field(ifield)
  
