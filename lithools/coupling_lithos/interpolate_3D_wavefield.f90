@@ -200,6 +200,9 @@ program interpolate_3D_wavefield
 
   !*** Compute STA/LTA
   call substalta(vpow, nsta, nlta, stalta)
+  if(.not.allocated(conv)) allocate(conv(ntold))
+  call myconvolution(stalta,stf,ntold,ntstf,stalta)
+  stalta = conv
   do i=1,ntold
      if (stalta(i) >= thres) then
         ind = i;
@@ -230,6 +233,7 @@ program interpolate_3D_wavefield
 	write(6,*)'WARNING itend > olden will STOP'
         stop 'itend > oldlen'
   end if
+  call MPI_barrier(MPI_COMM_WORLD,ierr_mpi)
 
   if (.not.allocated(vxold)) allocate(vxold(nrec_to_store,oldlen))
   vxold(:,:) = vxold1(:,itbeg:itend)
@@ -264,34 +268,68 @@ program interpolate_3D_wavefield
   call MPI_barrier(MPI_COMM_WORLD,ierr_mpi)
 
   !*** Convolve with stf (could also be a filter)
-  !!!!! Allocate stf
-  !!!!! Read stf
-  !!!!! Convolve (can be done on multi procs also)
-  !  do ipt=1,npts
-  !          
-  !     call myconvolve(dble(vxold(ipt,:)),ker,nt,n1,conv)
-  !     vxold(ipt,:) = real(conv(ibeg:iend))
-  !     call myconvolve(dble(vyold(ipt,:)),ker,nt,n1,conv)
-  !     vyold(ipt,:) = real(conv(ibeg:iend))
-  !     call myconvolve(dble(vzold(ipt,:)),ker,nt,n1,conv)
-  !     vzold(ipt,:) = real(conv(ibeg:iend))
-  !     
-  !     call myconvolve(dble(sxxold(ipt,:)),ker,nt,n1,conv)
-  !     sxxold(ipt,:) = real(conv(ibeg:iend))
-  !     call myconvolve(dble(syyold(ipt,:)),ker,nt,n1,conv)
-  !     syyold(ipt,:) = real(conv(ibeg:iend))
-  !     call myconvolve(dble(szzold(ipt,:)),ker,nt,n1,conv)
-  !     szzold(ipt,:) = real(conv(ibeg:iend))
-  !     call myconvolve(dble(syzold(ipt,:)),ker,nt,n1,conv)
-  !     syzold(ipt,:) = real(conv(ibeg:iend))
-  !     call myconvolve(dble(sxzold(ipt,:)),ker,nt,n1,conv)
-  !     sxzold(ipt,:) = real(conv(ibeg:iend))
-  !     call myconvolve(dble(sxyold(ipt,:)),ker,nt,n1,conv)
-  !     sxyold(ipt,:) = real(conv(ibeg:iend))
-  !     
-  !  end do
-  if (myid==0) write(6,*)'Done.'
+  if (isconv == 1) then  
+  !* Allocate convtmp
+  if (.not.allocated(convtmpvx))  allocate(convtmpvx(nrec_to_store,oldlen))
+  if (.not.allocated(convtmpvy))  allocate(convtmpvy(nrec_to_store,oldlen))
+  if (.not.allocated(convtmpvz))  allocate(convtmpvz(nrec_to_store,oldlen))
+  if (.not.allocated(convtmpsxx)) allocate(convtmpsxx(nrec_to_store,oldlen))
+  if (.not.allocated(convtmpsyy)) allocate(convtmpsyy(nrec_to_store,oldlen))
+  if (.not.allocated(convtmpszz)) allocate(convtmpszz(nrec_to_store,oldlen))
+  if (.not.allocated(convtmpsyz)) allocate(convtmpsyz(nrec_to_store,oldlen))
+  if (.not.allocated(convtmpsxz)) allocate(convtmpsxz(nrec_to_store,oldlen))
+  if (.not.allocated(convtmpsxy)) allocate(convtmpsxy(nrec_to_store,oldlen))
 
+  !* convolve
+  do ipt = 1, nrec_to_store
+     do it = 1, ntold
+        do itstf = 1, ntstf
+           convtmpvx( ipt,it+itstf-1) = convtmpvx( ipt,it+itstf-1) + vxold(ipt,it)  * stf(itstf)
+           convtmpvy( ipt,it+itstf-1) = convtmpvy( ipt,it+itstf-1) + vyold(ipt,it)  * stf(itstf)
+           convtmpvz( ipt,it+itstf-1) = convtmpvz( ipt,it+itstf-1) + vzold(ipt,it)  * stf(itstf)
+           convtmpsxx(ipt,it+itstf-1) = convtmpsxx(ipt,it+itstf-1) + sxxold(ipt,it) * stf(itstf)
+           convtmpsyy(ipt,it+itstf-1) = convtmpsyy(ipt,it+itstf-1) + syyold(ipt,it) * stf(itstf)
+           convtmpszz(ipt,it+itstf-1) = convtmpszz(ipt,it+itstf-1) + szzold(ipt,it) * stf(itstf)
+           convtmpsyz(ipt,it+itstf-1) = convtmpsyz(ipt,it+itstf-1) + syzold(ipt,it) * stf(itstf)
+           convtmpsxz(ipt,it+itstf-1) = convtmpsxz(ipt,it+itstf-1) + sxzold(ipt,it) * stf(itstf)
+           convtmpsxy(ipt,it+itstf-1) = convtmpsxy(ipt,it+itstf-1) + syzold(ipt,it) * stf(itstf)
+        end do
+     end do
+  end do
+
+  !* take good part
+   if (modulo(ntstf,2) == 0) then
+       ind = ntstf/2 + 1
+   else
+       ind = ceiling(real(ntstf/2,kind=cp))
+   end if
+
+   vxold(ipt,:)  = convtmpvx(ipt,ind:ind+ntold-1)
+   vyold(ipt,:)  = convtmpvy(ipt,ind:ind+ntold-1)
+   vzold(ipt,:)  = convtmpvz(ipt,ind:ind+ntold-1)
+   sxxold(ipt,:) = convtmpsxx(ipt,ind:ind+ntold-1)
+   syyold(ipt,:) = convtmpsyy(ipt,ind:ind+ntold-1)
+   szzold(ipt,:) = convtmpszz(ipt,ind:ind+ntold-1)
+   syzold(ipt,:) = convtmpsyz(ipt,ind:ind+ntold-1)
+   sxzold(ipt,:) = convtmpsxz(ipt,ind:ind+ntold-1)
+   sxyold(ipt,:) = convtmpsxy(ipt,ind:ind+ntold-1)
+
+  !* Deallocate
+  deallocate(convtmpvx)
+  deallocate(convtmpvy)
+  deallocate(convtmpvz)
+  deallocate(convtmpsxx)
+  deallocate(convtmpsyy)
+  deallocate(convtmpszz)
+  deallocate(convtmpsyz)
+  deallocate(convtmpsxz)
+  deallocate(convtmpsxy)
+
+  end if
+
+  call MPI_barrier(MPI_COMM_WORLD,ierr_mpi)
+  
+  if (myid==0) write(6,*)'Done.'
 
   !================================================================================
   ! Resample with sinc interpolation

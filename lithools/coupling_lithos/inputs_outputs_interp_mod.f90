@@ -21,6 +21,9 @@ contains
        
        !*** Read modeling tools param
        call read_modeling_params
+       if (isconv == 1) then
+           call read_stf
+       end if
 
     end if
        
@@ -133,7 +136,8 @@ contains
     read(10,'(a)')rep
     read(10,*)nsta,nlta,thres
     read(10,*)istap,alpha
-    read(10,*)isconv,stf_file
+    read(10,*)isconv,ntstf
+    read(10,*)stf_file
     read(10,*)dummy
     read(10,*)fmax
     close(10)
@@ -141,6 +145,19 @@ contains
   end subroutine read_interpolation_param
 !--------------------------------------------------------------------------------
  
+!================================================================================
+! Read source time function to convolve
+  subroutine read_stf
+
+     if(.not.allocated(stf)) allocate(stf(ntstf))     
+
+     open(10,file=trim(stf_file),access='direct',recl=cp*ntstf)
+     read(10,rec=1)stf
+     close(10)
+
+  end subroutine read_stf
+!--------------------------------------------------------------------------------
+
 !================================================================================
 ! Read modeling tools parameter
   subroutine read_modeling_params

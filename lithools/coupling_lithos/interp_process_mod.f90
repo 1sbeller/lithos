@@ -140,63 +140,40 @@ contains
 
   end function next_iunit
 !--------------------------------------------------------------------------------
+!========================================================================
+! Convolution routine
+  subroutine myconvolution(sig1,sig2,n1,n2,conv)
 
-  subroutine prepare_adjoint_filter
+    integer(kind=si), intent(in) :: n1, n2
 
-  !  real(kind=cp), intent(in) :: fmax, dt
-  !  real(kind=cp), dimension(:), allocatable, intent(out) :: Ker, conv, taper
-  !  integer(kind=si), intent(out) :: ibeg, iend
+    real(kind=cp), dimension(n1), intent(in) :: sig1
+    real(kind=cp), dimension(n2), intent(in) :: sig2
 
-    !*** Define bandwidth
-    n1 = ceiling(4./(fmax * dt))        !before it was 4./fmax...  !bandwidth              !Let's say the frequency
-    if (modulo(n1,2) == 0) then
-       n1 = n1+1
+    real(kind=cp), dimension(n1), intent(out) ::conv
+
+    real(kind=cp), dimension(n1+n2-1) :: convtmp !, intent(out) :: conv
+    integer(kind=si) :: i1, i2, ind
+
+    !*** Put to zero
+    convtmp = zero
+
+    !*** Convolve
+    do i1=1,n1
+      do i2=1,n2
+         convtmp(i1+i2-1) = convtmp(i1+i2-1) + sig1(i1) * sig2(i2)
+      end do
+    end do
+
+    !*** Take good parts
+    if (modulo(n2,2) == 0) then
+        ind = n2/2+1
+    else
+        ind = ceiling(real(n2/2,kind=cp))
     end if
-
-    !*** Allocate
-    if (.not. allocated(ker)) allocate(ker(n1))
-    if (.not. allocated(taptap)) allocate(taptap(nt))
-    if (.not. allocated(conv)) allocate(conv(n1+nt-1))
-    ker = 0.
-    conv = 0.
-
-    !*** Create filter kernel (may be done elsewhere)
-    call sinc_kernel(dt, 1./fmax, n1, ker)
-    
-    !*** Get taper
-    taptap = tuckeywin(nt,0.05)
-
-    !*** Index (to get good part of conoluion)
-    ibeg = ceiling(n1/2.)-1
-    iend = ibeg + nt - 1
-
-  end subroutine prepare_adjoint_filter
-
-!!$  subroutine filter_adjoint_source
-!!$    
-!!$!    integer(kind=si), intent(in) :: irec
-!!$!
-!!$!    !*** Loop over receivers
-!!$!    do irec=1,nrec
-!!$!           
-!!$       
-!!$    !*** Taper on residuals
-!!$    toconv(irec,:) = residu_vx(irec,:) * taptap(:)
-!!$    residu_vy(irec,:) = residu_vy(irec,:) * taptap(:)
-!!$    residu_vz(irec,:) = residu_vz(irec,:) * taptap(:)
-!!$
-!!$      
-!!$    !*** Filter on residuals
-!!$    call myconvolve(dble(residu_vx(irec,:)),ker,nt,n1,conv)
-!!$    residu_vx(irec,:) = real(conv(ibeg:iend))
-!!$    call myconvolve(dble(residu_vy(irec,:)),ker,nt,n1,conv)
-!!$    residu_vy(irec,:) = real(conv(ibeg:iend))
-!!$    call myconvolve(dble(residu_vz(irec,:)),ker,nt,n1,conv)
-!!$    residu_vz(irec,:) = real(conv(ibeg:iend))
-!!$
-!!$    end do
-!!$
-!!$  end subroutine filter_adjoint_source
+    conv(:) = convtmp(ind:ind+n1-1)
+  
+  end subroutine myconvolution
+!------------------------------------------------------------------------
 
  subroutine sinc_kernel(dx1in, dx1out, n1, ker)
 
@@ -241,29 +218,6 @@ contains
      print *,ker
 
    end subroutine sinc_kernel
-
-
-  subroutine myconvolve(a,b,na,nb,conv)
-
-    integer(kind=si), intent(in) :: na, nb
-    
-    real(kind=cp), dimension(na), intent(in) :: a
-    real(kind=cp), dimension(nb), intent(in) :: b
-
-    real(kind=cp), dimension(na+nb-1), intent(out) :: conv
-    integer(kind=si) :: ia, ib
-
-    !*** Put to zero
-    conv = 0.
-
-    !*** Convolve
-    do ia=1,na
-      do ib=1,nb
-         conv(ia+ib-1) = conv(ia+ib-1) + a(ia) * b(ib)
-      end do
-   end do
-
-  end subroutine myconvolve
 
 
 end module interp_process_mod

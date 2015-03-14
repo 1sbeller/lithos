@@ -51,17 +51,20 @@ module interpolation_parameters_mod
   character(len=250), dimension(3) :: output_veloc_name
   character(len=250), dimension(6) :: output_stress_name
   integer(kind=si), dimension(:), allocatable ::  ivx, ivy, ivz, isxx, isyy, iszz, isxy, isxz, isyz
-  integer(kind=si) :: nbrec, ntime, istap, itime, iptglob, isconv
+  integer(kind=si) :: nbrec, ntime, istap, itime, iptglob, isconv, ntstf
 
   integer(kind=si) :: nptsa, nelx, nely, nelz, nelem, ngllx, nglly, ngllz, nlta, nsta, itbeg, itend
   real(kind=cp)    :: thres, alpha, tbeg, tend, fmax
 
   !** For filter
-  real(kind=cp), dimension(:), allocatable :: Ker, conv, taptap
-  integer(kind=si) :: ibeg, iend, nt
+  real(kind=cp), dimension(:), allocatable :: conv, taptap, stf
+  integer(kind=si) :: ibeg, iend, nt, it, itstf
   integer(kind=si) :: n1
   real(kind=cp) :: dt, ttt2, ttt1
   real(kind=cp), dimension(:), allocatable :: tab_sinc 
+  real(kind=cp), dimension(:,:), allocatable :: convtmpvx,  convtmpvy,  convtmpvz  
+  real(kind=cp), dimension(:,:), allocatable :: convtmpsxx, convtmpsyy, convtmpszz
+  real(kind=cp), dimension(:,:), allocatable :: convtmpsyz, convtmpsxz, convtmpsxy
 
   !*** From vadim
   integer(kind=si), dimension(MPI_STATUS_SIZE) :: statut
