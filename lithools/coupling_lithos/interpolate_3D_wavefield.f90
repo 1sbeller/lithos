@@ -199,16 +199,16 @@ program interpolate_3D_wavefield
   end do
 
   !*** Compute STA/LTA
-  call substalta(vpow, nsta, nlta, stalta)
   if(.not.allocated(conv)) allocate(conv(ntold))
-  call myconvolution(stalta,stf,ntold,ntstf,stalta)
-  stalta = conv
-  do i=1,ntold
-     if (stalta(i) >= thres) then
-        ind = i;
-        exit
-     end if
-  end do
+  call myconvolution(vpow,stf,ntold,ntstf,conv)
+  vpow = conv
+  call substalta(vpow, ntold,  nsta, nlta, thres, stalta, ind)
+!  do i=1,ntold
+!     if (stalta(i) >= thres) then
+!        ind = i;
+!        exit
+!     end if
+!  end do
   deallocate(vpow)
   deallocate(stalta)
   if (myid==0) write(6,*)'Done'

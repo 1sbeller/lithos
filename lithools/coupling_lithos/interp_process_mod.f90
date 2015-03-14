@@ -6,63 +6,52 @@ module interp_process_mod
 
 contains
 
-  
 !================================================================================
-! Compute STA/LTA for picking
-  subroutine substalta(sig, nsta, nlta, stalta)
+! Compute stalta ratio and give first pick
+  subroutine substalta(sig,n,nsta,nlta,crit,stalta,tpick)
 
-    real(kind=cp), dimension(:), allocatable, intent(in)  :: sig
-    real(kind=cp), dimension(:), allocatable, intent(inout) :: stalta
+    integer(kind=si), intent(in)            :: n, nsta, nlta
+    real(kind=cp), intent(in)               :: crit
+    real(kind=cp), dimension(n), intent(in) :: sig
 
-    integer(kind=si), intent(in) :: nsta, nlta
+    integer(kind=si), intent(out) :: tpick
 
-    integer(kind=si) :: m, nsta_1, nlta_1, i
+    real(kind=cp), dimension(n)    :: sta, lta
+    real(kind=cp), dimension(n), intent(out) :: stalta
+    real(kind=cp), dimension(n+2*nsta) :: tmpsta
+    real(kind=cp), dimension(n+2*nlta) :: tmplta
 
-    real(kind=cp), dimension(:), allocatable :: sta, lta, pad_sta, pad_lta, tmp1, tmp2
+    integer(kind=si) :: i
 
-    m = size(sig)
-
-    nsta_1 = nsta - 1
-    nlta_1 = nlta - 1
-
-
-    allocate(sta(m))
-    allocate(lta(m))
-    allocate(tmp1(m))
-    allocate(tmp2(m))
-    allocate(pad_sta(nsta_1))
-    allocate(pad_lta(nlta_1))
-    sta = 0.
-    lta = 0.
-    pad_sta = 0.
-    pad_lta = 1.
-
-    !*** compute the short time average (STA)
-    do i=1,nsta
-       tmp1(1:nsta_1) = pad_sta(:)
-       tmp1(nsta_1+1:m) = sig(i:m - nsta_1 + i-1)**2
-       sta = sta + tmp1
+    !*** Compute the short time average (STA)
+    tmpsta(1:nsta) = sig(1)
+    tmpsta(nsta+1:nsta+n) = sig(:) 
+    tmpsta(nsta+n+1:n+2*nsta) = sig(n)
+    sta = zero
+    do i=1+nsta,n+nsta
+       sta(i) = sum(tmpsta(i-nsta:i+nsta)**2)
     end do
-    sta = sta / nsta
+    sta = 0.5 * sta / nsta
 
-    !*** compute the long time average (LTA)
-    do i =1,nlta
-       tmp2(1:nlta_1) = pad_lta(:)
-       tmp2(nlta_1+1:m) = sig(i:m - nlta_1 + i-1)**2
-       lta = lta + tmp2
+    !*** Compute the long time average (LTA)
+    tmplta(1:nlta) = sig(1)
+    tmplta(nlta+1:nlta+n) = sig(:) 
+    tmplta(nlta+n+1:n+2*nlta) = sig(n)
+    lta = zero
+    do i=1+nlya,n+nlta
+        lta(i+nlta) = sum(tmplta(i-nlta:i+nlta)**2)
     end do
-    lta = lta / nlta
+    lta = 0.5 * lta / nlta
 
-!    sta(1:nsta_1) = 0.
-!    lta(1:nlta_1) = 1.
 
-    do i=1,m
-       if (lta(i) < 1e-20) then
-          lta(i) = 1.
-          sta(i) = 0.
-       end if
-    end do
+    !*** Compute ratio and gives first pick
     stalta = sta / lta
+    do i=1,n
+      if (stalta(i) >= crit) then
+        tpick = i
+        exit
+      end if
+    end do
 
   end subroutine substalta
 !--------------------------------------------------------------------------------
