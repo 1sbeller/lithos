@@ -163,7 +163,7 @@ contains
        !*** Write wavefield
        if (myid == 0) then
            call write_veloc3D(ivx,ivy,ivz)
-           write(6,'(f06.2,a)')100.*real(itime/ntime),'%'                  
+           write(6,*)itime,ntime                  
        end if
     end do ! time step
 
@@ -431,7 +431,7 @@ contains
        !*** Write wavefield
        if (myid == 0) then
           call  write_stress3D(isxx,isyy,iszz,isxy,isxz,isyz)
-          write(6,'(f06.2,a)')100.*real(itime/ntime),'%'                   
+          write(6,*)itime,ntime                   
        end if
   
     end do
