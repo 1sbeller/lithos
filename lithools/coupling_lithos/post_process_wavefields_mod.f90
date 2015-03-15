@@ -28,8 +28,6 @@ contains
     character(len=256) :: fichier
 
 
-	print *,myid,'we fucking exist...'
-	call MPI_barrier(MPI_COMM_WORLD,ierr_mpi)
     allocate(iunit(0:nbproc-1,3))
         
 
@@ -84,7 +82,6 @@ contains
           do iproc=0, nbproc-1
              call define_io_appendix(appmynum,iproc)
              write(fichier,'(a6,a15,a1)') '/Data/',input_veloc_name(ifield),'_'
-	     print *,trim(working_axisem_dir)//trim(simdir(isim))//trim(fichier)//appmynum//'.bindat'
              open(unit=iunit(iproc,ifield), file=trim(working_axisem_dir)//trim(simdir(isim))//trim(fichier) &
                   //appmynum//'.bindat', &
                   FORM="UNFORMATTED", STATUS="UNKNOWN", POSITION="REWIND")
@@ -94,18 +91,16 @@ contains
    
 !    call MPI_barrier(MPI_COMM_WORLD,ierr_mpi)
  
+    if (myid==0) write(6,*)'Percentage : '
     !*** Read those files
     do itime=1,ntime
-       print *,'step: ',itime
-	data_rec=0.
+       data_rec=0.
        indx_stored=1
        !** us comp
        ifield=1
-       if (myid ==0) then 
+       if (myid ==0) then
           do iproc=0, nbproc-1
-             print *,nb_stored(iproc),' stored'
              if (nb_stored(iproc) > 0) then
-                print *,myid,iproc,nb_stored,ibeg,iend 
                 allocate(data_to_read(ibeg:iend,ibeg:iend, nb_stored(iproc)))
                 read(iunit(iproc,ifield))  data_to_read(ibeg:iend,ibeg:iend,:)
                 data_read(ibeg:iend, ibeg:iend, indx_stored(ifield):indx_stored(ifield)+nb_stored(iproc)-1) &
@@ -114,12 +109,10 @@ contains
                 
                 deallocate(data_to_read)
              end if
-		print *,myid,'DONE'
           end do
        end if
-       print *,myid,'here'
        call mpi_bcast(data_read,(iend-ibeg+1)*(iend-ibeg+1)*nel,MPISP,0,MPI_COMM_WORLD,ierr_mpi) 
-       print *,myid
+       
        !* Interpolate us comp
        call interpol_field(ifield)
  
@@ -168,8 +161,10 @@ contains
        call reduce_mpi_veloc
        
        !*** Write wavefield
-       if (myid == 0) call write_veloc3D(ivx,ivy,ivz)
-
+       if (myid == 0) then
+           call write_veloc3D(ivx,ivy,ivz)
+           write(6,'(f06.2,a)')100*itime/ntime,'%'                  
+       end if
     end do ! time step
 
     if (myid ==0) then
@@ -291,7 +286,9 @@ contains
           end do
        end do
     end if
-    
+
+
+    if (myid==0) write(6,*)'Percentage : '
     ! read files
     do itime=1,ntime
        stress_rec=0. 
@@ -299,6 +296,7 @@ contains
        !! s11
        ifield=1
        if (myid == 0) then
+          if (modulo(100*itime/ntime,5)==0) write(6,*)'Percentage : ',100*real(itime/ntime),'%'                  
           do iproc=0, nbproc-1
              if (nb_stored(iproc) > 0) then
                 
@@ -431,8 +429,12 @@ contains
        call reduce_mpi_stress
        
        !*** Write wavefield
-       if (myid == 0) call  write_stress3D(isxx,isyy,iszz,isxy,isxz,isyz)
-       
+       if (myid == 0) then
+          call  write_stress3D(isxx,isyy,iszz,isxy,isxz,isyz)
+!          write(6,*)'Percentage : ',100*real(itime/ntime),'%'
+           write(6,'(f06.2,a)')100*itime/ntime,'%'                   
+       end if
+  
     end do
     
     ! close files 

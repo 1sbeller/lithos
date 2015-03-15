@@ -27,8 +27,6 @@ program reconstruct_3D_wavefield
   call distribute_mpi
   call MPI_barrier(MPI_COMM_WORLD, ierr_mpi)
 
-  print *,myid,'we have survived'
-  print *,myid,nsim
   !*** Reconstruct wavefields
   do isim=1,nsim
      call reconstruct_velocity(isim)
