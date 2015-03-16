@@ -296,7 +296,6 @@ contains
        !! s11
        ifield=1
        if (myid == 0) then
-          if (modulo(100*itime/ntime,5)==0) write(6,*)'Percentage : ',100*real(itime/ntime),'%'                  
           do iproc=0, nbproc-1
              if (nb_stored(iproc) > 0) then
                 
