@@ -224,14 +224,14 @@ program interpolate_3D_wavefield
   oldlen = itend-itbeg+1
 
 
-  if (myid==0) write(6,*)'Infos : itbeg, itend, tbeg, tend, oldlen'
-  if (myid==0) write(6,*)itbeg, itend, tbeg, tend, oldlen
+  if (myid==0) write(6,*)'Infos : itbeg, itend, tbeg, tend, oldlen, ntold'
+  if (myid==0) write(6,*)itbeg, itend, tbeg, tend, oldlen, ntold
 
   call MPI_barrier(MPI_COMM_WORLD,ierr_mpi)
  
-  if (itend > oldlen) then
+  if (itend > ntold) then
 	write(6,*)'WARNING itend > olden will STOP'
-        stop 'itend > oldlen'
+        stop 'itend > ntold'
   end if
   call MPI_barrier(MPI_COMM_WORLD,ierr_mpi)
 
