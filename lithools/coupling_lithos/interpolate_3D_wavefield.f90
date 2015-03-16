@@ -198,6 +198,7 @@ program interpolate_3D_wavefield
     vpow(itold) = sqrt(sumx + sumy +sumz)
   end do
 
+
   !*** Compute STA/LTA
   if (isconv == 1) then
       if(.not.allocated(conv)) allocate(conv(ntold))
@@ -212,8 +213,14 @@ program interpolate_3D_wavefield
 !        exit
 !     end if
 !  end do
+  open(26,file='verifconv.bin',access='direct',recl=cp*ntold)
+  write(26,rec=1)vpow
+  close(26)
+  
   deallocate(vpow)
   deallocate(stalta)
+
+
   if (myid==0) write(6,*)'Done'
 
   !================================================================================
@@ -307,7 +314,7 @@ program interpolate_3D_wavefield
            convtmpszz(ipt,it+itstf-1) = convtmpszz(ipt,it+itstf-1) + szzold(ipt,it) * stf(itstf)
            convtmpsyz(ipt,it+itstf-1) = convtmpsyz(ipt,it+itstf-1) + syzold(ipt,it) * stf(itstf)
            convtmpsxz(ipt,it+itstf-1) = convtmpsxz(ipt,it+itstf-1) + sxzold(ipt,it) * stf(itstf)
-           convtmpsxy(ipt,it+itstf-1) = convtmpsxy(ipt,it+itstf-1) + syzold(ipt,it) * stf(itstf)
+           convtmpsxy(ipt,it+itstf-1) = convtmpsxy(ipt,it+itstf-1) + sxyold(ipt,it) * stf(itstf)
         end do
      end do
   end do
