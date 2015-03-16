@@ -38,7 +38,6 @@ contains
     call MPI_Type_create_f90_real(precision(dummycp), range(dummycp), mpicp, ierr_mpi)
     call MPI_Type_create_f90_real(precision(dummyhp), range(dummyhp), mpihp, ierr_mpi)    
 
-	print *,myid,' hello you im here'
     call MPI_barrier(MPI_COMM_WORLD,ierr_mpi)
 
   end subroutine init_mpi
@@ -83,6 +82,8 @@ contains
 
    end if
    allocate(stress_reduce(nbrec,9),data_reduce(nbrec,3))
+   call MPI_barrier(MPI_COMM_WORLD, ierr_mpi)
+
 
   end subroutine alloc_all_mpi
 !--------------------------------------------------------------------------------
@@ -152,7 +153,7 @@ contains
 ! Reduce stress
   subroutine reduce_mpi_stress
     
-    call mpi_reduce(stress_rec,stress_reduce,nbrec*9,MPISP,MPI_SUM,0,MPI_COMM_WORLD,ierr_mpi)
+    call mpi_reduce(stress_rec,stress_reduce,nbrec*6,MPISP,MPI_SUM,0,MPI_COMM_WORLD,ierr_mpi)
     stress_rec(:,:)=stress_reduce(:,:)
   
   end subroutine reduce_mpi_stress
