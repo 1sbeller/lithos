@@ -199,9 +199,12 @@ program interpolate_3D_wavefield
   end do
 
   !*** Compute STA/LTA
-  if(.not.allocated(conv)) allocate(conv(ntold))
-  call myconvolution(vpow,stf,ntold,ntstf,conv)
-  vpow = conv
+  if (isconv == 1) then
+      if(.not.allocated(conv)) allocate(conv(ntold))
+      call myconvolution(vpow,stf,ntold,ntstf,conv)
+      vpow = conv
+      if (allocated(conv)) deallocate(conv)
+  end if
   call substalta(vpow, ntold,  nsta, nlta, thres, stalta, ind)
 !  do i=1,ntold
 !     if (stalta(i) >= thres) then
@@ -240,6 +243,10 @@ program interpolate_3D_wavefield
   deallocate(vxold1)
   call MPI_barrier(MPI_COMM_WORLD,ierr_mpi)
   if (.not.allocated(vyold)) allocate(vyold(nrec_to_store,oldlen))
+  print *,shape(vyold),shape(vyold1),myid
+  print *,itbeg,itend,myid
+  read(*,*)
+  call MPI_barrier(MPI_COMM_WORLD,ierr_mpi)
   vyold(:,:) = vyold1(:,itbeg:itend)
   deallocate(vyold1)
   call MPI_barrier(MPI_COMM_WORLD,ierr_mpi)
