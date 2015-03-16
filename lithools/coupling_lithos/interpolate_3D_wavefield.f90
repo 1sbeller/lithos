@@ -220,7 +220,7 @@ program interpolate_3D_wavefield
   ! Cut signal and convolve with stf
   !--------------------------------------------------
   !*** Cut old signal
-  itbeg  = i-1
+  itbeg  = ind-1
   itend  = itbeg + ceiling(ntnew * dtnew / dtold)
   tbeg = itbeg * dtold      !*** Starting time of cut signal
   tend = itend * dtold
@@ -245,7 +245,6 @@ program interpolate_3D_wavefield
   if (.not.allocated(vyold)) allocate(vyold(nrec_to_store,oldlen))
   print *,shape(vyold),shape(vyold1),myid
   print *,itbeg,itend,myid
-  read(*,*)
   call MPI_barrier(MPI_COMM_WORLD,ierr_mpi)
   vyold(:,:) = vyold1(:,itbeg:itend)
   deallocate(vyold1)
