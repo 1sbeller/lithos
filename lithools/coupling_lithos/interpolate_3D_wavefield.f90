@@ -234,8 +234,9 @@ program interpolate_3D_wavefield
   oldlen = itend-itbeg+1
 
 
-  if (myid==0) write(6,*)'Infos : itbeg, itend, tbeg, tend, oldlen, ntold'
-  if (myid==0) write(6,*)itbeg, itend, tbeg, tend, oldlen, ntold
+  if (myid==0) write(6,*)'Infos : itbeg, itend, tbeg, tend, oldlen, ntold, dtold'
+  if (myid==0) write(6,*)itbeg, itend, tbeg, tend, oldlen, ntold, dtold
+!  write(6,*)itbeg, itend, tbeg, tend, oldlen, ntold, dtold, myid
 
   call MPI_barrier(MPI_COMM_WORLD,ierr_mpi)
  
@@ -250,8 +251,6 @@ program interpolate_3D_wavefield
   deallocate(vxold1)
   call MPI_barrier(MPI_COMM_WORLD,ierr_mpi)
   if (.not.allocated(vyold)) allocate(vyold(nrec_to_store,oldlen))
-  print *,shape(vyold),shape(vyold1),myid
-  print *,itbeg,itend,myid
   call MPI_barrier(MPI_COMM_WORLD,ierr_mpi)
   vyold(:,:) = vyold1(:,itbeg:itend)
   deallocate(vyold1)
@@ -292,20 +291,20 @@ program interpolate_3D_wavefield
   !*** Convolve with stf (could also be a filter)
   if (isconv == 1) then  
   !* Allocate convtmp
-  if (.not.allocated(convtmpvx))  allocate(convtmpvx(nrec_to_store,oldlen))
-  if (.not.allocated(convtmpvy))  allocate(convtmpvy(nrec_to_store,oldlen))
-  if (.not.allocated(convtmpvz))  allocate(convtmpvz(nrec_to_store,oldlen))
-  if (.not.allocated(convtmpsxx)) allocate(convtmpsxx(nrec_to_store,oldlen))
-  if (.not.allocated(convtmpsyy)) allocate(convtmpsyy(nrec_to_store,oldlen))
-  if (.not.allocated(convtmpszz)) allocate(convtmpszz(nrec_to_store,oldlen))
-  if (.not.allocated(convtmpsyz)) allocate(convtmpsyz(nrec_to_store,oldlen))
-  if (.not.allocated(convtmpsxz)) allocate(convtmpsxz(nrec_to_store,oldlen))
-  if (.not.allocated(convtmpsxy)) allocate(convtmpsxy(nrec_to_store,oldlen))
+  if (.not.allocated(convtmpvx))  allocate(convtmpvx(nrec_to_store,oldlen+ntstf-1))
+  if (.not.allocated(convtmpvy))  allocate(convtmpvy(nrec_to_store,oldlen+ntstf-1))
+  if (.not.allocated(convtmpvz))  allocate(convtmpvz(nrec_to_store,oldlen+ntstf-1))
+  if (.not.allocated(convtmpsxx)) allocate(convtmpsxx(nrec_to_store,oldlen+ntstf-1))
+  if (.not.allocated(convtmpsyy)) allocate(convtmpsyy(nrec_to_store,oldlen+ntstf-1))
+  if (.not.allocated(convtmpszz)) allocate(convtmpszz(nrec_to_store,oldlen+ntstf-1))
+  if (.not.allocated(convtmpsyz)) allocate(convtmpsyz(nrec_to_store,oldlen+ntstf-1))
+  if (.not.allocated(convtmpsxz)) allocate(convtmpsxz(nrec_to_store,oldlen+ntstf-1))
+  if (.not.allocated(convtmpsxy)) allocate(convtmpsxy(nrec_to_store,oldlen+ntstf-1))
 
   !* convolve
-  do ipt = 1, nrec_to_store
-     do it = 1, ntold
-        do itstf = 1, ntstf
+  do it = 1, ntold
+     do itstf = 1, ntstf
+        do ipt = 1, nrec_to_store
            convtmpvx( ipt,it+itstf-1) = convtmpvx( ipt,it+itstf-1) + vxold(ipt,it)  * stf(itstf)
            convtmpvy( ipt,it+itstf-1) = convtmpvy( ipt,it+itstf-1) + vyold(ipt,it)  * stf(itstf)
            convtmpvz( ipt,it+itstf-1) = convtmpvz( ipt,it+itstf-1) + vzold(ipt,it)  * stf(itstf)
@@ -317,8 +316,9 @@ program interpolate_3D_wavefield
            convtmpsxy(ipt,it+itstf-1) = convtmpsxy(ipt,it+itstf-1) + sxyold(ipt,it) * stf(itstf)
         end do
      end do
+     if(myid==0) write(6,*)'conv ',it,ntold
   end do
-
+!!!!!!!! MUST SCALE CONVOLUTION SOMEWHERE (by source sampling rate)!!!!!!
   !* take good part
    if (modulo(ntstf,2) == 0) then
        ind = ntstf/2 + 1
