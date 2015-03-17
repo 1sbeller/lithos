@@ -391,6 +391,8 @@ program interpolate_3D_wavefield
 
   if (myid==0) write(6,*)'Infos : feold, ntold, itbeg, itend, tbeg, tend, dtnew, dtold'
   if (myid==0) write(6,*)feold,ntold,itbeg,itend,tbeg,tend,dtnew,dtold
+  
+  call MPI_barrier(MPI_COMM_WORLD,ierr_mpi)
 
   !*** Loop over new time steps
   do itnew = 1, ntnew
