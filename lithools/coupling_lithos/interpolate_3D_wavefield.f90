@@ -359,7 +359,7 @@ program interpolate_3D_wavefield
   if (myid==0) write(6,*)'Resample with sinc interpolation....'
 
   !*** Open file and allocate
-  open(20,file='incident_field.bin',status='unknown',form='unformatted')
+  if (myid==0) open(20,file='incident_field.bin',status='unknown',form='unformatted')
   if (fwdtool == 'SEM') then
      if (.not.allocated(vel_inc))    allocate(vel_inc(3,ngllsquare,num_bnd_faces))
      if (.not.allocated(trac_inc)) allocate(trac_inc(3,ngllsquare,num_bnd_faces))
@@ -389,13 +389,14 @@ program interpolate_3D_wavefield
   if (.not.allocated(tab_sinc)) allocate(tab_sinc(ntold))
   feold = 1./dtold
 
-  if (myid==0) write(6,*)'Infos : feold, ntold, itbeg, itend, tbeg, tend, dtnew, dtold'
-  if (myid==0) write(6,*)feold,ntold,itbeg,itend,tbeg,tend,dtnew,dtold
+  if (myid==0) write(6,*)'Infos : feold, ntold, itbeg, itend, tbeg, tend, dtnew, dtold,ntnew'
+  if (myid==0) write(6,*)feold,ntold,itbeg,itend,tbeg,tend,dtnew,dtold,ntnew
   
   call MPI_barrier(MPI_COMM_WORLD,ierr_mpi)
 
   !*** Loop over new time steps
   do itnew = 1, ntnew
+     print *,'mwell.. ',myid,itnew
 
      !*** Compute sinc kernel
      call comp_tab_sinc(itnew,dtnew,feold,ntold,tab_sinc)
@@ -476,7 +477,7 @@ program interpolate_3D_wavefield
 
      end do
      
-     if(myid ==0 .and. mod(100*itnew/ntnew,5)==0) write(6,*)'Progress : ',100*itnew/ntnew,'%'
+     if(myid ==0) write(6,*)'Progress : ',100.*itnew/ntnew,'%'
 
      !*** Write everything (check engine)
      select case (fwdtool)
@@ -492,7 +493,8 @@ program interpolate_3D_wavefield
 
   end do
 
-  close(20)
+  call MPI_barrier(MPI_COMM_WORLD,ierr_mpi)
+  if (myid==0) close(20)
 
   if (myid==0) write(*,*)'End of incident field computation.'
 
