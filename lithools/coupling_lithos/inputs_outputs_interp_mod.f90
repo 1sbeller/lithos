@@ -172,8 +172,10 @@ contains
           stf(itnew) = stf(itnew) + tmpstf(itold) * mysinc(real(festf * itnew * dtold - itold))
        end do
     end do
-
     if(allocated(tmpstf)) deallocate(tmpstf)
+
+    ntstf = ntold
+
     write(6,*)'Done !'
     
   contains
