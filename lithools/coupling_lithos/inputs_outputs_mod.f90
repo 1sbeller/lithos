@@ -266,7 +266,7 @@ contains
     character(len=250) :: file_to_read
     character(len=4)   :: appmynum
     
-    real(kind=cp), allocatable, dimension(:,:,:) :: ssol, zsol
+    real(kind=dp), allocatable, dimension(:,:,:) :: ssol, zsol
     
     !*** Number of elements for each procs
     allocate(nb_stored(0:nbproc-1))
