@@ -396,7 +396,6 @@ program interpolate_3D_wavefield
 
   !*** Loop over new time steps
   do itnew = 1, ntnew
-     print *,'mwell.. ',myid,itnew
 
      !*** Compute sinc kernel
      call comp_tab_sinc(itnew,dtnew,feold,ntold,tab_sinc)
