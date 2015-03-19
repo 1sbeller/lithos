@@ -58,7 +58,7 @@ module interpolation_parameters_mod
 
   !** For filter
   real(kind=cp), dimension(:), allocatable :: conv, taptap, stf
-  integer(kind=si) :: ibeg, iend, nt, it, itstf
+  integer(kind=si) :: ibeg, iend, nt, it, itstf, dtstf
   integer(kind=si) :: n1
   real(kind=cp) :: dt, ttt2, ttt1
   real(kind=cp), dimension(:), allocatable :: tab_sinc 
