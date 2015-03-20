@@ -154,7 +154,7 @@ contains
 ! Reduce velocity
   subroutine reduce_mpi_veloc
 
-    call mpi_reduce(data_rec,data_reduce,nbrec*3,MPISP,MPI_SUM,0,MPI_COMM_WORLD,ierr_mpi)
+    call mpi_reduce(data_rec,data_reduce,nbrec*3,MPI_REAL,MPI_SUM,0,MPI_COMM_WORLD,ierr_mpi)
     data_rec(:,:)=data_reduce(:,:)
 
   end subroutine reduce_mpi_veloc
@@ -164,7 +164,7 @@ contains
 ! Reduce stress
   subroutine reduce_mpi_stress
     
-    call mpi_reduce(stress_rec,stress_reduce,nbrec*6,MPISP,MPI_SUM,0,MPI_COMM_WORLD,ierr_mpi)
+    call mpi_reduce(stress_rec,stress_reduce,nbrec*6,MPI_REAL,MPI_SUM,0,MPI_COMM_WORLD,ierr_mpi)
     stress_rec(:,:)=stress_reduce(:,:)
   
   end subroutine reduce_mpi_stress
