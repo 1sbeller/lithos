@@ -354,11 +354,7 @@ contains
     real(kind=cp) :: smin, smax, zmin, zmax
 
     real(kind=cp), dimension(NGNOD,2) :: nodes_crd
-<<<<<<< HEAD
-    real(kind=cp), parameter          :: eps=10 !.e-3
-=======
     real(kind=cp), parameter          :: eps=1._dp  !!-3
->>>>>>> 240218df47af09344ddc29fd5bab9f44ba001d0f
 
     integer(kind=si), dimension(8) :: IGRIDs, IGRIDz
     integer(kind=si) :: irec, iel, inode
