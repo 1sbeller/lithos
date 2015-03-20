@@ -192,9 +192,9 @@ program interpolate_3D_wavefield
         sumy = sumy + vyold1(ipt,itold)**2
         sumz = sumz + vzold1(ipt,itold)**2
      end do
-    call MPI_allreduce(MPI_IN_PLACE,sumx,1,MPICP,MPI_SUM,MPI_COMM_WORLD,ierr_mpi)
-    call MPI_allreduce(MPI_IN_PLACE,sumy,1,MPICP,MPI_SUM,MPI_COMM_WORLD,ierr_mpi)
-    call MPI_allreduce(MPI_IN_PLACE,sumz,1,MPICP,MPI_SUM,MPI_COMM_WORLD,ierr_mpi)
+    call MPI_allreduce(MPI_IN_PLACE,sumx,1,MPI_REAL,MPI_SUM,MPI_COMM_WORLD,ierr_mpi)
+    call MPI_allreduce(MPI_IN_PLACE,sumy,1,MPI_REAL,MPI_SUM,MPI_COMM_WORLD,ierr_mpi)
+    call MPI_allreduce(MPI_IN_PLACE,sumz,1,MPI_REAL,MPI_SUM,MPI_COMM_WORLD,ierr_mpi)
     vpow(itold) = sqrt(sumx + sumy +sumz)
   end do
 
