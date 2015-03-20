@@ -1,6 +1,8 @@
 #!/bin/bash
 
 clear
+source /softs/env_default.sh 
+ 
 ./clean.sh
 
 F90='mpif90 -O3 -xHost -assume byterecl -traceback' # -check all -g -warn all'

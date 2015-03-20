@@ -149,11 +149,18 @@ contains
 ! Read source time function to convolve
   subroutine read_stf
 
+     !*** Read
      if(.not.allocated(stf)) allocate(stf(ntstf))     
 
      open(10,file=trim(stf_file),access='direct',recl=cp*ntstf)
      read(10,rec=1)stf
      close(10)
+
+     !*** Interpolate to axisem 
+
+
+     
+
 
   end subroutine read_stf
 !--------------------------------------------------------------------------------
