@@ -4,6 +4,8 @@ module interp_process_mod
   use constants_mod
   use interpolation_parameters_mod
 
+  implicit none
+
 contains
 
 !================================================================================
@@ -29,7 +31,7 @@ contains
     tmpsta(nsta+n+1:n+2*nsta) = sig(n)
     sta = zero
     do i=1+nsta,n+nsta
-       sta(i) = sum(tmpsta(i-nsta:i+nsta)**2)
+       sta(i-nsta) = sum(tmpsta(i-nsta:i+nsta)**2)
     end do
     sta = 0.5 * sta / nsta
 
@@ -38,8 +40,8 @@ contains
     tmplta(nlta+1:nlta+n) = sig(:) 
     tmplta(nlta+n+1:n+2*nlta) = sig(n)
     lta = zero
-    do i=1+nlya,n+nlta
-        lta(i+nlta) = sum(tmplta(i-nlta:i+nlta)**2)
+    do i=1+nlta,n+nlta
+        lta(i-nlta) = sum(tmplta(i-nlta:i+nlta)**2)
     end do
     lta = 0.5 * lta / nlta
 

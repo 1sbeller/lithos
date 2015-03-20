@@ -326,15 +326,15 @@ program interpolate_3D_wavefield
        ind = ceiling(real(ntstf/2,kind=cp))
    end if
 
-   vxold(ipt,:)  = convtmpvx(ipt,ind:ind+ntold-1)
-   vyold(ipt,:)  = convtmpvy(ipt,ind:ind+ntold-1)
-   vzold(ipt,:)  = convtmpvz(ipt,ind:ind+ntold-1)
-   sxxold(ipt,:) = convtmpsxx(ipt,ind:ind+ntold-1)
-   syyold(ipt,:) = convtmpsyy(ipt,ind:ind+ntold-1)
-   szzold(ipt,:) = convtmpszz(ipt,ind:ind+ntold-1)
-   syzold(ipt,:) = convtmpsyz(ipt,ind:ind+ntold-1)
-   sxzold(ipt,:) = convtmpsxz(ipt,ind:ind+ntold-1)
-   sxyold(ipt,:) = convtmpsxy(ipt,ind:ind+ntold-1)
+   vxold(:,:)  = convtmpvx(:,ind:ind+ntold-1)
+   vyold(:,:)  = convtmpvy(:,ind:ind+ntold-1)
+   vzold(:,:)  = convtmpvz(:,ind:ind+ntold-1)
+   sxxold(:,:) = convtmpsxx(:,ind:ind+ntold-1)
+   syyold(:,:) = convtmpsyy(:,ind:ind+ntold-1)
+   szzold(:,:) = convtmpszz(:,ind:ind+ntold-1)
+   syzold(:,:) = convtmpsyz(:,ind:ind+ntold-1)
+   sxzold(:,:) = convtmpsxz(:,ind:ind+ntold-1)
+   sxyold(:,:) = convtmpsxy(:,ind:ind+ntold-1)
 
   !* Deallocate
   deallocate(convtmpvx)
@@ -367,8 +367,6 @@ program interpolate_3D_wavefield
      trac_inc = 0.
      
      !!! Add local versions
-
-     
      if (.not.allocated(mapipt)) allocate(mapipt(2,npts))
      
      !*** Map igll, iface to ipt
@@ -481,12 +479,12 @@ program interpolate_3D_wavefield
      !*** Write everything (check engine)
      select case (fwdtool)
      case('SEM')
-        call MPI_allreduce(MPI_IN_PLACE,vel_inc,3*ngllsquare*num_bnd_faces,MPICP,MPI_SUM,MPI_COMM_WORLD,ierr_mpi)
-        call MPI_allreduce(MPI_IN_PLACE,trac_inc,3*ngllsquare*num_bnd_faces,MPICP,MPI_SUM,MPI_COMM_WORLD,ierr_mpi)   
+        call MPI_allreduce(MPI_IN_PLACE,vel_inc,3*ngllsquare*num_bnd_faces,MPI_REAL,MPI_SUM,MPI_COMM_WORLD,ierr_mpi)
+        call MPI_allreduce(MPI_IN_PLACE,trac_inc,3*ngllsquare*num_bnd_faces,MPI_REAL,MPI_SUM,MPI_COMM_WORLD,ierr_mpi)   
         if (myid ==0) write(20)vel_inc,trac_inc
      case('FD')        
-        call MPI_allreduce(MPI_IN_PLACE,vel_inc2,3*npts,MPICP,MPI_SUM,MPI_COMM_WORLD,ierr_mpi)
-        call MPI_allreduce(MPI_IN_PLACE,stress_inc,6*npts,MPICP,MPI_SUM,MPI_COMM_WORLD,ierr_mpi) 
+        call MPI_allreduce(MPI_IN_PLACE,vel_inc2,3*npts,MPI_REAL,MPI_SUM,MPI_COMM_WORLD,ierr_mpi)
+        call MPI_allreduce(MPI_IN_PLACE,stress_inc,6*npts,MPI_REAL,MPI_SUM,MPI_COMM_WORLD,ierr_mpi) 
         if (myid == 0) write(20)vel_inc2,stress_inc
      end select
 
