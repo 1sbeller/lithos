@@ -136,7 +136,7 @@ contains
     read(10,'(a)')rep
     read(10,*)nsta,nlta,thres
     read(10,*)istap,alpha
-    read(10,*)isconv,ntstf
+    read(10,*)isconv,ntstf,dtstf
     read(10,*)stf_file
     read(10,*)dummy
     read(10,*)fmax
@@ -149,12 +149,49 @@ contains
 ! Read source time function to convolve
   subroutine read_stf
 
-     !*** Read
-     if(.not.allocated(stf)) allocate(stf(ntstf))     
+    real(kind=cp), dimension(:), allocatable :: tmpstf
+    real(kind=cp) :: festf
 
-     open(10,file=trim(stf_file),access='direct',recl=cp*ntstf)
-     read(10,rec=1)stf
-     close(10)
+    integer(kind=si) :: itnew, itold
+
+    !*** Read STF
+    if(.not.allocated(tmpstf)) allocate(tmpstf(ntstf))     
+    
+    open(10,file=trim(stf_file),access='direct',recl=cp*ntstf)
+    read(10,rec=1)tmpstf
+    close(10)
+    
+    !*** Interpolate
+    write(6,*)'Interpolate source time function...'
+    if(.not.allocated(stf)) allocate(stf(ntold))
+    stf(:) = 0._cp
+    festf = 1. / dtstf
+ 
+    do itnew = 1, ntold
+       do itold = 1, ntstf
+          stf(itnew) = stf(itnew) + tmpstf(itold) * mysinc(real(festf * itnew * dtold - itold))
+       end do
+    end do
+    if(allocated(tmpstf)) deallocate(tmpstf)
+
+    ntstf = ntold
+
+    write(6,*)'Done !'
+    
+  contains
+
+    real(kind=cp) function mysinc(x)
+
+      real(kind=cp) :: x
+      real(kind=cp), parameter :: pipi=3.141592653589793
+    
+      if (abs(x) >= 1e-13) then
+         mysinc = sin(pipi*x)/(pipi*x)
+      else
+         mysinc = 1
+      end if
+      
+    end function mysinc
 
      !*** Interpolate to axisem 
 

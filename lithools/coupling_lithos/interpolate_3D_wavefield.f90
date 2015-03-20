@@ -318,7 +318,7 @@ program interpolate_3D_wavefield
      end do
      if(myid==0) write(6,*)'conv ',it,ntold
   end do
-!!!!!!!! MUST SCALE CONVOLUTION SOMEWHERE (by source sampling rate)!!!!!!
+
   !* take good part
    if (modulo(ntstf,2) == 0) then
        ind = ntstf/2 + 1
@@ -396,7 +396,6 @@ program interpolate_3D_wavefield
 
   !*** Loop over new time steps
   do itnew = 1, ntnew
-     print *,'mwell.. ',myid,itnew
 
      !*** Compute sinc kernel
      call comp_tab_sinc(itnew,dtnew,feold,ntold,tab_sinc)

@@ -40,6 +40,10 @@ contains
 
     call MPI_barrier(MPI_COMM_WORLD,ierr_mpi)
 
+    !*** Define operation
+!    call MPI_Op_create(mysum, .true., mympisum, ierr_mpi)   
+!    call MPI_barrier(MPI_COMM_WORLD,ierr_mpi)
+
   end subroutine init_mpi
 !--------------------------------------------------------------------------------
 
@@ -53,6 +57,13 @@ contains
   end subroutine finalize_mpi
 !--------------------------------------------------------------------------------
 
+ !       real(kind=cp) function mysum(in, inout, len, type) 
+!	        real(kind=cp) :: in(len), inout(len)
+!                integer(kind=si) :: len, type
+!                do i=1, len
+!                     inout(i) = inout(i) + in(i)     
+!                enddo
+!        end function mysum
 
 !================================================================================
 ! Allocate mpi arrays
@@ -93,10 +104,10 @@ contains
   subroutine bcast_all_mpi
     
     ! single
-    call mpi_bcast(data_rec,3*nbrec,MPISP,0,MPI_COMM_WORLD,ierr_mpi)
-    call mpi_bcast(stress_to_write,3*nbrec,MPISP,0,MPI_COMM_WORLD,ierr_mpi)
-    call mpi_bcast(stress_rec,3*nbrec,MPISP,0,MPI_COMM_WORLD,ierr_mpi)
-    call mpi_bcast(strain_rec,3*nbrec,MPISP,0,MPI_COMM_WORLD,ierr_mpi)
+    call mpi_bcast(data_rec,3*nbrec,MPI_REAL,0,MPI_COMM_WORLD,ierr_mpi)
+    call mpi_bcast(stress_to_write,6*nbrec,MPI_REAL,0,MPI_COMM_WORLD,ierr_mpi)
+    call mpi_bcast(stress_rec,6*nbrec,MPI_REAL,0,MPI_COMM_WORLD,ierr_mpi)
+    call mpi_bcast(strain_rec,6*nbrec,MPI_REAL,0,MPI_COMM_WORLD,ierr_mpi)
     call mpi_bcast(f1,nbrec,MPISP,0,MPI_COMM_WORLD,ierr_mpi)
     call mpi_bcast(f2,nbrec,MPISP,0,MPI_COMM_WORLD,ierr_mpi)
     call mpi_bcast(phi,nbrec,MPISP,0,MPI_COMM_WORLD,ierr_mpi)

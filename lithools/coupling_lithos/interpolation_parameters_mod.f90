@@ -60,7 +60,7 @@ module interpolation_parameters_mod
   real(kind=cp), dimension(:), allocatable :: conv, taptap, stf
   integer(kind=si) :: ibeg, iend, nt, it, itstf
   integer(kind=si) :: n1
-  real(kind=cp) :: dt, ttt2, ttt1
+  real(kind=cp) :: dt, ttt2, ttt1, dtstf
   real(kind=cp), dimension(:), allocatable :: tab_sinc 
   real(kind=cp), dimension(:,:), allocatable :: convtmpvx,  convtmpvy,  convtmpvz  
   real(kind=cp), dimension(:,:), allocatable :: convtmpsxx, convtmpsyy, convtmpszz
