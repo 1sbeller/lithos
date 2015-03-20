@@ -104,10 +104,10 @@ contains
   subroutine bcast_all_mpi
     
     ! single
-    call mpi_bcast(data_rec,3*nbrec,MPISP,0,MPI_COMM_WORLD,ierr_mpi)
-    call mpi_bcast(stress_to_write,6*nbrec,MPISP,0,MPI_COMM_WORLD,ierr_mpi)
-    call mpi_bcast(stress_rec,6*nbrec,MPISP,0,MPI_COMM_WORLD,ierr_mpi)
-    call mpi_bcast(strain_rec,6*nbrec,MPISP,0,MPI_COMM_WORLD,ierr_mpi)
+    call mpi_bcast(data_rec,3*nbrec,MPI_REAL,0,MPI_COMM_WORLD,ierr_mpi)
+    call mpi_bcast(stress_to_write,6*nbrec,MPI_REAL,0,MPI_COMM_WORLD,ierr_mpi)
+    call mpi_bcast(stress_rec,6*nbrec,MPI_REAL,0,MPI_COMM_WORLD,ierr_mpi)
+    call mpi_bcast(strain_rec,6*nbrec,MPI_REAL,0,MPI_COMM_WORLD,ierr_mpi)
     call mpi_bcast(f1,nbrec,MPISP,0,MPI_COMM_WORLD,ierr_mpi)
     call mpi_bcast(f2,nbrec,MPISP,0,MPI_COMM_WORLD,ierr_mpi)
     call mpi_bcast(phi,nbrec,MPISP,0,MPI_COMM_WORLD,ierr_mpi)
