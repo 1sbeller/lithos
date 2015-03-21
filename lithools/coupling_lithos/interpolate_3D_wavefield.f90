@@ -375,7 +375,6 @@ program interpolate_3D_wavefield
 
   end if
 
-  print *,'mid',myid,i_inf(myid+1),nrec_to_store
 
   call MPI_barrier(MPI_COMM_WORLD,ierr_mpi)
   
@@ -406,7 +405,6 @@ program interpolate_3D_wavefield
            mapipt(2,ipt) = iface
         end do
      end do
-    print *,'total ipt ',ipt
   else
      if (.not.allocated(vel_inc2))    allocate(vel_inc2(3,npts))
      if (.not.allocated(stress_inc)) allocate(stress_inc(6,npts))
