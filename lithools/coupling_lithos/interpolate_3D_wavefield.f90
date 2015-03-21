@@ -198,6 +198,15 @@ program interpolate_3D_wavefield
     vpow(itold) = sqrt(sumx + sumy +sumz)
   end do
 
+  if (myid == 0) then
+  open(26,file='verif.bin',access='direct',recl=cp*ntold)
+  write(26,rec=1)vpow
+  close(26)
+  open(26,file='stfint.bin',access='direct',recl=cp*ntold)
+  write(26,rec=1)stf
+  close(26)
+  end if
+
 
   !*** Compute STA/LTA
   if (isconv == 1) then
@@ -206,6 +215,11 @@ program interpolate_3D_wavefield
       vpow = conv
       if (allocated(conv)) deallocate(conv)
   end if
+  if (myid ==0) then
+  open(26,file='verifconv.bin',access='direct',recl=cp*ntold)
+  write(26,rec=1)vpow
+  close(26)
+  end if
   call substalta(vpow, ntold,  nsta, nlta, thres, stalta, ind)
 !  do i=1,ntold
 !     if (stalta(i) >= thres) then
@@ -213,10 +227,12 @@ program interpolate_3D_wavefield
 !        exit
 !     end if
 !  end do
-  open(26,file='verifconv.bin',access='direct',recl=cp*ntold)
-  write(26,rec=1)vpow
-  close(26)
-  
+!  if (myid ==0) then
+ ! open(26,file='verifconv.bin',access='direct',recl=cp*ntold)
+ ! write(26,rec=1)vpow
+ ! close(26)
+ ! end if
+
   deallocate(vpow)
   deallocate(stalta)
 
@@ -300,6 +316,15 @@ program interpolate_3D_wavefield
   if (.not.allocated(convtmpsyz)) allocate(convtmpsyz(nrec_to_store,oldlen+ntstf-1))
   if (.not.allocated(convtmpsxz)) allocate(convtmpsxz(nrec_to_store,oldlen+ntstf-1))
   if (.not.allocated(convtmpsxy)) allocate(convtmpsxy(nrec_to_store,oldlen+ntstf-1))
+  convtmpvx = 0.
+  convtmpvy = 0.
+  convtmpvz = 0.
+  convtmpsxx = 0.
+  convtmpsyy = 0.
+  convtmpszz = 0.
+  convtmpsyz = 0.
+  convtmpsxz = 0.
+  convtmpsxy = 0.
 
   !* convolve
   do it = 1, ntold
@@ -319,12 +344,13 @@ program interpolate_3D_wavefield
      if(myid==0) write(6,*)'conv ',it,ntold
   end do
 
-  !* take good part
+  !* take good part (wrong)
    if (modulo(ntstf,2) == 0) then
        ind = ntstf/2 + 1
    else
        ind = ceiling(real(ntstf/2,kind=cp))
    end if
+   ind = 1
 
    vxold(:,:)  = convtmpvx(:,ind:ind+ntold-1)
    vyold(:,:)  = convtmpvy(:,ind:ind+ntold-1)
@@ -348,6 +374,8 @@ program interpolate_3D_wavefield
   deallocate(convtmpsxy)
 
   end if
+
+  print *,'mid',myid,i_inf(myid+1),nrec_to_store
 
   call MPI_barrier(MPI_COMM_WORLD,ierr_mpi)
   
@@ -378,6 +406,7 @@ program interpolate_3D_wavefield
            mapipt(2,ipt) = iface
         end do
      end do
+    print *,'total ipt ',ipt
   else
      if (.not.allocated(vel_inc2))    allocate(vel_inc2(3,npts))
      if (.not.allocated(stress_inc)) allocate(stress_inc(6,npts))
@@ -394,6 +423,14 @@ program interpolate_3D_wavefield
 
   !*** Loop over new time steps
   do itnew = 1, ntnew
+
+     if (fwdtool == 'SEM') then
+	     vel_inc  = 0.
+	     trac_inc = 0.
+     else 
+	     vel_inc2   = 0.
+	     stress_inc = 0.
+     end if
 
      !*** Compute sinc kernel
      call comp_tab_sinc(itnew,dtnew,feold,ntold,tab_sinc)
@@ -416,7 +453,7 @@ program interpolate_3D_wavefield
         case ('SEM') 
            
            !* 1. Indices
-           iptglob = ipt + i_inf(myid+1) -1
+           iptglob = ipt + i_inf(myid+1) - 1
            igll    = mapipt(1,iptglob)
            iface   = mapipt(2,iptglob)
            

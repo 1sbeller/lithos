@@ -54,10 +54,17 @@ contains
        working_axisem_dir(4) = "MXY_MXX_M_MYY/"
     end if
     
-    open(10,file=trim( working_axisem_dir(1))//'Data/strain_info.dat0000')
-    read(10,*) ntold
-    read(10,*) dtold,i
+    !open(10,file=trim( working_axisem_dir(1))//'Data/strain_info.dat0000')
+    open(10,file=trim( working_axisem_dir(1))//'simulation.info')
+    do i=1,15
+	read(10,*)dummy
+    end do
+    read(10,*)ntold,dummy
+    read(10,*)dtold,dummy
     close(10)
+    !read(10,*) ntold
+    !read(10,*) dtold,i
+    !close(10)
     print *,ntold, dtold,i
   
     output_veloc_name(1)  = 'velocityoutp_u1'

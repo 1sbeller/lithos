@@ -155,13 +155,16 @@ contains
       end do
     end do
 
-    !*** Take good parts
+    !*** Take good parts (this is wrong...)
     if (modulo(n2,2) == 0) then
         ind = n2/2+1
     else
         ind = ceiling(real(n2/2,kind=cp))
     end if
-    conv(:) = convtmp(ind:ind+n1-1)
+    ind = 1
+    conv(1:n1) = convtmp(ind:ind+n1-1)
+
+!	print *,'Indice ',ind,'size ',n1+n2-1
   
   end subroutine myconvolution
 !------------------------------------------------------------------------
