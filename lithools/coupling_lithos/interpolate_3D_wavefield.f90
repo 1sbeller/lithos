@@ -394,7 +394,7 @@ program interpolate_3D_wavefield
      trac_inc = 0.
      
      !!! Add local versions
-     if (.not.allocated(mapipt)) allocate(mapipt(2,npts))
+     if (.not.allocated(mapipt)) allocate(mapipt(2,ngllsquare*num_bnd_faces))
      
      !*** Map igll, iface to ipt
      ipt = 0
@@ -406,8 +406,8 @@ program interpolate_3D_wavefield
         end do
      end do
   else
-     if (.not.allocated(vel_inc2))    allocate(vel_inc2(3,npts))
-     if (.not.allocated(stress_inc)) allocate(stress_inc(6,npts))
+     if (.not.allocated(vel_inc2))    allocate(vel_inc2(3,npts))     ! warning npts may be wrong
+     if (.not.allocated(stress_inc)) allocate(stress_inc(6,npts))    ! warning "
      vel_inc2   = 0.
      stress_inc = 0.
   end if
