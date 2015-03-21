@@ -19,7 +19,7 @@ module global_parameters_mod
   integer(kind=si) :: nbproc, nel, ntime
   integer(kind=si) :: ibeg, iend
   integer(kind=si), allocatable, dimension(:)  :: nb_stored
-  real(kind=cp), allocatable, dimension(:,:,:) :: scoor, zcoor
+  real(kind=dp), allocatable, dimension(:,:,:) :: scoor, zcoor
   
   !*** AxiSEM mesh specifications
   integer(kind=si), parameter :: NGNOD=8, NGLLX=5, NGLLY=5, NGLLS=5, NGLLZ=5
