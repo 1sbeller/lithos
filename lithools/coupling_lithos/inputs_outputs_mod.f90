@@ -239,14 +239,19 @@ contains
     !* Read and computes coordinates for each point
     do i=1,nbrec !! radius, latitude, longitude
        read(10,*) reciever_geogr(1,i),reciever_geogr(2,i),reciever_geogr(3,i)
+
        reciever_sph(1,i) = reciever_geogr(1,i)*1000.
        reciever_sph(2,i) = (90. - reciever_geogr(2,i)) * pi / 180.  
        reciever_sph(3,i) = reciever_geogr(3,i)  * pi / 180.
+
        call rotate_box(reciever_sph(1,i), reciever_sph(2,i), reciever_sph(3,i),trans_rot_mat)
+
        reciever_cyl(1,i) = reciever_sph(1,i)  * sin( reciever_sph(2,i))
        reciever_cyl(2,i) = reciever_sph(3,i)
        reciever_cyl(3,i) = reciever_sph(1,i)  * cos( reciever_sph(2,i))
+
        phi(i) = reciever_cyl(2,i) 
+
     end do
     close(10)
       

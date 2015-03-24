@@ -58,38 +58,65 @@ contains
     nb_rec_by_proc=nbrec/nb_proc
     nb_remain_proc=mod(nbrec,nb_proc)
     write(*,*) ' decomposition ', nb_rec_by_proc,nb_remain_proc
-    if (myid < nb_remain_proc) then
-       irecmin=myid*(nb_rec_by_proc+1) + 1
-       irecmax=irecmin+nb_rec_by_proc 
+    
+    if (myid == 0) then !!! More data
+       irecmin = 1 
+       irecmax = nb_rec_by_proc + nb_remain_proc
     else
-       irecmin=myid*(nb_rec_by_proc) + 1 + nb_remain_proc              
-       irecmax=irecmin+nb_rec_by_proc-1
+       irecmin = myid * nb_rec_by_proc + nb_remain_proc +1
+       irecmax = (myid + 1) * nb_rec_by_proc + nb_remain_proc
     end if
 
+!    if (myid < nb_remain_proc) then
+!       irecmin=myid*(nb_rec_by_proc+1) + 1
+!       irecmax=irecmin+nb_rec_by_proc 
+!    else
+!       irecmin=myid*(nb_rec_by_proc) + 1 + nb_remain_proc              
+!       irecmax=irecmin+nb_rec_by_proc-1
+!    end if
+
     do iproc=0,nb_proc-1
-       if (iproc < nb_remain_proc) then
-                    
-          i_inf(iproc+1)=iproc*(nb_rec_by_proc+1) + 1
-          i_sup(iproc+1)=i_inf(iproc+1) + nb_rec_by_proc
-          
-          shift(iproc+1)=iproc*(nb_rec_by_proc+1) + 1 - 1     
-          shift_sv(iproc+1)=shift(iproc+1)*ntime 
-          
-          nb_received(iproc+1)=nb_rec_by_proc+1
-          nb_received_sv(iproc+1)=nb_received(iproc+1) 
-          
+       if (iproc == 0) then
+
+          i_inf(iproc+1) = 1
+          i_sup(iproc+1) = nb_rec_by_proc + nb_remain_proc
+
+          nb_received(iproc+1)    = nb_rec_by_proc + nb_remain_proc
+          nb_received_sv(iproc+1) = nb_received(iproc+1)
+        
        else
-          
-          i_inf(iproc+1)=iproc*(nb_rec_by_proc) + 1 + nb_remain_proc
-          i_sup(iproc+1)=i_inf(iproc+1) + nb_rec_by_proc - 1
-                    
-          shift(iproc+1)=iproc*(nb_rec_by_proc) + 1 + nb_remain_proc - 1 
-          shift_sv(iproc+1)=shift(iproc+1)*ntime
-          
-          nb_received(iproc+1)=nb_rec_by_proc
-          nb_received_sv(iproc+1)=nb_received(iproc+1) !*ntime       !nb_rec_by_proc*ntime
-          
+
+          i_inf(iproc+1) = iproc * nb_rec_by_proc + nb_remain_proc + 1
+          i_sup(iproc+1) = (iproc + 1) * nb_rec_by_proc + nb_remain_proc
+
+          nb_received(iproc+1)    = nb_rec_by_proc 
+          nb_received_sv(iproc+1) = nb_received(iproc+1)
+     
        end if
+
+!       if (iproc < nb_remain_proc) then
+!                    
+!          i_inf(iproc+1)=iproc*(nb_rec_by_proc+1) + 1
+!          i_sup(iproc+1)=i_inf(iproc+1) + nb_rec_by_proc
+!          
+!          shift(iproc+1)=iproc*(nb_rec_by_proc+1) + 1 - 1     
+!          shift_sv(iproc+1)=shift(iproc+1)*ntime 
+!          
+!          nb_received(iproc+1)=nb_rec_by_proc+1
+!          nb_received_sv(iproc+1)=nb_received(iproc+1) 
+!          
+!       else
+!          
+!          i_inf(iproc+1)=iproc*(nb_rec_by_proc) + 1 + nb_remain_proc
+!          i_sup(iproc+1)=i_inf(iproc+1) + nb_rec_by_proc - 1
+!                    
+!          shift(iproc+1)=iproc*(nb_rec_by_proc) + 1 + nb_remain_proc - 1 
+!          shift_sv(iproc+1)=shift(iproc+1)*ntime
+!          
+!          nb_received(iproc+1)=nb_rec_by_proc
+!          nb_received_sv(iproc+1)=nb_received(iproc+1) !*ntime       !nb_rec_by_proc*ntime
+!          
+!       end if
     end do
 
     nrec_to_store = irecmax-irecmin+1
