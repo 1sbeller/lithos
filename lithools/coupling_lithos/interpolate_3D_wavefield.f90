@@ -49,6 +49,8 @@ program interpolate_3D_wavefield
 
   call scatter_data
 
+  print *,'DEBUG npts,nptsa,nrec_to_store : ',npts,nptsa,nrec_to_store
+  
   if (.not.allocated(vxold1)) allocate(vxold1(nrec_to_store,ntold))
   if (.not.allocated(vyold1)) allocate(vyold1(nrec_to_store,ntold))
   if (.not.allocated(vzold1)) allocate(vzold1(nrec_to_store,ntold))
@@ -77,6 +79,18 @@ program interpolate_3D_wavefield
   do itime=1,ntime
 
      if (myid == 0) then ! Read on master proc
+
+        vxold2(:,:) = 0.
+        vyold2(:,:) = 0.
+        vzold2(:,:) = 0.
+        sxxold2(:,:) = 0.
+        syyold2(:,:) = 0.
+        szzold2(:,:) = 0.
+        syzold2(:,:) = 0.
+        sxzold2(:,:) = 0.
+        sxyold2(:,:) = 0.
+
+
         write(6,*)'time ',100.*itime/ntime,'%'
         do isim=1,nsim
 
@@ -105,136 +119,136 @@ program interpolate_3D_wavefield
      
      !*** Send-receive to scatter data
      !* Vx
+!     if (myid ==0) then ! SEND
+!        vxold1(:,itime)  =  vxold2(i_inf(1):i_sup(1),1)
+!        do iproc=1,nb_proc-1
+!           call mpi_send( vxold2(i_inf(iproc+1):i_sup(iproc+1),1),nb_received_sv(iproc+1),MPI_REAL,iproc,etq,MPI_COMM_WORLD,ierr_mpi)
+!        end do
+!     else ! RECEIVE
+!        call mpi_recv( vxold1(:,itime),nb_received_sv(myid+1),MPI_REAL,0,etq,MPI_COMM_WORLD,statut,ierr_mpi)
+!     end if
+!
+!     !* Vy
+!     if (myid ==0) then ! SEND
+!        vyold1(:,itime)  =  vyold2(i_inf(1):i_sup(1),1)
+!        do iproc=1,nb_proc-1
+!           call mpi_send( vyold2(i_inf(iproc+1):i_sup(iproc+1),1),nb_received_sv(iproc+1),MPI_REAL,iproc,etq,MPI_COMM_WORLD,ierr_mpi)
+!        end do
+!     else ! RECEIVE
+!        call mpi_recv( vyold1(:,itime),nb_received_sv(myid+1),MPI_REAL,0,etq,MPI_COMM_WORLD,statut,ierr_mpi)
+!     end if
+!
+!     !* Vz
+!     if (myid ==0) then ! SEND
+!        vzold1(:,itime)  =  vzold2(i_inf(1):i_sup(1),1)
+!        do iproc=1,nb_proc-1
+!           call mpi_send( vzold2(i_inf(iproc+1):i_sup(iproc+1),1),nb_received_sv(iproc+1),MPI_REAL,iproc,etq,MPI_COMM_WORLD,ierr_mpi)
+!        end do
+!     else ! RECEIVE
+!        call mpi_recv( vzold1(:,itime),nb_received_sv(myid+1),MPI_REAL,0,etq,MPI_COMM_WORLD,statut,ierr_mpi)
+!     end if
+!
+!     !* Sxx
+!     if (myid ==0) then ! SEND
+!        sxxold1(:,itime) = sxxold2(i_inf(1):i_sup(1),1)
+!        do iproc=1,nb_proc-1
+!           call mpi_send(sxxold2(i_inf(iproc+1):i_sup(iproc+1),1),nb_received_sv(iproc+1),MPI_REAL,iproc,etq,MPI_COMM_WORLD,ierr_mpi)
+!        end do
+!     else ! RECEIVE
+!        call mpi_recv(sxxold1(:,itime),nb_received_sv(myid+1),MPI_REAL,0,etq,MPI_COMM_WORLD,statut,ierr_mpi)
+!     end if
+!!
+!     !* Syy
+!     if (myid ==0) then ! SEND
+!        syyold1(:,itime) = syyold2(i_inf(1):i_sup(1),1)
+!        do iproc=1,nb_proc-1
+!           call mpi_send(syyold2(i_inf(iproc+1):i_sup(iproc+1),1),nb_received_sv(iproc+1),MPI_REAL,iproc,etq,MPI_COMM_WORLD,ierr_mpi)
+!        end do
+!     else ! RECEIVE
+!        call mpi_recv(syyold1(:,itime),nb_received_sv(myid+1),MPI_REAL,0,etq,MPI_COMM_WORLD,statut,ierr_mpi)
+!     end if
+!
+!     !* Szz
+!     if (myid ==0) then ! SEND
+!        szzold1(:,itime) = szzold2(i_inf(1):i_sup(1),1)
+!        do iproc=1,nb_proc-1
+!           call mpi_send(szzold2(i_inf(iproc+1):i_sup(iproc+1),1),nb_received_sv(iproc+1),MPI_REAL,iproc,etq,MPI_COMM_WORLD,ierr_mpi)
+!        end do
+!     else ! RECEIVE
+!        call mpi_recv(szzold1(:,itime),nb_received_sv(myid+1),MPI_REAL,0,etq,MPI_COMM_WORLD,statut,ierr_mpi)
+!     end if
+!
+!     !* Sxy
+!     if (myid ==0) then ! SEND
+!        sxyold1(:,itime) = sxyold2(i_inf(1):i_sup(1),1)
+!        do iproc=1,nb_proc-1
+!           call mpi_send(sxyold2(i_inf(iproc+1):i_sup(iproc+1),1),nb_received_sv(iproc+1),MPI_REAL,iproc,etq,MPI_COMM_WORLD,ierr_mpi)
+!        end do
+!     else ! RECEIVE
+!        call mpi_recv(sxyold1(:,itime),nb_received_sv(myid+1),MPI_REAL,0,etq,MPI_COMM_WORLD,statut,ierr_mpi)
+!     end if
+!
+!     !* Sxz
+!     if (myid ==0) then ! SEND
+!        sxzold1(:,itime) = sxzold2(i_inf(1):i_sup(1),1)
+!        do iproc=1,nb_proc-1
+!           call mpi_send(sxzold2(i_inf(iproc+1):i_sup(iproc+1),1),nb_received_sv(iproc+1),MPI_REAL,iproc,etq,MPI_COMM_WORLD,ierr_mpi)
+!        end do
+!     else ! RECEIVE
+!        call mpi_recv(sxzold1(:,itime),nb_received_sv(myid+1),MPI_REAL,0,etq,MPI_COMM_WORLD,statut,ierr_mpi)
+!
+!     end if
+!
+!     !* Syz
+!     if (myid ==0) then ! SEND
+!        syzold1(:,itime) = syzold2(i_inf(1):i_sup(1),1)
+!        do iproc=1,nb_proc-1
+!           call mpi_send(syzold2(i_inf(iproc+1):i_sup(iproc+1),1),nb_received_sv(iproc+1),MPI_REAL,iproc,etq,MPI_COMM_WORLD,ierr_mpi)
+!        end do
+!     else ! RECEIVE
+!        call mpi_recv(syzold1(:,itime),nb_received_sv(myid+1),MPI_REAL,0,etq,MPI_COMM_WORLD,statut,ierr_mpi)
+!     end if
+!     
+     !*** Send-receive to scatter data
      if (myid ==0) then ! SEND
+
         vxold1(:,itime)  =  vxold2(i_inf(1):i_sup(1),1)
-        do iproc=1,nb_proc-1
-           call mpi_send( vxold2(i_inf(iproc+1):i_sup(iproc+1),1),nb_received_sv(iproc+1),MPICP,iproc,etq,MPI_COMM_WORLD,ierr_mpi)
-        end do
-     else ! RECEIVE
-        call mpi_recv( vxold1(:,itime),nb_received_sv(myid+1),MPICP,0,etq,MPI_COMM_WORLD,statut,ierr_mpi)
-     end if
-
-     !* Vy
-     if (myid ==0) then ! SEND
         vyold1(:,itime)  =  vyold2(i_inf(1):i_sup(1),1)
-        do iproc=1,nb_proc-1
-           call mpi_send( vyold2(i_inf(iproc+1):i_sup(iproc+1),1),nb_received_sv(iproc+1),MPICP,iproc,etq,MPI_COMM_WORLD,ierr_mpi)
-        end do
-     else ! RECEIVE
-        call mpi_recv( vyold1(:,itime),nb_received_sv(myid+1),MPICP,0,etq,MPI_COMM_WORLD,statut,ierr_mpi)
-     end if
-
-     !* Vz
-     if (myid ==0) then ! SEND
         vzold1(:,itime)  =  vzold2(i_inf(1):i_sup(1),1)
-        do iproc=1,nb_proc-1
-           call mpi_send( vzold2(i_inf(iproc+1):i_sup(iproc+1),1),nb_received_sv(iproc+1),MPICP,iproc,etq,MPI_COMM_WORLD,ierr_mpi)
-        end do
-     else ! RECEIVE
-        call mpi_recv( vzold1(:,itime),nb_received_sv(myid+1),MPICP,0,etq,MPI_COMM_WORLD,statut,ierr_mpi)
-     end if
-
-     !* Sxx
-     if (myid ==0) then ! SEND
         sxxold1(:,itime) = sxxold2(i_inf(1):i_sup(1),1)
-        do iproc=1,nb_proc-1
-           call mpi_send(sxxold2(i_inf(iproc+1):i_sup(iproc+1),1),nb_received_sv(iproc+1),MPICP,iproc,etq,MPI_COMM_WORLD,ierr_mpi)
-        end do
-     else ! RECEIVE
-        call mpi_recv(sxxold1(:,itime),nb_received_sv(myid+1),MPICP,0,etq,MPI_COMM_WORLD,statut,ierr_mpi)
-     end if
-
-     !* Syy
-     if (myid ==0) then ! SEND
         syyold1(:,itime) = syyold2(i_inf(1):i_sup(1),1)
-        do iproc=1,nb_proc-1
-           call mpi_send(syyold2(i_inf(iproc+1):i_sup(iproc+1),1),nb_received_sv(iproc+1),MPICP,iproc,etq,MPI_COMM_WORLD,ierr_mpi)
-        end do
-     else ! RECEIVE
-        call mpi_recv(syyold1(:,itime),nb_received_sv(myid+1),MPICP,0,etq,MPI_COMM_WORLD,statut,ierr_mpi)
-     end if
-
-     !* Szz
-     if (myid ==0) then ! SEND
         szzold1(:,itime) = szzold2(i_inf(1):i_sup(1),1)
-        do iproc=1,nb_proc-1
-           call mpi_send(szzold2(i_inf(iproc+1):i_sup(iproc+1),1),nb_received_sv(iproc+1),MPICP,iproc,etq,MPI_COMM_WORLD,ierr_mpi)
-        end do
-     else ! RECEIVE
-        call mpi_recv(szzold1(:,itime),nb_received_sv(myid+1),MPICP,0,etq,MPI_COMM_WORLD,statut,ierr_mpi)
-     end if
-
-     !* Sxy
-     if (myid ==0) then ! SEND
         sxyold1(:,itime) = sxyold2(i_inf(1):i_sup(1),1)
-        do iproc=1,nb_proc-1
-           call mpi_send(sxyold2(i_inf(iproc+1):i_sup(iproc+1),1),nb_received_sv(iproc+1),MPICP,iproc,etq,MPI_COMM_WORLD,ierr_mpi)
-        end do
-     else ! RECEIVE
-        call mpi_recv(sxyold1(:,itime),nb_received_sv(myid+1),MPICP,0,etq,MPI_COMM_WORLD,statut,ierr_mpi)
-     end if
-
-     !* Sxz
-     if (myid ==0) then ! SEND
         sxzold1(:,itime) = sxzold2(i_inf(1):i_sup(1),1)
-        do iproc=1,nb_proc-1
-           call mpi_send(sxzold2(i_inf(iproc+1):i_sup(iproc+1),1),nb_received_sv(iproc+1),MPICP,iproc,etq,MPI_COMM_WORLD,ierr_mpi)
-        end do
-     else ! RECEIVE
-        call mpi_recv(sxzold1(:,itime),nb_received_sv(myid+1),MPICP,0,etq,MPI_COMM_WORLD,statut,ierr_mpi)
-
-     end if
-
-     !* Syz
-     if (myid ==0) then ! SEND
         syzold1(:,itime) = syzold2(i_inf(1):i_sup(1),1)
+
         do iproc=1,nb_proc-1
-           call mpi_send(syzold2(i_inf(iproc+1):i_sup(iproc+1),1),nb_received_sv(iproc+1),MPICP,iproc,etq,MPI_COMM_WORLD,ierr_mpi)
-        end do
-     else ! RECEIVE
-        call mpi_recv(syzold1(:,itime),nb_received_sv(myid+1),MPICP,0,etq,MPI_COMM_WORLD,statut,ierr_mpi)
-     end if
+        
+           call mpi_send( vxold2(i_inf(iproc+1):i_sup(iproc+1),1),nb_received_sv(iproc+1),MPI_REAL,iproc,etq1,MPI_COMM_WORLD,ierr_mpi)
+           call mpi_send( vyold2(i_inf(iproc+1):i_sup(iproc+1),1),nb_received_sv(iproc+1),MPI_REAL,iproc,etq2,MPI_COMM_WORLD,ierr_mpi)
+           call mpi_send( vzold2(i_inf(iproc+1):i_sup(iproc+1),1),nb_received_sv(iproc+1),MPI_REAL,iproc,etq3,MPI_COMM_WORLD,ierr_mpi)
+           call mpi_send(sxxold2(i_inf(iproc+1):i_sup(iproc+1),1),nb_received_sv(iproc+1),MPI_REAL,iproc,etq4,MPI_COMM_WORLD,ierr_mpi)
+           call mpi_send(syyold2(i_inf(iproc+1):i_sup(iproc+1),1),nb_received_sv(iproc+1),MPI_REAL,iproc,etq5,MPI_COMM_WORLD,ierr_mpi)
+           call mpi_send(szzold2(i_inf(iproc+1):i_sup(iproc+1),1),nb_received_sv(iproc+1),MPI_REAL,iproc,etq6,MPI_COMM_WORLD,ierr_mpi)
+           call mpi_send(sxyold2(i_inf(iproc+1):i_sup(iproc+1),1),nb_received_sv(iproc+1),MPI_REAL,iproc,etq7,MPI_COMM_WORLD,ierr_mpi)
+           call mpi_send(sxzold2(i_inf(iproc+1):i_sup(iproc+1),1),nb_received_sv(iproc+1),MPI_REAL,iproc,etq8,MPI_COMM_WORLD,ierr_mpi)
+           call mpi_send(syzold2(i_inf(iproc+1):i_sup(iproc+1),1),nb_received_sv(iproc+1),MPI_REAL,iproc,etq9,MPI_COMM_WORLD,ierr_mpi)
      
-!!$     !*** Send-receive to scatter data
-!!$     if (myid ==0) then ! SEND
-!!$
-!!$        vxold1(:,itime)  =  vxold2(i_inf(1):i_sup(1),1)
-!!$        vyold1(:,itime)  =  vyold2(i_inf(1):i_sup(1),1)
-!!$        vzold1(:,itime)  =  vzold2(i_inf(1):i_sup(1),1)
-!!$        sxxold1(:,itime) = sxxold2(i_inf(1):i_sup(1),1)
-!!$        syyold1(:,itime) = syyold2(i_inf(1):i_sup(1),1)
-!!$        szzold1(:,itime) = szzold2(i_inf(1):i_sup(1),1)
-!!$        sxyold1(:,itime) = sxyold2(i_inf(1):i_sup(1),1)
-!!$        sxzold1(:,itime) = sxzold2(i_inf(1):i_sup(1),1)
-!!$        syzold1(:,itime) = syzold2(i_inf(1):i_sup(1),1)
-!!$
-!!$        do iproc=1,nb_proc-1
-!!$        
-!!$           call mpi_send( vxold2(i_inf(iproc+1):i_sup(iproc+1),1),nb_received_sv(iproc+1),MPICP,iproc,etq,MPI_COMM_WORLD,ierr_mpi)
-!!$           call mpi_send( vyold2(i_inf(iproc+1):i_sup(iproc+1),1),nb_received_sv(iproc+1),MPICP,iproc,etq,MPI_COMM_WORLD,ierr_mpi)
-!!$           call mpi_send( vzold2(i_inf(iproc+1):i_sup(iproc+1),1),nb_received_sv(iproc+1),MPICP,iproc,etq,MPI_COMM_WORLD,ierr_mpi)
-!!$           call mpi_send(sxxold2(i_inf(iproc+1):i_sup(iproc+1),1),nb_received_sv(iproc+1),MPICP,iproc,etq,MPI_COMM_WORLD,ierr_mpi)
-!!$           call mpi_send(syyold2(i_inf(iproc+1):i_sup(iproc+1),1),nb_received_sv(iproc+1),MPICP,iproc,etq,MPI_COMM_WORLD,ierr_mpi)
-!!$           call mpi_send(szzold2(i_inf(iproc+1):i_sup(iproc+1),1),nb_received_sv(iproc+1),MPICP,iproc,etq,MPI_COMM_WORLD,ierr_mpi)
-!!$           call mpi_send(sxyold2(i_inf(iproc+1):i_sup(iproc+1),1),nb_received_sv(iproc+1),MPICP,iproc,etq,MPI_COMM_WORLD,ierr_mpi)
-!!$           call mpi_send(sxzold2(i_inf(iproc+1):i_sup(iproc+1),1),nb_received_sv(iproc+1),MPICP,iproc,etq,MPI_COMM_WORLD,ierr_mpi)
-!!$           call mpi_send(syzold2(i_inf(iproc+1):i_sup(iproc+1),1),nb_received_sv(iproc+1),MPICP,iproc,etq,MPI_COMM_WORLD,ierr_mpi)
-!!$     
-!!$        end do
-!!$        
-!!$     else ! RECEIVE
-!!$     
-!!$        call mpi_recv( vxold1(:,itime),nb_received_sv(myid+1),MPICP,0,etq,MPI_COMM_WORLD,statut,ierr_mpi)
-!!$        call mpi_recv( vyold1(:,itime),nb_received_sv(myid+1),MPICP,0,etq,MPI_COMM_WORLD,statut,ierr_mpi)
-!!$        call mpi_recv( vzold1(:,itime),nb_received_sv(myid+1),MPICP,0,etq,MPI_COMM_WORLD,statut,ierr_mpi)
-!!$        call mpi_recv(sxxold1(:,itime),nb_received_sv(myid+1),MPICP,0,etq,MPI_COMM_WORLD,statut,ierr_mpi)
-!!$        call mpi_recv(syyold1(:,itime),nb_received_sv(myid+1),MPICP,0,etq,MPI_COMM_WORLD,statut,ierr_mpi)
-!!$        call mpi_recv(szzold1(:,itime),nb_received_sv(myid+1),MPICP,0,etq,MPI_COMM_WORLD,statut,ierr_mpi)
-!!$        call mpi_recv(sxyold1(:,itime),nb_received_sv(myid+1),MPICP,0,etq,MPI_COMM_WORLD,statut,ierr_mpi)
-!!$        call mpi_recv(sxzold1(:,itime),nb_received_sv(myid+1),MPICP,0,etq,MPI_COMM_WORLD,statut,ierr_mpi)
-!!$        call mpi_recv(syzold1(:,itime),nb_received_sv(myid+1),MPICP,0,etq,MPI_COMM_WORLD,statut,ierr_mpi)
-!!$
-!!$     end if
+        end do
+        
+     else ! RECEIVE
+     
+        call mpi_recv( vxold1(:,itime),nb_received_sv(myid+1),MPI_REAL,0,etq1,MPI_COMM_WORLD,statut,ierr_mpi)
+        call mpi_recv( vyold1(:,itime),nb_received_sv(myid+1),MPI_REAL,0,etq2,MPI_COMM_WORLD,statut,ierr_mpi)
+        call mpi_recv( vzold1(:,itime),nb_received_sv(myid+1),MPI_REAL,0,etq3,MPI_COMM_WORLD,statut,ierr_mpi)
+        call mpi_recv(sxxold1(:,itime),nb_received_sv(myid+1),MPI_REAL,0,etq4,MPI_COMM_WORLD,statut,ierr_mpi)
+        call mpi_recv(syyold1(:,itime),nb_received_sv(myid+1),MPI_REAL,0,etq5,MPI_COMM_WORLD,statut,ierr_mpi)
+        call mpi_recv(szzold1(:,itime),nb_received_sv(myid+1),MPI_REAL,0,etq6,MPI_COMM_WORLD,statut,ierr_mpi)
+        call mpi_recv(sxyold1(:,itime),nb_received_sv(myid+1),MPI_REAL,0,etq7,MPI_COMM_WORLD,statut,ierr_mpi)
+        call mpi_recv(sxzold1(:,itime),nb_received_sv(myid+1),MPI_REAL,0,etq8,MPI_COMM_WORLD,statut,ierr_mpi)
+        call mpi_recv(syzold1(:,itime),nb_received_sv(myid+1),MPI_REAL,0,etq9,MPI_COMM_WORLD,statut,ierr_mpi)
+
+     end if
 
   end do
   if (myid==0) then
@@ -487,7 +501,8 @@ program interpolate_3D_wavefield
      
      !!! Add local versions
      if (.not.allocated(mapipt)) allocate(mapipt(2,ngllsquare*num_bnd_faces))
-     
+     mapipt = 0    
+ 
      !*** Map igll, iface to ipt
      ipt = 0
      do iface = 1, num_bnd_faces
@@ -541,7 +556,7 @@ program interpolate_3D_wavefield
         !*** Compute traction for sem
         select case(fwdtool)
         case ('SEM') 
-           
+          
            !* 1. Indices
            iptglob = ipt + i_inf(myid+1) - 1  !irecmin + ipt - 1 
            igll    = mapipt(1,iptglob)
@@ -560,12 +575,12 @@ program interpolate_3D_wavefield
            z=zcoord(iglob)
            
            !* 2. Normals
-           !nx = sign(abs_bnd_normal(1,igll,iface),x)
-           !ny = sign(abs_bnd_normal(2,igll,iface),y)
-           !nz = sign(abs_bnd_normal(3,igll,iface),z)
-                      nx = abs_bnd_normal(1,igll,iface)
-                      ny = abs_bnd_normal(2,igll,iface)
-                      nz = abs_bnd_normal(3,igll,iface)
+           nx = sign(abs_bnd_normal(1,igll,iface),x)
+           ny = sign(abs_bnd_normal(2,igll,iface),y)
+           nz = sign(abs_bnd_normal(3,igll,iface),z)
+           !           nx = abs_bnd_normal(1,igll,iface)
+           !           ny = abs_bnd_normal(2,igll,iface)
+           !           nz = abs_bnd_normal(3,igll,iface)
            
            !* 3. Tractions
            tx = sxx*nx + sxy*ny + sxz*nz

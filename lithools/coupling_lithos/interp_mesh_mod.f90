@@ -354,7 +354,7 @@ contains
     real(kind=cp) :: smin, smax, zmin, zmax
 
     real(kind=cp), dimension(NGNOD,2) :: nodes_crd
-    real(kind=cp), parameter          :: eps=1._dp  !!-3
+    real(kind=cp), parameter          :: eps=0.5_cp  !!-3
 
     integer(kind=si), dimension(8) :: IGRIDs, IGRIDz
     integer(kind=si) :: irec, iel, inode
@@ -389,9 +389,9 @@ contains
        do iel = 1, NEL
           !*** Element
           smin=1e25_cp
-          smax=-1e25_cp
-          zmin=smin
-          zmax=smax
+          smax=0._cp    !-1e25_cp
+          zmin=1e25_cp  !smin
+          zmax=-1e25_cp !smax
           do inode=1,NGNOD
              nodes_crd(inode,1)=scoor(IGRIDs(inode),IGRIDz(inode),iel)
              nodes_crd(inode,2)=zcoor(IGRIDs(inode),IGRIDz(inode),iel)

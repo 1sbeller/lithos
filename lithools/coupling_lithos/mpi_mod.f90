@@ -69,17 +69,17 @@ contains
 ! Allocate mpi arrays
   subroutine alloc_all_mpi
 
-   call mpi_bcast(nsim,1,MPISI,0,MPI_COMM_WORLD,ierr_mpi)
-   call mpi_bcast(ntime,1,MPISI,0,MPI_COMM_WORLD,ierr_mpi)
-   call mpi_bcast(nbrec,1,MPISI,0,MPI_COMM_WORLD,ierr_mpi)
-   call mpi_bcast(nbproc,1,MPISI,0,MPI_COMM_WORLD,ierr_mpi) 
-   call mpi_bcast(ibeg,1,MPISI,0,MPI_COMM_WORLD,ierr_mpi)
-   call mpi_bcast(iend,1,MPISI,0,MPI_COMM_WORLD,ierr_mpi)
-   call mpi_bcast(nel,1,MPISI,0,MPI_COMM_WORLD,ierr_mpi)
-   call mpi_bcast(rot_mat,9,MPIDP,0,MPI_COMM_WORLD,ierr_mpi)
-   call mpi_bcast(trans_rot_mat,9,MPIDP,0,MPI_COMM_WORLD,ierr_mpi)
-   call mpi_bcast(rot_mat_mesh,9,MPIDP,0,MPI_COMM_WORLD,ierr_mpi)
-   call mpi_bcast(trans_rot_mat_mesh,9,MPIDP,0,MPI_COMM_WORLD,ierr_mpi)
+   call mpi_bcast(nsim,1,MPI_INTEGER,0,MPI_COMM_WORLD,ierr_mpi)
+   call mpi_bcast(ntime,1,MPI_INTEGER,0,MPI_COMM_WORLD,ierr_mpi)
+   call mpi_bcast(nbrec,1,MPI_INTEGER,0,MPI_COMM_WORLD,ierr_mpi)
+   call mpi_bcast(nbproc,1,MPI_INTEGER,0,MPI_COMM_WORLD,ierr_mpi) 
+   call mpi_bcast(ibeg,1,MPI_INTEGER,0,MPI_COMM_WORLD,ierr_mpi)
+   call mpi_bcast(iend,1,MPI_INTEGER,0,MPI_COMM_WORLD,ierr_mpi)
+   call mpi_bcast(nel,1,MPI_INTEGER,0,MPI_COMM_WORLD,ierr_mpi)
+   call mpi_bcast(rot_mat,9,MPI_REAL,0,MPI_COMM_WORLD,ierr_mpi)
+   call mpi_bcast(trans_rot_mat,9,MPI_REAL,0,MPI_COMM_WORLD,ierr_mpi)
+   call mpi_bcast(rot_mat_mesh,9,MPI_REAL,0,MPI_COMM_WORLD,ierr_mpi)
+   call mpi_bcast(trans_rot_mat_mesh,9,MPI_REAL,0,MPI_COMM_WORLD,ierr_mpi)
    
    if (myid >  0) then 
       allocate(reciever_geogr(3,nbrec),reciever_sph(3,nbrec),reciever_cyl(3,nbrec),reciever_interp_value(nbrec))
@@ -108,21 +108,21 @@ contains
     call mpi_bcast(stress_to_write,6*nbrec,MPI_REAL,0,MPI_COMM_WORLD,ierr_mpi)
     call mpi_bcast(stress_rec,6*nbrec,MPI_REAL,0,MPI_COMM_WORLD,ierr_mpi)
     call mpi_bcast(strain_rec,6*nbrec,MPI_REAL,0,MPI_COMM_WORLD,ierr_mpi)
-    call mpi_bcast(f1,nbrec,MPISP,0,MPI_COMM_WORLD,ierr_mpi)
-    call mpi_bcast(f2,nbrec,MPISP,0,MPI_COMM_WORLD,ierr_mpi)
-    call mpi_bcast(phi,nbrec,MPISP,0,MPI_COMM_WORLD,ierr_mpi)
+    call mpi_bcast(f1,nbrec,MPI_REAL,0,MPI_COMM_WORLD,ierr_mpi)
+    call mpi_bcast(f2,nbrec,MPI_REAL,0,MPI_COMM_WORLD,ierr_mpi)
+    call mpi_bcast(phi,nbrec,MPI_REAL,0,MPI_COMM_WORLD,ierr_mpi)
 
     ! double 
     call mpi_bcast(scoor,(iend-ibeg+1)*(iend-ibeg+1)*nel,MPIDP,0,MPI_COMM_WORLD,ierr_mpi)
     call mpi_bcast(zcoor,(iend-ibeg+1)*(iend-ibeg+1)*nel,MPIDP,0,MPI_COMM_WORLD,ierr_mpi)
-    call mpi_bcast(reciever_geogr,3*nbrec,MPIDP,0,MPI_COMM_WORLD,ierr_mpi)    
-    call mpi_bcast(reciever_sph,3*nbrec,MPIDP,0,MPI_COMM_WORLD,ierr_mpi)
-    call mpi_bcast(reciever_cyl,3*nbrec,MPIDP,0,MPI_COMM_WORLD,ierr_mpi)
-    call mpi_bcast(xi_rec,nbrec,MPIDP,0,MPI_COMM_WORLD,ierr_mpi)
-    call mpi_bcast(eta_rec,nbrec,MPIDP,0,MPI_COMM_WORLD,ierr_mpi)
+    call mpi_bcast(reciever_geogr,3*nbrec,MPI_REAL,0,MPI_COMM_WORLD,ierr_mpi)    
+    call mpi_bcast(reciever_sph,3*nbrec,MPI_REAL,0,MPI_COMM_WORLD,ierr_mpi)
+    call mpi_bcast(reciever_cyl,3*nbrec,MPI_REAL,0,MPI_COMM_WORLD,ierr_mpi)
+    call mpi_bcast(xi_rec,nbrec,MPI_REAL,0,MPI_COMM_WORLD,ierr_mpi)
+    call mpi_bcast(eta_rec,nbrec,MPI_REAL,0,MPI_COMM_WORLD,ierr_mpi)
 
     ! integer
-    call mpi_bcast(rec2elm,nbrec,MPISI,0,MPI_COMM_WORLD,ierr_mpi)
+    call mpi_bcast(rec2elm,nbrec,MPI_INTEGER,0,MPI_COMM_WORLD,ierr_mpi)
 
     ! character 
      call mpi_bcast(src_type,10*2*nsim,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi)

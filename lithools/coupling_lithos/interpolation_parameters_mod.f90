@@ -68,7 +68,7 @@ module interpolation_parameters_mod
 
   !*** From vadim
   integer(kind=si), dimension(MPI_STATUS_SIZE) :: statut
-  integer(kind=si), parameter :: etq=100
+  integer(kind=si), parameter :: etq1=101, etq2=102, etq3=103, etq4=104, etq5=105, etq6=106, etq7=107, etq8=108, etq9=109
   integer(kind=si) :: nb_rec_by_proc, nb_remain_proc, irecmin, irecmax, iproc, nrec_to_store, irec
   integer(kind=si), dimension(:), allocatable :: i_inf, i_sup, nb_received, shift, nb_received_sv, shift_sv
 

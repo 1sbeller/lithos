@@ -50,7 +50,7 @@ contains
     !*** Compute prefactor for wavefield reconstruction
     write(*,*) src_type
     call compute_prefactor(src_type(isim,1),src_type(isim,2))
-    
+
     !*** Read AxiSEM solutions
     if (myid == 0) then
        write(fichier,'(a6,a15)') '/Data/',output_veloc_name(1)
