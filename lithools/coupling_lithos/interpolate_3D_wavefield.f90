@@ -523,7 +523,9 @@ program interpolate_3D_wavefield
 
   if (myid==0) write(6,*)'Infos : feold, ntold, itbeg, itend, tbeg, tend, dtnew, dtold,ntnew'
   if (myid==0) write(6,*)feold,ntold,itbeg,itend,tbeg,tend,dtnew,dtold,ntnew
-  
+ 
+  print *,myid,fwdtool
+ 
   call MPI_barrier(MPI_COMM_WORLD,ierr_mpi)
 
   !*** Loop over new time steps
@@ -578,8 +580,8 @@ program interpolate_3D_wavefield
            nx = sign(abs_bnd_normal(1,igll,iface),x)
            ny = sign(abs_bnd_normal(2,igll,iface),y)
            nz = sign(abs_bnd_normal(3,igll,iface),z)
-           !           nx = abs_bnd_normal(1,igll,iface)
-           !           ny = abs_bnd_normal(2,igll,iface)
+           !          nx = abs_bnd_normal(1,igll,iface)
+           !          ny = abs_bnd_normal(2,igll,iface)
            !           nz = abs_bnd_normal(3,igll,iface)
            
            !* 3. Tractions
