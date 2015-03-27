@@ -111,7 +111,7 @@ contains
              end if
           end do
        end if
-       call mpi_bcast(data_read,(iend-ibeg+1)*(iend-ibeg+1)*nel,MPISP,0,MPI_COMM_WORLD,ierr_mpi) 
+       call mpi_bcast(data_read,(iend-ibeg+1)*(iend-ibeg+1)*nel,MPI_REAL,0,MPI_COMM_WORLD,ierr_mpi) 
        
        !* Interpolate us comp
        call interpol_field(ifield)
@@ -130,7 +130,7 @@ contains
                 end if
              end do
           end if
-          call mpi_bcast(data_read,(iend-ibeg+1)*(iend-ibeg+1)*nel,MPISP,0,MPI_COMM_WORLD,ierr_mpi)
+          call mpi_bcast(data_read,(iend-ibeg+1)*(iend-ibeg+1)*nel,MPI_REAL,0,MPI_COMM_WORLD,ierr_mpi)
           call interpol_field(ifield)
        end if
 
@@ -148,7 +148,7 @@ contains
              end if
           end do
        end if
-       call mpi_bcast(data_read,(iend-ibeg+1)*(iend-ibeg+1)*nel,MPISP,0,MPI_COMM_WORLD,ierr_mpi)
+       call mpi_bcast(data_read,(iend-ibeg+1)*(iend-ibeg+1)*nel,MPI_REAL,0,MPI_COMM_WORLD,ierr_mpi)
        call interpol_field(ifield)           
 
        !*** Compute cylindrical coordinates
@@ -310,7 +310,7 @@ contains
              end if
           end do
        end if
-       call mpi_bcast(data_read,(iend-ibeg+1)*(iend-ibeg+1)*nel,MPISP,0,MPI_COMM_WORLD,ierr_mpi)
+       call mpi_bcast(data_read,(iend-ibeg+1)*(iend-ibeg+1)*nel,MPI_REAL,0,MPI_COMM_WORLD,ierr_mpi)
        call interpol_stress(ifield)
        
        
@@ -330,7 +330,7 @@ contains
              end if
           end do
        end if
-       call mpi_bcast(data_read,(iend-ibeg+1)*(iend-ibeg+1)*nel,MPISP,0,MPI_COMM_WORLD,ierr_mpi)
+       call mpi_bcast(data_read,(iend-ibeg+1)*(iend-ibeg+1)*nel,MPI_REAL,0,MPI_COMM_WORLD,ierr_mpi)
        call interpol_stress(ifield)
        
        
@@ -351,7 +351,7 @@ contains
              
           end do
        end if
-       call mpi_bcast(data_read,(iend-ibeg+1)*(iend-ibeg+1)*nel,MPISP,0,MPI_COMM_WORLD,ierr_mpi)
+       call mpi_bcast(data_read,(iend-ibeg+1)*(iend-ibeg+1)*nel,MPI_REAL,0,MPI_COMM_WORLD,ierr_mpi)
        call interpol_stress(ifield)
        
        !! s12
@@ -371,7 +371,7 @@ contains
                 end if
              end do
           end if
-          call mpi_bcast(data_read,(iend-ibeg+1)*(iend-ibeg+1)*nel,MPISP,0,MPI_COMM_WORLD,ierr_mpi)
+          call mpi_bcast(data_read,(iend-ibeg+1)*(iend-ibeg+1)*nel,MPI_REAL,0,MPI_COMM_WORLD,ierr_mpi)
           call interpol_stress(ifield)
        end if
        
@@ -393,7 +393,7 @@ contains
              
           end do
        end if
-       call mpi_bcast(data_read,(iend-ibeg+1)*(iend-ibeg+1)*nel,MPISP,0,MPI_COMM_WORLD,ierr_mpi) 
+       call mpi_bcast(data_read,(iend-ibeg+1)*(iend-ibeg+1)*nel,MPI_REAL,0,MPI_COMM_WORLD,ierr_mpi) 
        call interpol_stress(ifield)
        
        
@@ -414,7 +414,7 @@ contains
                 end if
              end do
           end if
-          call mpi_bcast(data_read,(iend-ibeg+1)*(iend-ibeg+1)*nel,MPISP,0,MPI_COMM_WORLD,ierr_mpi)
+          call mpi_bcast(data_read,(iend-ibeg+1)*(iend-ibeg+1)*nel,MPI_REAL,0,MPI_COMM_WORLD,ierr_mpi)
           call interpol_stress(ifield)
        end if
        
@@ -422,9 +422,9 @@ contains
        call compute_stress_3D_cyl
 
        !*** Perform rotations
-       call rotate2cartesian_with_source_in_pole
-       call rotate_back_source                    ! global earth cartesian 
-       call rotate_back_to_local_cart             ! local cartesian
+       call rotate2cartesian_with_source_in_pole_stress
+       call rotate_back_source_stress                    ! global earth cartesian 
+       call rotate_back_to_local_cart_stress             ! local cartesian
        call reduce_mpi_stress
        
        !*** Write wavefield
