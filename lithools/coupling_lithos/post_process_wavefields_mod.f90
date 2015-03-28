@@ -532,78 +532,29 @@ contains
 ! Routine computing prefactor for wavefield extrapolation
   subroutine compute_prefactor(src_type,Mcomp,isim)
     
-    use global_parameters_mod, only: Mij, phi, nbrec, nsim, magnitude, mij_scale, mij_prefact
+    use global_parameters_mod, only: Mij, phi, nbrec, nsim, magnitude, mij_scale
     
     integer(kind=si), intent(in) :: isim
     character(len=10), intent(in)  :: src_type
     character(len=10), intent(in) :: Mcomp
     integer(kind=si) :: irec
 
+    !*** Scale tensor
+    Mij_scale(1) = Mij(isim,1) / magnitude(isim) 
+    Mij_scale(2) = Mij(isim,2) / magnitude(isim) 
+    Mij_scale(3) = Mij(isim,3) / magnitude(isim) 
+    Mij_scale(4) = Mij(isim,4) / magnitude(isim) 
+    Mij_scale(5) = Mij(isim,5) / magnitude(isim) 
+    Mij_scale(6) = Mij(isim,6) / magnitude(isim) 
 
-    !*** Prefactors
-!!$    select case (trim(src_type))
-!!$    case('monopole')
-!!$       f1=1.
-!!$       f2=0.
-!!$    case('dipole')
-!!$       select case (trim(Mcomp))
-!!$       case('mtr')
-!!$          do irec=1,nbrec
-!!$             f1(irec)=cos(phi(irec))
-!!$             f2(irec)=-sin(phi(irec))
-!!$          end do
-!!$       case ('thetaforce')
-!!$          do irec=1,nbrec
-!!$             f1(irec)=cos(phi(irec))
-!!$             f2(irec)=-sin(phi(irec))
-!!$          end do
-!!$       case('mpr')
-!!$          do irec=1,nbrec
-!!$             f1(irec)=sin(phi(irec))
-!!$             f2(irec)=cos(phi(irec))
-!!$          end do
-!!$       case('phiforce')
-!!$          do irec=1,nbrec
-!!$             f1(irec)=sin(phi(irec))
-!!$             f2(irec)=cos(phi(irec))
-!!$          end do
-!!$       end select
-!!$    case('quadpole')
-!!$       select case (trim(Mcomp))
-!!$       case ('mtt_m_mpp')
-!!$          do irec=1,nbrec
-!!$             f1(irec)=cos(2.*phi(irec))
-!!$             f2(irec)=-sin(2.*phi(irec))
-!!$          end do
-!!$       case('mtp')
-!!$          do irec=1,nbrec
-!!$             f1(irec)=sin(2*phi(irec))
-!!$             f2(irec)=cos(2*phi(irec))
-!!$          end do
-!!$       end select
-!!$       
-!!$    end select
-
-    !*** For moment tensor
-!    if (.not.allocated(mij_prefact)) allocate(mij_prefact(nbrec,nsim,3))
-!    if (.not.allocated(Mij_scale)) allocate(Mij_scale(nsim,3))
-    Mij_scale = 0.
-    Mij_scale(isim,1) = Mij(isim,1) / magnitude(isim)
-    Mij_scale(isim,2) = Mij(isim,2) / magnitude(isim)
-    Mij_scale(isim,3) = Mij(isim,3) / magnitude(isim)
-    Mij_scale(isim,4) = Mij(isim,4) / magnitude(isim)
-    Mij_scale(isim,5) = Mij(isim,5) / magnitude(isim)
-    Mij_scale(isim,6) = Mij(isim,6) / magnitude(isim)
-    mij_prefact = 0.
-    
     call MPI_barrier(MPI_COMM_WORLD, ierr_mpi)
     if (myid == 0) then
        write(6,*)'Mij scaled: on proc 0'
        write(6,*) Mij_scale
        write(6,*)'-----------------'
-       write(6,*) Mij
+       write(6,*) Mij(isim,:)
        write(6,*)'-----------------'
-       write(6,*) magnitude
+       write(6,*) magnitude(isim)
        write(6,*)'-----------------'
     end if
     call MPI_barrier(MPI_COMM_WORLD, ierr_mpi)
@@ -611,81 +562,173 @@ contains
        write(6,*)'Mij scaled: on proc 1'
        write(6,*) Mij_scale
        write(6,*)'-----------------'
-       write(6,*) Mij
+       write(6,*) Mij(isim,:)
        write(6,*)'-----------------'
-       write(6,*) magnitude
+       write(6,*) magnitude(isim)
        write(6,*)'-----------------'
     end if
     call MPI_barrier(MPI_COMM_WORLD, ierr_mpi)
 
-    select case(Mcomp)
-    case('mrr')
-       do irec=1,nbrec
-          mij_prefact(irec,isim,:) = Mij_scale(isim,1)
-          mij_prefact(irec,isim,2) = 0.
-       end do
+    !*** Prefactors
+    select case (trim(src_type))
+    case('monopole')
+
+       select case(Mcomp)
+       case('mrr')
+          f1 = Mij_scale(1)
+          f2 = 0.
+       case('mtt_p_mpp')
+          f1 = Mij_scale(2) + Mij_scale(3)
+          f2 = 0.
+       case('explosion')
+          f1 = (Mij_scale(1) + Mij_scale(2) + Mij_scale(3)) / 3.
+          f2 = 0.
+       end select
+
+    case('dipole')
+
+       select case (trim(Mcomp))
+       case('mtr','mrt')
+          do irec=1,nbrec
+             f1(irec) =   Mij_scale(4) * cos(phi(irec))
+             f2(irec) = - Mij_scale(4) * sin(phi(irec))
+          end do
+       case ('thetaforce')   !!! TO verify
+          do irec=1,nbrec
+             f1(irec) =   cos(phi(irec))
+             f2(irec) = - sin(phi(irec))
+          end do
+       case('mpr','mrp')
+          do irec=1,nbrec
+             f1(irec) = Mij_scale(5) * sin(phi(irec))
+             f2(irec) = Mij_scale(5) * cos(phi(irec))
+          end do
+       case('phiforce')      !!! TO verify
+          do irec=1,nbrec
+             f1(irec) = sin(phi(irec))
+             f2(irec) = cos(phi(irec))
+          end do
+       end select
+
+    case('quadpole')
+
+       select case (trim(Mcomp))
+       case ('mtt_m_mpp')
+          do irec=1,nbrec
+             f1(irec)=   (Mij_scale(2) - Mij_scale(3)) * cos(2.*phi(irec)) !!! Check -1/2 
+             f2(irec)= - (Mij_scale(2) - Mij_scale(3)) * sin(2.*phi(irec)) !!! Check -1/2
+          end do
+       case('mtp','mpt')
+          do irec=1,nbrec
+             f1(irec) = 2. * Mij_scale(6) * sin(2*phi(irec))    !!! Check -1/2
+             f2(irec) = 2. * Mij_scale(6) * cos(2*phi(irec))    !!! Check -1/2
+          end do
+       end select
+       
+    end select
+
+!!$    !*** For moment tensor
+!!$!    if (.not.allocated(mij_prefact)) allocate(mij_prefact(nbrec,nsim,3))
+!!$!    if (.not.allocated(Mij_scale)) allocate(Mij_scale(nsim,3))
+!!$    Mij_scale = 0.
+!!$    Mij_scale(isim,1) = Mij(isim,1) / magnitude(isim)
+!!$    Mij_scale(isim,2) = Mij(isim,2) / magnitude(isim)
+!!$    Mij_scale(isim,3) = Mij(isim,3) / magnitude(isim)
+!!$    Mij_scale(isim,4) = Mij(isim,4) / magnitude(isim)
+!!$    Mij_scale(isim,5) = Mij(isim,5) / magnitude(isim)
+!!$    Mij_scale(isim,6) = Mij(isim,6) / magnitude(isim)
+!!$    mij_prefact = 0.
+!!$    
+!!$    call MPI_barrier(MPI_COMM_WORLD, ierr_mpi)
+!!$    if (myid == 0) then
+!!$       write(6,*)'Mij scaled: on proc 0'
+!!$       write(6,*) Mij_scale
+!!$       write(6,*)'-----------------'
+!!$       write(6,*) Mij
+!!$       write(6,*)'-----------------'
+!!$       write(6,*) magnitude
+!!$       write(6,*)'-----------------'
+!!$    end if
+!!$    call MPI_barrier(MPI_COMM_WORLD, ierr_mpi)
+!!$    if (myid == 1) then
+!!$       write(6,*)'Mij scaled: on proc 1'
+!!$       write(6,*) Mij_scale
+!!$       write(6,*)'-----------------'
+!!$       write(6,*) Mij
+!!$       write(6,*)'-----------------'
+!!$       write(6,*) magnitude
+!!$       write(6,*)'-----------------'
+!!$    end if
+!!$    call MPI_barrier(MPI_COMM_WORLD, ierr_mpi)
+!!$
+!!$    select case(Mcomp)
+!!$    case('mrr')
+!!$       do irec=1,nbrec
+!!$          mij_prefact(irec,isim,:) = Mij_scale(isim,1)
+!!$          mij_prefact(irec,isim,2) = 0.
+!!$       end do
 !!$       write(6,*) isim, 'Simulation is mrr, prefact:', &
 !!$            mij_prefact(1,isim,1), mij_prefact(1,isim,2), &
 !!$            mij_prefact(1,isim,3)
-    case('mtt_p_mpp')
-       do irec=1,nbrec
-          mij_prefact(irec,isim,:) = Mij_scale(isim,2) + Mij_scale(isim,3)
-          mij_prefact(irec,isim,2) = 0.
-       end do
+!!$    case('mtt_p_mpp')
+!!$       do irec=1,nbrec
+!!$          mij_prefact(irec,isim,:) = Mij_scale(isim,2) + Mij_scale(isim,3)
+!!$          mij_prefact(irec,isim,2) = 0.
+!!$       end do
 !!$       write(6,*) isim, 'Simulation is mpp, prefact:', &
 !!$            mij_prefact(1,isim,1), mij_prefact(1,isim,2), &
 !!$            mij_prefact(1,isim,3)
-       
-    case('mtr', 'mrt', 'mpr', 'mrp')
-       do irec=1,nbrec
-          mij_prefact(irec,isim,1) =   Mij_scale(isim,4) * cos(phi(irec)) &
-               + Mij_scale(isim,5) * sin(phi(irec))
-          mij_prefact(irec,isim,2) = - Mij_scale(isim,4) * sin(phi(irec)) &
-               + Mij_scale(isim,5) * cos(phi(irec))
-          mij_prefact(irec,isim,3) =   Mij_scale(isim,4) * cos(phi(irec)) &
-               + Mij_scale(isim,5) * sin(phi(irec))
-       end do
+!!$       
+!!$    case('mtr', 'mrt', 'mpr', 'mrp')
+!!$       do irec=1,nbrec
+!!$          mij_prefact(irec,isim,1) =   Mij_scale(isim,4) * cos(phi(irec)) &
+!!$               + Mij_scale(isim,5) * sin(phi(irec))
+!!$          mij_prefact(irec,isim,2) = - Mij_scale(isim,4) * sin(phi(irec)) &
+!!$               + Mij_scale(isim,5) * cos(phi(irec))
+!!$          mij_prefact(irec,isim,3) =   Mij_scale(isim,4) * cos(phi(irec)) &
+!!$               + Mij_scale(isim,5) * sin(phi(irec))
+!!$       end do
 !!$       write(6,*) isim, 'Simulation is mtr, prefact:', &
 !!$            mij_prefact(1,isim,1), mij_prefact(1,isim,2), &
 !!$            mij_prefact(1,isim,3)
-       
-    case('mtp', 'mpt', 'mtt_m_mpp')
-       do irec=1,nbrec
-          mij_prefact(irec,isim,1) = (Mij_scale(isim,2) - Mij_scale(isim,3)) * cos(2. * phi(irec))  &
-               + 2. * Mij_scale(isim,6)  * sin(2. * phi(irec))
-          mij_prefact(irec,isim,2) = (Mij_scale(isim,3) - Mij_scale(isim,2)) * sin(2. * phi(irec)) &
-               + 2. * Mij_scale(isim,6)  * cos(2. * phi(irec))
-          mij_prefact(irec,isim,3) = (Mij_scale(isim,2) - Mij_scale(isim,3)) * cos(2. * phi(irec))  &
-               + 2. * Mij_scale(isim,6)  * sin(2. * phi(irec))
-       end do
+!!$       
+!!$    case('mtp', 'mpt', 'mtt_m_mpp')
+!!$       do irec=1,nbrec
+!!$          mij_prefact(irec,isim,1) = (Mij_scale(isim,2) - Mij_scale(isim,3)) * cos(2. * phi(irec))  &
+!!$               + 2. * Mij_scale(isim,6)  * sin(2. * phi(irec))
+!!$          mij_prefact(irec,isim,2) = (Mij_scale(isim,3) - Mij_scale(isim,2)) * sin(2. * phi(irec)) &
+!!$               + 2. * Mij_scale(isim,6)  * cos(2. * phi(irec))
+!!$          mij_prefact(irec,isim,3) = (Mij_scale(isim,2) - Mij_scale(isim,3)) * cos(2. * phi(irec))  &
+!!$               + 2. * Mij_scale(isim,6)  * sin(2. * phi(irec))
+!!$       end do
 !!$       write(6,*) isim, 'Simulation is mtp, prefact:', &
 !!$            mij_prefact(1,isim,1), mij_prefact(1,isim,2), &
 !!$            mij_prefact(1,isim,3)
-       
-    case('explosion')
-       do irec=1,nbrec
-          mij_prefact(irec,isim,:) = (Mij_scale(isim,1) + Mij_scale(isim,2) + Mij_scale(isim,3)) / 3.
-       end do
+!!$       
+!!$    case('explosion')
+!!$       do irec=1,nbrec
+!!$          mij_prefact(irec,isim,:) = (Mij_scale(isim,1) + Mij_scale(isim,2) + Mij_scale(isim,3)) / 3.
+!!$       end do
 !!$       write(6,*) isim, 'Simulation is explosion, prefact:', &
 !!$            mij_prefact(1,isim,1), mij_prefact(1,isim,2), &
 !!$            mij_prefact(1,isim,3)
-       
-    case default
-       write(6,*) 'unknown source type ', Mcomp
-       stop
-    end select
-
-    call MPI_barrier(MPI_COMM_WORLD, ierr_mpi)
-    if (myid == 0) then
-       write(6,*) 'Mij phi prefactor proc0:', maxval(mij_prefact(:,isim,1)), &
-            maxval(mij_prefact(:,isim,2)), maxval(mij_prefact(:,isim,3))
-    end if
-    call MPI_barrier(MPI_COMM_WORLD, ierr_mpi)
-    if (myid == 1) then
-       write(6,*) 'Mij phi prefactor proc1:', maxval(mij_prefact(:,isim,1)), &
-            maxval(mij_prefact(:,isim,2)), maxval(mij_prefact(:,isim,3))
-    end if
-    call MPI_barrier(MPI_COMM_WORLD, ierr_mpi)
+!!$       
+!!$    case default
+!!$       write(6,*) 'unknown source type ', Mcomp
+!!$       stop
+!!$    end select
+!!$
+!!$    call MPI_barrier(MPI_COMM_WORLD, ierr_mpi)
+!!$    if (myid == 0) then
+!!$       write(6,*) 'Mij phi prefactor proc0:', maxval(mij_prefact(:,isim,1)), &
+!!$            maxval(mij_prefact(:,isim,2)), maxval(mij_prefact(:,isim,3))
+!!$    end if
+!!$    call MPI_barrier(MPI_COMM_WORLD, ierr_mpi)
+!!$    if (myid == 1) then
+!!$       write(6,*) 'Mij phi prefactor proc1:', maxval(mij_prefact(:,isim,1)), &
+!!$            maxval(mij_prefact(:,isim,2)), maxval(mij_prefact(:,isim,3))
+!!$    end if
+!!$    call MPI_barrier(MPI_COMM_WORLD, ierr_mpi)
 
   end subroutine compute_prefactor
 !--------------------------------------------------------------------------------
@@ -701,9 +744,9 @@ contains
     integer(kind=si), intent(in) :: isim
 
     do irec=irecmin,irecmax
-       data_rec(irec,1)=mij_prefact(irec,isim,1)*data_rec(irec,1) !f1
-       data_rec(irec,2)=mij_prefact(irec,isim,2)*data_rec(irec,2)          !f2
-       data_rec(irec,3)=mij_prefact(irec,isim,3)*data_rec(irec,3)          !f1
+       data_rec(irec,1) = f1(irec) * data_rec(irec,1) !f1
+       data_rec(irec,2) = f2(irec) * data_rec(irec,2)          !f2
+       data_rec(irec,3) = f1(irec) * data_rec(irec,3)          !f1
     end do
 
   end subroutine compute_3D_cyl
@@ -720,12 +763,12 @@ contains
     integer(kind=si), intent(in) :: isim
 
     do irec=irecmin,irecmax
-       stress_rec(irec,1)=mij_prefact(irec,isim,1)*stress_rec(irec,1) !f1
-       stress_rec(irec,2)=mij_prefact(irec,isim,2)*stress_rec(irec,2) !f1
-       stress_rec(irec,3)=mij_prefact(irec,isim,3)*stress_rec(irec,3) !f1
-       stress_rec(irec,4)=mij_prefact(irec,isim,4)*stress_rec(irec,4) !f2
-       stress_rec(irec,5)=mij_prefact(irec,isim,5)*stress_rec(irec,5) !f1
-       stress_rec(irec,6)=mij_prefact(irec,isim,6)*stress_rec(irec,6) !f2
+       stress_rec(irec,1) = f1(irec) * stress_rec(irec,1) !f1
+       stress_rec(irec,2) = f1(irec) * stress_rec(irec,2) !f1
+       stress_rec(irec,3) = f1(irec) * stress_rec(irec,3) !f1
+       stress_rec(irec,4) = f2(irec) * stress_rec(irec,4) !f2
+       stress_rec(irec,5) = f1(irec) * stress_rec(irec,5) !f1
+       stress_rec(irec,6) = f2(irec) * stress_rec(irec,6) !f2
     end do
     
   end subroutine compute_stress_3D_cyl
