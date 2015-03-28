@@ -215,8 +215,8 @@ contains
           stop
        end select
   
-	write(6,*)'Simu : ',isim,
-	write(6,ù)'Mij = ',Mij(isim,:)
+	write(6,*)'Simu : ',isim
+	write(6,*)'Mij = ',Mij(isim,:)
 
  
     end do
