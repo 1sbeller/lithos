@@ -149,7 +149,7 @@ contains
        if(.not.allocated(Mij)) allocate(Mij(nsim,6))
        Mij = 0
 
-       select case(src_type(isim,1))
+       select case(src_file_type)
        case('moment')
           write(6,*)'  reading CMTSOLUTION file....'
           open(unit=20000,file='CMTSOLUTION',POSITION='REWIND',status='old')
@@ -211,7 +211,7 @@ contains
           end select
           
        case default
-          write(6,*)'unknown simulation type!', src_type(isim,1)
+          write(6,*)'unknown simulation type!', src_file_type !type(isim,1)
           stop
        end select
    
