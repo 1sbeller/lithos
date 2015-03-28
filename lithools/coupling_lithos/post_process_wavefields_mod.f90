@@ -721,11 +721,11 @@ contains
 
     do irec=irecmin,irecmax
        stress_rec(irec,1)=mij_prefact(irec,isim,1)*stress_rec(irec,1) !f1
-       stress_rec(irec,2)=mij_prefact(irec,isim,1)*stress_rec(irec,2) !f1
-       stress_rec(irec,3)=mij_prefact(irec,isim,1)*stress_rec(irec,3) !f1
-       stress_rec(irec,4)=mij_prefact(irec,isim,2)*stress_rec(irec,4) !f2
-       stress_rec(irec,5)=mij_prefact(irec,isim,1)*stress_rec(irec,5) !f1
-       stress_rec(irec,6)=mij_prefact(irec,isim,2)*stress_rec(irec,6) !f2
+       stress_rec(irec,2)=mij_prefact(irec,isim,2)*stress_rec(irec,2) !f1
+       stress_rec(irec,3)=mij_prefact(irec,isim,3)*stress_rec(irec,3) !f1
+       stress_rec(irec,4)=mij_prefact(irec,isim,4)*stress_rec(irec,4) !f2
+       stress_rec(irec,5)=mij_prefact(irec,isim,5)*stress_rec(irec,5) !f1
+       stress_rec(irec,6)=mij_prefact(irec,isim,6)*stress_rec(irec,6) !f2
     end do
     
   end subroutine compute_stress_3D_cyl
