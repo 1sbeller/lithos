@@ -587,21 +587,25 @@ contains
     !*** For moment tensor
 !    if (.not.allocated(mij_prefact)) allocate(mij_prefact(nbrec,nsim,3))
 !    if (.not.allocated(Mij_scale)) allocate(Mij_scale(nsim,3))
-
+    Mij_scale = 0.
     Mij_scale(isim,:) = Mij(isim,:) / magnitude(isim)
     mij_prefact = 0.
     
+    call MPI_barrier(MPI_COMM_WORLD, ierr_mpi)
     if (myid == 0) then
        write(6,*)'Mij scaled: on proc 0'
        write(6,*) Mij_scale
        write(6,*) Mij
        write(6,*) magnitude
-    elseif (myid == 1) then
+    end if
+    call MPI_barrier(MPI_COMM_WORLD, ierr_mpi)
+    if (myid == 1) then
        write(6,*)'Mij scaled: on proc 1'
        write(6,*) Mij_scale
        write(6,*) Mij
        write(6,*) magnitude
     end if
+    call MPI_barrier(MPI_COMM_WORLD, ierr_mpi)
 
     select case(Mcomp)
     case('mrr')
@@ -660,14 +664,18 @@ contains
        stop
     end select
 
+    call MPI_barrier(MPI_COMM_WORLD, ierr_mpi)
     if (myid == 0) then
        write(6,*) 'Mij phi prefactor proc0:', maxval(mij_prefact(:,isim,1)), &
             maxval(mij_prefact(:,isim,2)), maxval(mij_prefact(:,isim,3))
-    elseif (myid == 1) then
+    end if
+    call MPI_barrier(MPI_COMM_WORLD, ierr_mpi)
+    if (myid == 1) then
        write(6,*) 'Mij phi prefactor proc1:', maxval(mij_prefact(:,isim,1)), &
             maxval(mij_prefact(:,isim,2)), maxval(mij_prefact(:,isim,3))
     end if
-    
+    call MPI_barrier(MPI_COMM_WORLD, ierr_mpi)
+
   end subroutine compute_prefactor
 !--------------------------------------------------------------------------------
 
