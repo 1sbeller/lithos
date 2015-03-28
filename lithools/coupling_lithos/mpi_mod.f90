@@ -80,16 +80,21 @@ contains
    call mpi_bcast(trans_rot_mat,9,MPI_REAL8,0,MPI_COMM_WORLD,ierr_mpi)
    call mpi_bcast(rot_mat_mesh,9,MPI_REAL8,0,MPI_COMM_WORLD,ierr_mpi)
    call mpi_bcast(trans_rot_mat_mesh,9,MPI_REAL8,0,MPI_COMM_WORLD,ierr_mpi)
-   
+
    if (myid >  0) then 
       allocate(reciever_geogr(3,nbrec),reciever_sph(3,nbrec),reciever_cyl(3,nbrec),reciever_interp_value(nbrec))
       allocate(data_rec(nbrec,3),stress_rec(nbrec,6),stress_to_write(nbrec,6),strain_rec(nbrec,6))
-      allocate(f1(nbrec),f2(nbrec),phi(nbrec))
+  !    allocate(f1(nbrec),f2(nbrec),
+      allocate(phi(nbrec))
+    if (.not.allocated(mij_prefact)) allocate(mij_prefact(nbrec,nsim,3))
+    if (.not.allocated(Mij_scale)) allocate(Mij_scale(nsim,3))
+    allocate(magnitude(nsim))
       allocate(scoor(ibeg:iend,ibeg:iend,nel),zcoor(ibeg:iend,ibeg:iend,nel))
       allocate(data_read(ibeg:iend,ibeg:iend,nel))
       allocate(xi_rec(nbrec),eta_rec(nbrec))
       allocate(rec2elm(nbrec))
       allocate(src_type(nsim,2))
+      allocate(Mij(nsim,6))
 
    end if
    allocate(stress_reduce(nbrec,6),data_reduce(nbrec,3))
@@ -108,8 +113,12 @@ contains
     call mpi_bcast(stress_to_write,6*nbrec,MPI_REAL4,0,MPI_COMM_WORLD,ierr_mpi)
     call mpi_bcast(stress_rec,6*nbrec,MPI_REAL4,0,MPI_COMM_WORLD,ierr_mpi)
     call mpi_bcast(strain_rec,6*nbrec,MPI_REAL4,0,MPI_COMM_WORLD,ierr_mpi)
-    call mpi_bcast(f1,nbrec,MPI_REAL8,0,MPI_COMM_WORLD,ierr_mpi)
-    call mpi_bcast(f2,nbrec,MPI_REAL8,0,MPI_COMM_WORLD,ierr_mpi)
+!    call mpi_bcast(f1,nbrec,MPI_REAL8,0,MPI_COMM_WORLD,ierr_mpi)
+!    call mpi_bcast(f2,nbrec,MPI_REAL8,0,MPI_COMM_WORLD,ierr_mpi)
+    call mpi_bcast(Mij,nsim*3,MPI_REAL8,0,MPI_COMM_WORLD,ierr_mpi)
+    call mpi_bcast(mij_prefact,nbrec*nsim*3,MPI_REAL8,0,MPI_COMM_WORLD,ierr_mpi)
+   call mpi_bcast(magnitude,nsim,MPI_REAL8,0,MPI_COMM_WORLD,ierr_mpi)
+
     call mpi_bcast(phi,nbrec,MPI_REAL8,0,MPI_COMM_WORLD,ierr_mpi)
 
     ! double 

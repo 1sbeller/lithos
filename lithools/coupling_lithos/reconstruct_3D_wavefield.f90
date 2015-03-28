@@ -30,6 +30,7 @@ program reconstruct_3D_wavefield
 
   !*** Reconstruct wavefields
   do isim=1,nsim
+     write(6,*)'Process source component: ',isim
      call reconstruct_velocity(isim)
      call reconstruct_stress(isim)
   end do

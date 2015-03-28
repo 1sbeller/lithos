@@ -57,4 +57,9 @@ module global_parameters_mod
   !*** Mpi 
   integer(kind=si) :: irecmin, irecmax
 
+  !*** Moment tensor
+  real(kind=dp), dimension(:,:), allocatable :: Mij, Mij_scale
+  real(kind=dp), dimension(:,:,:), allocatable :: mij_prefact
+  real(kind=dp), dimension(:), allocatable :: magnitude
+
 end module global_parameters_mod

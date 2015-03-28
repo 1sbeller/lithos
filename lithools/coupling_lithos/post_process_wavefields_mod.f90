@@ -27,10 +27,9 @@ contains
     character(len=4)   :: appmynum
     character(len=256) :: fichier
 
-
     allocate(iunit(0:nbproc-1,3))
-        
-
+    
+    
     !*** Unit file
     i=150
     do ifield=1,3
@@ -49,8 +48,8 @@ contains
     
     !*** Compute prefactor for wavefield reconstruction
     write(*,*) src_type
-    call compute_prefactor(src_type(isim,1),src_type(isim,2))
-
+    call compute_prefactor(src_type(isim,1),src_type(isim,2),isim)
+    
     !*** Read AxiSEM solutions
     if (myid == 0) then
        write(fichier,'(a6,a15)') '/Data/',output_veloc_name(1)
@@ -63,7 +62,7 @@ contains
        write(*,*) 'nbrec to write', nbrec
        write(*,*) 'nbrec to read ',sum(nb_stored(:))
        write(*,*) 'nt to write ', ntime
-        
+       
        write(ivx) nbrec,ntime
        write(ivy) nbrec,ntime
        write(ivz) nbrec,ntime
@@ -88,9 +87,8 @@ contains
           end do
        end do
     end if
-   
-!    call MPI_barrier(MPI_COMM_WORLD,ierr_mpi)
- 
+    
+    
     if (myid==0) write(6,*)'Percentage : '
     !*** Read those files
     do itime=1,ntime
@@ -115,7 +113,7 @@ contains
        
        !* Interpolate us comp
        call interpol_field(ifield)
- 
+       
        if (.not.(trim(src_type(isim,1))=='monopole')) then
           ifield=2
           if (myid == 0) then
@@ -133,7 +131,7 @@ contains
           call mpi_bcast(data_read,(iend-ibeg+1)*(iend-ibeg+1)*nel,MPI_REAL,0,MPI_COMM_WORLD,ierr_mpi)
           call interpol_field(ifield)
        end if
-
+       
        !** uz comp
        ifield=3
        if (myid ==0) then
@@ -150,9 +148,9 @@ contains
        end if
        call mpi_bcast(data_read,(iend-ibeg+1)*(iend-ibeg+1)*nel,MPI_REAL,0,MPI_COMM_WORLD,ierr_mpi)
        call interpol_field(ifield)           
-
-       !*** Compute cylindrical coordinates
-       call compute_3D_cyl
+       
+       !*** Compute cylindrical components (prefactors)
+       call compute_3D_cyl(isim)
 
        !*** Perform rotations
        call rotate2cartesian_with_source_in_pole
@@ -246,8 +244,8 @@ contains
     isxz=i
     i=i+1
     isyz=i
-    
-    call compute_prefactor(src_type(isim,1),src_type(isim,2))
+
+    call compute_prefactor(src_type(isim,1),src_type(isim,2),isim)
     if (myid == 0) then  
        write(fichier,'(a6,a15)') '/Data/',output_stress_name(1)
        open(isxx,file= trim(working_axisem_dir)//trim(simdir(isim))//trim(fichier), FORM="UNFORMATTED")
@@ -286,8 +284,8 @@ contains
           end do
        end do
     end if
-
-
+    
+    
     if (myid==0) write(6,*)'Percentage : '
     ! read files
     do itime=1,ntime
@@ -418,9 +416,10 @@ contains
           call interpol_stress(ifield)
        end if
        
-       !*** Compute cylindrical coordinates
-       call compute_stress_3D_cyl
-
+       
+       !*** compute cylindrical componenets (with prefactors)
+       call compute_stress_3D_cyl(isim)
+          
        !*** Perform rotations
        call rotate2cartesian_with_source_in_pole_stress
        call rotate_back_source_stress                    ! global earth cartesian 
@@ -432,7 +431,7 @@ contains
           call  write_stress3D(isxx,isyy,iszz,isxy,isxz,isyz)
           write(6,*)itime,ntime                   
        end if
-  
+       
     end do
     
     ! close files 
@@ -533,117 +532,130 @@ contains
 
 !================================================================================
 ! Routine computing prefactor for wavefield extrapolation
-  subroutine compute_prefactor(src_type,Mcomp)
+  subroutine compute_prefactor(src_type,Mcomp,isim)
     
-    use global_parameters_mod, only: f1, f2, phi, nbrec
+    use global_parameters_mod, only: f1, f2, phi, nbrec, nsim
     
+    integer(kind=si), intent(in) :: isim
     character(len=10), intent(in)  :: src_type
     character(len=10), intent(in) :: Mcomp
     integer(kind=si) :: irec
 
 
     !*** Prefactors
-    select case (trim(src_type))
-    case('monopole')
-       f1=1.
-       f2=0.
-    case('dipole')
-       select case (trim(Mcomp))
-       case('mtr')
-          do irec=1,nbrec
-             f1(irec)=cos(phi(irec))
-             f2(irec)=-sin(phi(irec))
-          end do
-       case ('thetaforce')
-          do irec=1,nbrec
-             f1(irec)=cos(phi(irec))
-             f2(irec)=-sin(phi(irec))
-          end do
-       case('mpr')
-          do irec=1,nbrec
-             f1(irec)=sin(phi(irec))
-             f2(irec)=cos(phi(irec))
-          end do
-       case('phiforce')
-          do irec=1,nbrec
-             f1(irec)=sin(phi(irec))
-             f2(irec)=cos(phi(irec))
-          end do
-       end select
-    case('quadpole')
-       select case (trim(Mcomp))
-       case ('mtt_m_mpp')
-          do irec=1,nbrec
-             f1(irec)=cos(2.*phi(irec))
-             f2(irec)=-sin(2.*phi(irec))
-          end do
-       case('mtp')
-          do irec=1,nbrec
-             f1(irec)=sin(2*phi(irec))
-             f2(irec)=cos(2*phi(irec))
-          end do
-       end select
-       
-    end select
-
-!!$    !*** For moment tensor
-!!$    Mij_scale = Mij / magnitude(isim)
-!!$    
-!!$    write(6,*)'Mij scaled:'
-!!$    write(6,fmtstring) Mij_scale
-!!$    
-!!$    select case(src_type(isim,2))
-!!$    case('mrr')
-!!$       mij_prefact(:,isim,:) = Mij_scale(1)
-!!$       mij_prefact(:,isim,2) = 0.
-!!$       write(6,*) isim, 'Simulation is mrr, prefact:', &
-!!$            mij_prefact(1,isim,1), mij_prefact(1,isim,2), &
-!!$            mij_prefact(1,isim,3)
-!!$    case('mtt_p_mpp')
-!!$       mij_prefact(:,isim,:) = Mij_scale(2) + Mij_scale(3)
-!!$       mij_prefact(:,isim,2) = 0.
-!!$       write(6,*) isim, 'Simulation is mpp, prefact:', &
-!!$            mij_prefact(1,isim,1), mij_prefact(1,isim,2), &
-!!$            mij_prefact(1,isim,3)
+!!$    select case (trim(src_type))
+!!$    case('monopole')
+!!$       f1=1.
+!!$       f2=0.
+!!$    case('dipole')
+!!$       select case (trim(Mcomp))
+!!$       case('mtr')
+!!$          do irec=1,nbrec
+!!$             f1(irec)=cos(phi(irec))
+!!$             f2(irec)=-sin(phi(irec))
+!!$          end do
+!!$       case ('thetaforce')
+!!$          do irec=1,nbrec
+!!$             f1(irec)=cos(phi(irec))
+!!$             f2(irec)=-sin(phi(irec))
+!!$          end do
+!!$       case('mpr')
+!!$          do irec=1,nbrec
+!!$             f1(irec)=sin(phi(irec))
+!!$             f2(irec)=cos(phi(irec))
+!!$          end do
+!!$       case('phiforce')
+!!$          do irec=1,nbrec
+!!$             f1(irec)=sin(phi(irec))
+!!$             f2(irec)=cos(phi(irec))
+!!$          end do
+!!$       end select
+!!$    case('quadpole')
+!!$       select case (trim(Mcomp))
+!!$       case ('mtt_m_mpp')
+!!$          do irec=1,nbrec
+!!$             f1(irec)=cos(2.*phi(irec))
+!!$             f2(irec)=-sin(2.*phi(irec))
+!!$          end do
+!!$       case('mtp')
+!!$          do irec=1,nbrec
+!!$             f1(irec)=sin(2*phi(irec))
+!!$             f2(irec)=cos(2*phi(irec))
+!!$          end do
+!!$       end select
 !!$       
-!!$    case('mtr', 'mrt', 'mpr', 'mrp')
-!!$       mij_prefact(:,isim,1) =   Mij_scale(4) * cos(longit) &
-!!$            + Mij_scale(5) * sin(longit)
-!!$       mij_prefact(:,isim,2) = - Mij_scale(4) * sin(longit) &
-!!$            + Mij_scale(5) * cos(longit)
-!!$       mij_prefact(:,isim,3) =   Mij_scale(4) * cos(longit) &
-!!$            + Mij_scale(5) * sin(longit)
-!!$       
-!!$       write(6,*) isim, 'Simulation is mtr, prefact:', &
-!!$            mij_prefact(1,isim,1), mij_prefact(1,isim,2), &
-!!$            mij_prefact(1,isim,3)
-!!$       
-!!$    case('mtp', 'mpt', 'mtt_m_mpp')
-!!$       mij_prefact(:,isim,1) = (Mij_scale(2) - Mij_scale(3)) * cos(2. * longit)  &
-!!$            + 2. * Mij_scale(6)  * sin(2. * longit)
-!!$       mij_prefact(:,isim,2) = (Mij_scale(3) - Mij_scale(2)) * sin(2. * longit) &
-!!$            + 2. * Mij_scale(6)  * cos(2. * longit)
-!!$       mij_prefact(:,isim,3) = (Mij_scale(2) - Mij_scale(3)) * cos(2. * longit)  &
-!!$            + 2. * Mij_scale(6)  * sin(2. * longit)
-!!$       
-!!$       write(6,*) isim, 'Simulation is mtp, prefact:', &
-!!$            mij_prefact(1,isim,1), mij_prefact(1,isim,2), &
-!!$            mij_prefact(1,isim,3)
-!!$       
-!!$    case('explosion')
-!!$       mij_prefact(:,isim,:) = (Mij_scale(1) + Mij_scale(2) + Mij_scale(3)) / 3.
-!!$       write(6,*) isim, 'Simulation is explosion, prefact:', &
-!!$            mij_prefact(1,isim,1), mij_prefact(1,isim,2), &
-!!$            mij_prefact(1,isim,3)
-!!$       
-!!$    case default
-!!$       write(6,*) 'unknown source type ', src_type(isim,2)
-!!$       stop
 !!$    end select
-!!$    
-!!$    write(6,*) 'Mij phi prefactor:', maxval(mij_prefact(:,isim,1)), &
-!!$         maxval(mij_prefact(:,isim,2)), maxval(mij_prefact(:,isim,3))
-!!$    
+
+    !*** For moment tensor
+!    if (.not.allocated(mij_prefact)) allocate(mij_prefact(nbrec,nsim,3))
+!    if (.not.allocated(Mij_scale)) allocate(Mij_scale(nsim,3))
+
+    Mij_scale(isim,:) = Mij(isim,:) / magnitude(isim)
+    mij_prefact = 0
+    
+    write(6,*)'Mij scaled:'
+    write(6,*) Mij_scale
+    
+    select case(Mcomp)
+    case('mrr')
+       do irec=1,nbrec
+          mij_prefact(irec,isim,:) = Mij_scale(isim,1)
+          mij_prefact(irec,isim,2) = 0.
+       end do
+       write(6,*) isim, 'Simulation is mrr, prefact:', &
+            mij_prefact(1,isim,1), mij_prefact(1,isim,2), &
+            mij_prefact(1,isim,3)
+    case('mtt_p_mpp')
+       do irec=1,nbrec
+          mij_prefact(irec,isim,:) = Mij_scale(isim,2) + Mij_scale(isim,3)
+          mij_prefact(irec,isim,2) = 0.
+       end do
+       write(6,*) isim, 'Simulation is mpp, prefact:', &
+            mij_prefact(1,isim,1), mij_prefact(1,isim,2), &
+            mij_prefact(1,isim,3)
+       
+    case('mtr', 'mrt', 'mpr', 'mrp')
+       do irec=1,nbrec
+          mij_prefact(irec,isim,1) =   Mij_scale(isim,4) * cos(phi(irec)) &
+               + Mij_scale(isim,5) * sin(phi(irec))
+          mij_prefact(irec,isim,2) = - Mij_scale(isim,4) * sin(phi(irec)) &
+               + Mij_scale(isim,5) * cos(phi(irec))
+          mij_prefact(irec,isim,3) =   Mij_scale(isim,4) * cos(phi(irec)) &
+               + Mij_scale(isim,5) * sin(phi(irec))
+       end do
+       write(6,*) isim, 'Simulation is mtr, prefact:', &
+            mij_prefact(1,isim,1), mij_prefact(1,isim,2), &
+            mij_prefact(1,isim,3)
+       
+    case('mtp', 'mpt', 'mtt_m_mpp')
+       do irec=1,nbrec
+          mij_prefact(irec,isim,1) = (Mij_scale(isim,2) - Mij_scale(isim,3)) * cos(2. * phi(irec))  &
+               + 2. * Mij_scale(isim,6)  * sin(2. * phi(irec))
+          mij_prefact(irec,isim,2) = (Mij_scale(isim,3) - Mij_scale(isim,2)) * sin(2. * phi(irec)) &
+               + 2. * Mij_scale(isim,6)  * cos(2. * phi(irec))
+          mij_prefact(irec,isim,3) = (Mij_scale(isim,2) - Mij_scale(isim,3)) * cos(2. * phi(irec))  &
+               + 2. * Mij_scale(isim,6)  * sin(2. * phi(irec))
+       end do
+       write(6,*) isim, 'Simulation is mtp, prefact:', &
+            mij_prefact(1,isim,1), mij_prefact(1,isim,2), &
+            mij_prefact(1,isim,3)
+       
+    case('explosion')
+       do irec=1,nbrec
+          mij_prefact(irec,isim,:) = (Mij_scale(isim,1) + Mij_scale(isim,2) + Mij_scale(isim,3)) / 3.
+       end do
+       write(6,*) isim, 'Simulation is explosion, prefact:', &
+            mij_prefact(1,isim,1), mij_prefact(1,isim,2), &
+            mij_prefact(1,isim,3)
+       
+    case default
+       write(6,*) 'unknown source type ', Mcomp
+       stop
+    end select
+    
+    write(6,*) 'Mij phi prefactor:', maxval(mij_prefact(:,isim,1)), &
+         maxval(mij_prefact(:,isim,2)), maxval(mij_prefact(:,isim,3))
+    
     
   end subroutine compute_prefactor
 !--------------------------------------------------------------------------------
@@ -651,36 +663,39 @@ contains
 
 !================================================================================
 ! Compute cylinfrical coordinates 3D (vel)
-  subroutine compute_3D_cyl
+  subroutine compute_3D_cyl(isim)
 
     use global_parameters_mod
 
     integer(kind=si) :: irec
+    integer(kind=si), intent(in) :: isim
 
     do irec=irecmin,irecmax
-       data_rec(irec,1)=f1(irec)*data_rec(irec,1)
-       data_rec(irec,2)=f2(irec)*data_rec(irec,2)
-       data_rec(irec,3)=f1(irec)*data_rec(irec,3)
+       data_rec(irec,1)=mij_prefact(irec,isim,1)*data_rec(irec,1) !f1
+       data_rec(irec,2)=mij_prefact(irec,isim,2)*data_rec(irec,2)          !f2
+       data_rec(irec,3)=mij_prefact(irec,isim,3)*data_rec(irec,3)          !f1
     end do
 
   end subroutine compute_3D_cyl
 !--------------------------------------------------------------------------------
 
+
 !================================================================================
 ! Compute cylindrical coordinates 3D (stress)
-  subroutine compute_stress_3D_cyl
+  subroutine compute_stress_3D_cyl(isim)
     
     use global_parameters_mod
 
     integer(kind=si) :: irec
+    integer(kind=si), intent(in) :: isim
 
     do irec=irecmin,irecmax
-       stress_rec(irec,1)=f1(irec)*stress_rec(irec,1)
-       stress_rec(irec,2)=f1(irec)*stress_rec(irec,2)
-       stress_rec(irec,3)=f1(irec)*stress_rec(irec,3)
-       stress_rec(irec,4)=f2(irec)*stress_rec(irec,4)
-       stress_rec(irec,5)=f1(irec)*stress_rec(irec,5)
-       stress_rec(irec,6)=f2(irec)*stress_rec(irec,6)
+       stress_rec(irec,1)=mij_prefact(irec,isim,1)*stress_rec(irec,1) !f1
+       stress_rec(irec,2)=mij_prefact(irec,isim,1)*stress_rec(irec,2) !f1
+       stress_rec(irec,3)=mij_prefact(irec,isim,1)*stress_rec(irec,3) !f1
+       stress_rec(irec,4)=mij_prefact(irec,isim,2)*stress_rec(irec,4) !f2
+       stress_rec(irec,5)=mij_prefact(irec,isim,1)*stress_rec(irec,5) !f1
+       stress_rec(irec,6)=mij_prefact(irec,isim,2)*stress_rec(irec,6) !f2
     end do
     
   end subroutine compute_stress_3D_cyl
