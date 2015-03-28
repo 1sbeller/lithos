@@ -54,11 +54,11 @@ module interpolation_parameters_mod
   integer(kind=si) :: nbrec, ntime, istap, itime, iptglob, isconv, ntstf
 
   integer(kind=si) :: nptsa, nelx, nely, nelz, nelem, ngllx, nglly, ngllz, nlta, nsta, itbeg, itend
-  real(kind=cp)    :: thres, alpha, tbeg, tend, fmax
+  real(kind=cp)    :: thres, tbeg, tend, fmax
 
   !** For filter
   real(kind=cp), dimension(:), allocatable :: conv, taptap, stf
-  integer(kind=si) :: ibeg, iend, nt, it, itstf
+  integer(kind=si) :: ibeg, iend, nt, it, itstf, alpha
   integer(kind=si) :: n1
   real(kind=cp) :: dt, ttt2, ttt1, dtstf
   real(kind=cp), dimension(:), allocatable :: tab_sinc 

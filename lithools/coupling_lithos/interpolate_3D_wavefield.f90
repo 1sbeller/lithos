@@ -327,6 +327,23 @@ program interpolate_3D_wavefield
   close(26)
   end if
   call substalta(vpow, ntold,  nsta, nlta, thres, stalta, ind)
+  if (myid ==0) then
+  open(26,file='stalta.bin',access='direct',recl=cp*ntold)
+  write(26,rec=1)stalta
+  close(26)
+  end if
+
+  if (istap == 1) then
+	write(6,*)'verif stalta, indice is: '
+	write(6,*)ind - 1 
+        write(6,*)'corresponding to time step:'
+	write(6,*)(ind - 1)* dtold
+	write(6,*)'now quit'
+	stop 
+   else 
+	ind = alpha
+   end if
+
 !  do i=1,ntold
 !     if (stalta(i) >= thres) then
 !        ind = i;
