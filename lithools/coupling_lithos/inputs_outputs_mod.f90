@@ -147,7 +147,7 @@ contains
        !*** Tensor moment
        magnitude(isim) = mag(isim)
        if(.not.allocated(Mij)) allocate(Mij(nsim,6))
-       Mij = 0
+       Mij = 0.
 
        select case(src_file_type)
        case('moment')

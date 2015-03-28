@@ -47,7 +47,6 @@ contains
     ivz=i
     
     !*** Compute prefactor for wavefield reconstruction
-    write(*,*) src_type
     call compute_prefactor(src_type(isim,1),src_type(isim,2),isim)
     
     !*** Read AxiSEM solutions
@@ -591,28 +590,33 @@ contains
 !    if (.not.allocated(Mij_scale)) allocate(Mij_scale(nsim,3))
 
     Mij_scale(isim,:) = Mij(isim,:) / magnitude(isim)
-    mij_prefact = 0
+    mij_prefact = 0.
     
-    write(6,*)'Mij scaled:'
-    write(6,*) Mij_scale
-    
+    if (myid == 0) then
+       write(6,*)'Mij scaled: on proc 0'
+       write(6,*) Mij_scale
+    elseif (myid == 1) then
+       write(6,*)'Mij scaled: on proc 1'
+       write(6,*) Mij_scale
+    end if
+
     select case(Mcomp)
     case('mrr')
        do irec=1,nbrec
           mij_prefact(irec,isim,:) = Mij_scale(isim,1)
           mij_prefact(irec,isim,2) = 0.
        end do
-       write(6,*) isim, 'Simulation is mrr, prefact:', &
-            mij_prefact(1,isim,1), mij_prefact(1,isim,2), &
-            mij_prefact(1,isim,3)
+!!$       write(6,*) isim, 'Simulation is mrr, prefact:', &
+!!$            mij_prefact(1,isim,1), mij_prefact(1,isim,2), &
+!!$            mij_prefact(1,isim,3)
     case('mtt_p_mpp')
        do irec=1,nbrec
           mij_prefact(irec,isim,:) = Mij_scale(isim,2) + Mij_scale(isim,3)
           mij_prefact(irec,isim,2) = 0.
        end do
-       write(6,*) isim, 'Simulation is mpp, prefact:', &
-            mij_prefact(1,isim,1), mij_prefact(1,isim,2), &
-            mij_prefact(1,isim,3)
+!!$       write(6,*) isim, 'Simulation is mpp, prefact:', &
+!!$            mij_prefact(1,isim,1), mij_prefact(1,isim,2), &
+!!$            mij_prefact(1,isim,3)
        
     case('mtr', 'mrt', 'mpr', 'mrp')
        do irec=1,nbrec
@@ -623,9 +627,9 @@ contains
           mij_prefact(irec,isim,3) =   Mij_scale(isim,4) * cos(phi(irec)) &
                + Mij_scale(isim,5) * sin(phi(irec))
        end do
-       write(6,*) isim, 'Simulation is mtr, prefact:', &
-            mij_prefact(1,isim,1), mij_prefact(1,isim,2), &
-            mij_prefact(1,isim,3)
+!!$       write(6,*) isim, 'Simulation is mtr, prefact:', &
+!!$            mij_prefact(1,isim,1), mij_prefact(1,isim,2), &
+!!$            mij_prefact(1,isim,3)
        
     case('mtp', 'mpt', 'mtt_m_mpp')
        do irec=1,nbrec
@@ -636,17 +640,17 @@ contains
           mij_prefact(irec,isim,3) = (Mij_scale(isim,2) - Mij_scale(isim,3)) * cos(2. * phi(irec))  &
                + 2. * Mij_scale(isim,6)  * sin(2. * phi(irec))
        end do
-       write(6,*) isim, 'Simulation is mtp, prefact:', &
-            mij_prefact(1,isim,1), mij_prefact(1,isim,2), &
-            mij_prefact(1,isim,3)
+!!$       write(6,*) isim, 'Simulation is mtp, prefact:', &
+!!$            mij_prefact(1,isim,1), mij_prefact(1,isim,2), &
+!!$            mij_prefact(1,isim,3)
        
     case('explosion')
        do irec=1,nbrec
           mij_prefact(irec,isim,:) = (Mij_scale(isim,1) + Mij_scale(isim,2) + Mij_scale(isim,3)) / 3.
        end do
-       write(6,*) isim, 'Simulation is explosion, prefact:', &
-            mij_prefact(1,isim,1), mij_prefact(1,isim,2), &
-            mij_prefact(1,isim,3)
+!!$       write(6,*) isim, 'Simulation is explosion, prefact:', &
+!!$            mij_prefact(1,isim,1), mij_prefact(1,isim,2), &
+!!$            mij_prefact(1,isim,3)
        
     case default
        write(6,*) 'unknown source type ', Mcomp
