@@ -533,7 +533,7 @@ contains
 ! Routine computing prefactor for wavefield extrapolation
   subroutine compute_prefactor(src_type,Mcomp,isim)
     
-    use global_parameters_mod, only: f1, f2, phi, nbrec, nsim
+    use global_parameters_mod, only: Mij, phi, nbrec, nsim, magnitude, mij_scale, mij_prefact
     
     integer(kind=si), intent(in) :: isim
     character(len=10), intent(in)  :: src_type
@@ -656,10 +656,14 @@ contains
        write(6,*) 'unknown source type ', Mcomp
        stop
     end select
-    
-    write(6,*) 'Mij phi prefactor:', maxval(mij_prefact(:,isim,1)), &
-         maxval(mij_prefact(:,isim,2)), maxval(mij_prefact(:,isim,3))
-    
+
+    if (myid == 0) then
+       write(6,*) 'Mij phi prefactor proc0:', maxval(mij_prefact(:,isim,1)), &
+            maxval(mij_prefact(:,isim,2)), maxval(mij_prefact(:,isim,3))
+    elseif (myid == 1) then
+       write(6,*) 'Mij phi prefactor proc1:', maxval(mij_prefact(:,isim,1)), &
+            maxval(mij_prefact(:,isim,2)), maxval(mij_prefact(:,isim,3))
+    end if
     
   end subroutine compute_prefactor
 !--------------------------------------------------------------------------------
