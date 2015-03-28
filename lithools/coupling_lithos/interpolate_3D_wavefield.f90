@@ -9,6 +9,8 @@ program interpolate_3D_wavefield
 
   implicit none
 
+  integer(kind=si) :: warning=0
+
   !================================================================================
   ! Prepare reconstruction
   !--------------------------------------------------
@@ -333,13 +335,13 @@ program interpolate_3D_wavefield
   close(26)
   end if
 
-  if (istap == 1) then
+  if (istap == 0) then
 	write(6,*)'verif stalta, indice is: '
 	write(6,*)ind - 1 
         write(6,*)'corresponding to time step:'
 	write(6,*)(ind - 1)* dtold
-	write(6,*)'now quit'
-	stop 
+	write(6,*)'dont quit but beware that stalta may have failed'
+        warning =1 
    else 
 	ind = alpha
    end if
@@ -655,7 +657,12 @@ program interpolate_3D_wavefield
   if (myid==0) close(20)
 
   if (myid==0) write(*,*)'End of incident field computation.'
-
+  
+  if (warning == 1) then      
+  if (myid==0) write(*,*)'WARNING automatic picking has been used it may be wrong...' 
+  if (myid==0) write(6,*)'WARNING please verify.'
+  end if
+        
 
   call finish_program
 
