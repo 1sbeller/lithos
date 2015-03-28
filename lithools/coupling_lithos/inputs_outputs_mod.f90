@@ -214,9 +214,14 @@ contains
           write(6,*)'unknown simulation type!', src_file_type !type(isim,1)
           stop
        end select
-   
+  
+	write(6,*)'Simu : ',isim,
+	write(6,ù)'Mij = ',Mij(isim,:)
+
+ 
     end do
-    
+  
+
     
   end subroutine read_info_simu
 !--------------------------------------------------------------------------------
