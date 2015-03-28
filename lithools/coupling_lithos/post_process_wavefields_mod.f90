@@ -588,22 +588,33 @@ contains
 !    if (.not.allocated(mij_prefact)) allocate(mij_prefact(nbrec,nsim,3))
 !    if (.not.allocated(Mij_scale)) allocate(Mij_scale(nsim,3))
     Mij_scale = 0.
-    Mij_scale(isim,:) = Mij(isim,:) / magnitude(isim)
+    Mij_scale(isim,1) = Mij(isim,1) / magnitude(isim)
+    Mij_scale(isim,2) = Mij(isim,2) / magnitude(isim)
+    Mij_scale(isim,3) = Mij(isim,3) / magnitude(isim)
+    Mij_scale(isim,4) = Mij(isim,4) / magnitude(isim)
+    Mij_scale(isim,5) = Mij(isim,5) / magnitude(isim)
+    Mij_scale(isim,6) = Mij(isim,6) / magnitude(isim)
     mij_prefact = 0.
     
     call MPI_barrier(MPI_COMM_WORLD, ierr_mpi)
     if (myid == 0) then
        write(6,*)'Mij scaled: on proc 0'
        write(6,*) Mij_scale
+       write(6,*)'-----------------'
        write(6,*) Mij
+       write(6,*)'-----------------'
        write(6,*) magnitude
+       write(6,*)'-----------------'
     end if
     call MPI_barrier(MPI_COMM_WORLD, ierr_mpi)
     if (myid == 1) then
        write(6,*)'Mij scaled: on proc 1'
        write(6,*) Mij_scale
+       write(6,*)'-----------------'
        write(6,*) Mij
+       write(6,*)'-----------------'
        write(6,*) magnitude
+       write(6,*)'-----------------'
     end if
     call MPI_barrier(MPI_COMM_WORLD, ierr_mpi)
 
