@@ -82,7 +82,7 @@ contains
    call mpi_bcast(trans_rot_mat_mesh,9,MPI_REAL8,0,MPI_COMM_WORLD,ierr_mpi)
 
    if (.not.allocated(mij_prefact)) allocate(mij_prefact(nbrec,nsim,3))
-   if (.not.allocated(Mij_scale)) allocate(Mij_scale(nsim,6))
+   if (.not.allocated(Mij_scale)) allocate(Mij_scale(nsim,3))
 
    if (myid >  0) then 
       allocate(reciever_geogr(3,nbrec),reciever_sph(3,nbrec),reciever_cyl(3,nbrec),reciever_interp_value(nbrec))

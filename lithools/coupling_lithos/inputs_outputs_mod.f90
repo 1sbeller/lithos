@@ -168,7 +168,7 @@ contains
           read(20000,*) junk, Mij(isim,6) !Mtp
           close(20000)
           
-          Mij = Mij / 1.E7 ! CMTSOLUTION given in dyn-cm
+          Mij = Mij / 1.e7 ! CMTSOLUTION given in dyn-cm
           
        case('single')
           iinparam_source = 1132
