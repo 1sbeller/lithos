@@ -2,7 +2,7 @@ module post_process_wavefields_mod
 
   use precision_mod
   use constants_mod
-  use mpi_mod 
+  use mpi_mod
   implicit none
 
 contains
@@ -11,7 +11,6 @@ contains
 ! Routine reconstructing the 3D velocity wavefield
   subroutine reconstruct_velocity(isim)
 
-    use mpi_mod
     use global_parameters_mod
     use rotation_matrix_mod
     use inputs_outputs_mod
@@ -595,9 +594,13 @@ contains
     if (myid == 0) then
        write(6,*)'Mij scaled: on proc 0'
        write(6,*) Mij_scale
+       write(6,*) Mij
+       write(6,*) magnitude
     elseif (myid == 1) then
        write(6,*)'Mij scaled: on proc 1'
        write(6,*) Mij_scale
+       write(6,*) Mij
+       write(6,*) magnitude
     end if
 
     select case(Mcomp)
