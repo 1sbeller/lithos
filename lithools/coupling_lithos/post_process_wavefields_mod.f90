@@ -479,8 +479,8 @@ contains
     integer(kind=si), intent(in) :: ifield
 
     integer(kind=si) :: irec, iel
-    real(kind=cp) :: xi,eta,interp_value
-    real(kind=cp), dimension(NGLLX,NGLLY) :: field
+    real(kind=dp) :: xi,eta,interp_value
+    real(kind=dp), dimension(NGLLX,NGLLY) :: field
     
     data_rec(:,ifield) = 0.
     
@@ -511,8 +511,8 @@ contains
     integer(kind=si), intent(in) :: ifield
 
     integer(kind=si) :: irec, iel
-    real(kind=cp) :: xi,eta,interp_value
-    real(kind=cp), dimension(NGLLX,NGLLY) :: field
+    real(kind=dp) :: xi,eta,interp_value
+    real(kind=dp), dimension(NGLLX,NGLLY) :: field
     
     stress_rec(:,ifield)=0.
     do irec = irecmin, irecmax

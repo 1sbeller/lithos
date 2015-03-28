@@ -76,10 +76,10 @@ contains
    call mpi_bcast(ibeg,1,MPI_INTEGER,0,MPI_COMM_WORLD,ierr_mpi)
    call mpi_bcast(iend,1,MPI_INTEGER,0,MPI_COMM_WORLD,ierr_mpi)
    call mpi_bcast(nel,1,MPI_INTEGER,0,MPI_COMM_WORLD,ierr_mpi)
-   call mpi_bcast(rot_mat,9,MPI_REAL,0,MPI_COMM_WORLD,ierr_mpi)
-   call mpi_bcast(trans_rot_mat,9,MPI_REAL,0,MPI_COMM_WORLD,ierr_mpi)
-   call mpi_bcast(rot_mat_mesh,9,MPI_REAL,0,MPI_COMM_WORLD,ierr_mpi)
-   call mpi_bcast(trans_rot_mat_mesh,9,MPI_REAL,0,MPI_COMM_WORLD,ierr_mpi)
+   call mpi_bcast(rot_mat,9,MPI_REAL8,0,MPI_COMM_WORLD,ierr_mpi)
+   call mpi_bcast(trans_rot_mat,9,MPI_REAL8,0,MPI_COMM_WORLD,ierr_mpi)
+   call mpi_bcast(rot_mat_mesh,9,MPI_REAL8,0,MPI_COMM_WORLD,ierr_mpi)
+   call mpi_bcast(trans_rot_mat_mesh,9,MPI_REAL8,0,MPI_COMM_WORLD,ierr_mpi)
    
    if (myid >  0) then 
       allocate(reciever_geogr(3,nbrec),reciever_sph(3,nbrec),reciever_cyl(3,nbrec),reciever_interp_value(nbrec))
@@ -104,28 +104,29 @@ contains
   subroutine bcast_all_mpi
     
     ! single
-    call mpi_bcast(data_rec,3*nbrec,MPI_REAL,0,MPI_COMM_WORLD,ierr_mpi)
-    call mpi_bcast(stress_to_write,6*nbrec,MPI_REAL,0,MPI_COMM_WORLD,ierr_mpi)
-    call mpi_bcast(stress_rec,6*nbrec,MPI_REAL,0,MPI_COMM_WORLD,ierr_mpi)
-    call mpi_bcast(strain_rec,6*nbrec,MPI_REAL,0,MPI_COMM_WORLD,ierr_mpi)
-    call mpi_bcast(f1,nbrec,MPI_REAL,0,MPI_COMM_WORLD,ierr_mpi)
-    call mpi_bcast(f2,nbrec,MPI_REAL,0,MPI_COMM_WORLD,ierr_mpi)
-    call mpi_bcast(phi,nbrec,MPI_REAL,0,MPI_COMM_WORLD,ierr_mpi)
+    call mpi_bcast(data_rec,3*nbrec,MPI_REAL4,0,MPI_COMM_WORLD,ierr_mpi)
+    call mpi_bcast(stress_to_write,6*nbrec,MPI_REAL4,0,MPI_COMM_WORLD,ierr_mpi)
+    call mpi_bcast(stress_rec,6*nbrec,MPI_REAL4,0,MPI_COMM_WORLD,ierr_mpi)
+    call mpi_bcast(strain_rec,6*nbrec,MPI_REAL4,0,MPI_COMM_WORLD,ierr_mpi)
+    call mpi_bcast(f1,nbrec,MPI_REAL8,0,MPI_COMM_WORLD,ierr_mpi)
+    call mpi_bcast(f2,nbrec,MPI_REAL8,0,MPI_COMM_WORLD,ierr_mpi)
+    call mpi_bcast(phi,nbrec,MPI_REAL8,0,MPI_COMM_WORLD,ierr_mpi)
 
     ! double 
-    call mpi_bcast(scoor,(iend-ibeg+1)*(iend-ibeg+1)*nel,MPIDP,0,MPI_COMM_WORLD,ierr_mpi)
-    call mpi_bcast(zcoor,(iend-ibeg+1)*(iend-ibeg+1)*nel,MPIDP,0,MPI_COMM_WORLD,ierr_mpi)
-    call mpi_bcast(reciever_geogr,3*nbrec,MPI_REAL,0,MPI_COMM_WORLD,ierr_mpi)    
-    call mpi_bcast(reciever_sph,3*nbrec,MPI_REAL,0,MPI_COMM_WORLD,ierr_mpi)
-    call mpi_bcast(reciever_cyl,3*nbrec,MPI_REAL,0,MPI_COMM_WORLD,ierr_mpi)
-    call mpi_bcast(xi_rec,nbrec,MPI_REAL,0,MPI_COMM_WORLD,ierr_mpi)
-    call mpi_bcast(eta_rec,nbrec,MPI_REAL,0,MPI_COMM_WORLD,ierr_mpi)
+    call mpi_bcast(scoor,(iend-ibeg+1)*(iend-ibeg+1)*nel,MPI_REAL8,0,MPI_COMM_WORLD,ierr_mpi)
+    call mpi_bcast(zcoor,(iend-ibeg+1)*(iend-ibeg+1)*nel,MPI_REAL8,0,MPI_COMM_WORLD,ierr_mpi)
+    call mpi_bcast(reciever_geogr,3*nbrec,MPI_REAL8,0,MPI_COMM_WORLD,ierr_mpi)    
+    call mpi_bcast(reciever_sph,3*nbrec,MPI_REAL8,0,MPI_COMM_WORLD,ierr_mpi)
+    call mpi_bcast(reciever_cyl,3*nbrec,MPI_REAL8,0,MPI_COMM_WORLD,ierr_mpi)
+    call mpi_bcast(xi_rec,nbrec,MPI_REAL8,0,MPI_COMM_WORLD,ierr_mpi)
+    call mpi_bcast(eta_rec,nbrec,MPI_REAL8,0,MPI_COMM_WORLD,ierr_mpi)
 
     ! integer
     call mpi_bcast(rec2elm,nbrec,MPI_INTEGER,0,MPI_COMM_WORLD,ierr_mpi)
 
     ! character 
      call mpi_bcast(src_type,10*2*nsim,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi)
+     call mpi_bcast(coup_tool,3,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi)
 
   end subroutine bcast_all_mpi
 !--------------------------------------------------------------------------------
@@ -154,7 +155,7 @@ contains
 ! Reduce velocity
   subroutine reduce_mpi_veloc
 
-    call mpi_reduce(data_rec,data_reduce,nbrec*3,MPI_REAL,MPI_SUM,0,MPI_COMM_WORLD,ierr_mpi)
+    call mpi_reduce(data_rec,data_reduce,nbrec*3,MPI_REAL4,MPI_SUM,0,MPI_COMM_WORLD,ierr_mpi)
     data_rec(:,:)=data_reduce(:,:)
 
   end subroutine reduce_mpi_veloc
@@ -164,7 +165,7 @@ contains
 ! Reduce stress
   subroutine reduce_mpi_stress
     
-    call mpi_reduce(stress_rec,stress_reduce,nbrec*6,MPI_REAL,MPI_SUM,0,MPI_COMM_WORLD,ierr_mpi)
+    call mpi_reduce(stress_rec,stress_reduce,nbrec*6,MPI_REAL4,MPI_SUM,0,MPI_COMM_WORLD,ierr_mpi)
     stress_rec(:,:)=stress_reduce(:,:)
   
   end subroutine reduce_mpi_stress

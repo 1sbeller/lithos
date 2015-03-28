@@ -3,7 +3,7 @@ module interp_mesh_mod
   use precision_mod
   use global_parameters_mod, only: NGNOD, NGLLX, NGLLY
 
-  real(kind=cp) :: a, b, c, d, det_jacobian
+  real(kind=dp) :: a, b, c, d, det_jacobian
 
   real(kind=dp), dimension(NGLLX) :: hxir, hpxir, xigll, wxgll
   real(kind=dp), dimension(NGLLY) :: hpetar, hetar, yigll, wygll
@@ -18,12 +18,12 @@ contains
 ! Interpole wavefield in current element
   subroutine interpole_field(xi,eta,field,interp_value)
   
-    real(kind=cp), intent(in)  :: xi, eta
-    real(kind=cp), intent(out) :: interp_value
+    real(kind=dp), intent(in)  :: xi, eta
+    real(kind=dp), intent(out) :: interp_value
 
     integer(kind=si) :: igll, jgll
-    real(kind=cp)    :: hlagrange
-    real(kind=cp), dimension(NGLLX,NGLLY), intent(in) :: field
+    real(kind=dp)    :: hlagrange
+    real(kind=dp), dimension(NGLLX,NGLLY), intent(in) :: field
 
     call zwgljd(xigll,wxgll,NGLLX,GAUSSALPHA,GAUSSBETA)
     call zwgljd(yigll,wygll,NGLLY,GAUSSALPHA,GAUSSBETA)
@@ -52,20 +52,20 @@ contains
 ! Find xi eta coordinate of point  
   subroutine find_xix_eta(nodes_crd,xi,eta,s_target,z_target)
 
-    real(kind=cp), dimension(ngnod,2), intent(inout) :: nodes_crd
-    real(kind=cp), intent(in)                       :: s_target, z_target
-    real(kind=cp), intent(out)                    :: xi, eta
+    real(kind=dp), dimension(ngnod,2), intent(inout) :: nodes_crd
+    real(kind=dp), intent(in)                       :: s_target, z_target
+    real(kind=dp), intent(out)                    :: xi, eta
 
     integer(kind=si) :: inode, iguess, iter_newton, niter_newton
 
-    real(kind=cp), dimension(ngnod) :: sph
-    real(kind=cp) :: distmin, dist
-    real(kind=cp) :: dxi, deta, s, z 
+    real(kind=dp), dimension(ngnod) :: sph
+    real(kind=dp) :: distmin, dist
+    real(kind=dp) :: dxi, deta, s, z 
     
     niter_newton=6
 
     !*** Find the closest node 
-    distmin=1e20_dp
+    distmin=1e30_dp
     iguess=1
     do inode = 1, ngnod
        dist=(nodes_crd(inode,1)-s_target)**2 + (nodes_crd(inode,2)-z_target)**2
@@ -159,11 +159,11 @@ contains
     ! 1 - - - 2 - - - 3
     !
     
-    real(kind=cp), intent(in) :: xil, etal
+    real(kind=dp), intent(in) :: xil, etal
 
-    real(kind=cp), dimension(8), intent(out) :: shp
+    real(kind=dp), dimension(8), intent(out) :: shp
 
-    real(kind=cp) :: xip, xim, etap, etam, xixi, etaeta
+    real(kind=dp) :: xip, xim, etap, etam, xixi, etaeta
     
     shp(:) = zero
 
@@ -213,9 +213,9 @@ contains
     ! shpder(:,1) : derivative wrt xi
     ! shpder(:,2) : derivative wrt eta
     
-    real(kind=cp), intent(in)                  :: xil, etal
-    real(kind=cp), dimension(8,2), intent(out) :: shpder
-    real(kind=cp) :: xip, xim, etap, etam, xixi, etaeta
+    real(kind=dp), intent(in)                  :: xil, etal
+    real(kind=dp), dimension(8,2), intent(out) :: shpder
+    real(kind=dp) :: xip, xim, etap, etam, xixi, etaeta
     
     shpder(:,:) = zero
     
@@ -251,7 +251,7 @@ contains
   
 !================================================================================
 ! Get determinant of jacobian
-  real(kind=cp) function det_jacobian_shape(xil, etal, nodes_crd)
+  real(kind=dp) function det_jacobian_shape(xil, etal, nodes_crd)
     ! This routines the value of the Jacobian (that is, 
     ! the determinant of the Jacobian matrix), for any point
     ! inside a given element. IT ASSUMES 8 nodes 2D isoparametric
@@ -269,10 +269,10 @@ contains
     !     |               |
     !     1 - - - 2 - - - 3 .
     !
-    real(kind=cp), intent(in) ::xil, etal
-    real(kind=cp), dimension(8,2), intent(in) :: nodes_crd
+    real(kind=dp), intent(in) ::xil, etal
+    real(kind=dp), dimension(8,2), intent(in) :: nodes_crd
 
-    real(kind=cp), dimension(8,2) :: shpder
+    real(kind=dp), dimension(8,2) :: shpder
     integer(kind=si) :: inode
     
     ! Compute the appropriate derivatives of the shape
@@ -307,7 +307,7 @@ contains
     implicit none
     
     integer(kind=si), intent(in) :: NGLL
-    real(kind=cp),    intent(in) :: xi
+    real(kind=dp),    intent(in) :: xi
     real(kind=dp), dimension(NGLL), intent(in)  :: xigll
     real(kind=dp), dimension(NGLL), intent(out) :: h, hprime
     
@@ -350,11 +350,11 @@ contains
 
     use global_parameters_mod
     
-    real(kind=cp) :: xi, eta, scur, zcur
-    real(kind=cp) :: smin, smax, zmin, zmax
+    real(kind=dp) :: xi, eta, scur, zcur
+    real(kind=dp) :: smin, smax, zmin, zmax
 
-    real(kind=cp), dimension(NGNOD,2) :: nodes_crd
-    real(kind=cp), parameter          :: eps=0.5_cp  !!-3
+    real(kind=dp), dimension(NGNOD,2) :: nodes_crd
+    real(kind=dp), parameter          :: eps=1e-1_dp  !!-3
 
     integer(kind=si), dimension(8) :: IGRIDs, IGRIDz
     integer(kind=si) :: irec, iel, inode
@@ -388,10 +388,10 @@ contains
        zcur=reciever_cyl(3,irec)
        do iel = 1, NEL
           !*** Element
-          smin=1e25_cp
-          smax=0._cp    !-1e25_cp
-          zmin=1e25_cp  !smin
-          zmax=-1e25_cp !smax
+          smin=1e40_dp
+          smax=-1e40_dp    !-1e25_cp
+          zmin=1e40_dp  !smin
+          zmax=-1e40_dp !smax
           do inode=1,NGNOD
              nodes_crd(inode,1)=scoor(IGRIDs(inode),IGRIDz(inode),iel)
              nodes_crd(inode,2)=zcoor(IGRIDs(inode),IGRIDz(inode),iel)

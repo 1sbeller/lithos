@@ -13,7 +13,7 @@ module global_parameters_mod
   character(len=3)   :: coup_tool
 
   !*** Coordinates of source and mesh
-  real(kind=cp) :: lat_src,lon_src,lat_mesh,lon_mesh
+  real(kind=dp) :: lat_src,lon_src,lat_mesh,lon_mesh
 
   !*** Others
   integer(kind=si) :: nbproc, nel, ntime
@@ -34,17 +34,17 @@ module global_parameters_mod
         
   !*** Input box point 
   integer(kind=si) :: nbrec
-  real(kind=cp), allocatable, dimension(:,:) :: reciever_cyl, reciever_geogr, reciever_sph
-  real(kind=cp), allocatable, dimension(:)   :: reciever_interp_value, xi_rec, eta_rec
+  real(kind=dp), allocatable, dimension(:,:) :: reciever_cyl, reciever_geogr, reciever_sph
+  real(kind=dp), allocatable, dimension(:)   :: reciever_interp_value, xi_rec, eta_rec
 
   integer(kind=si), allocatable :: rec2elm(:)
   
   !*** Rotation matrix with respect to the source
-  real(kind=cp), dimension(3,3) :: rot_mat, trans_rot_mat
+  real(kind=dp), dimension(3,3) :: rot_mat, trans_rot_mat
 
   !*** Rotation matrix with respect to the chosen coupling mesh
-  real(kind=cp), dimension(3,3) :: rot_mat_mesh, trans_rot_mat_mesh
-  real(kind=cp), dimension(3,3) :: mat, tmat
+  real(kind=dp), dimension(3,3) :: rot_mat_mesh, trans_rot_mat_mesh
+  real(kind=dp), dimension(3,3) :: mat, tmat
 
   !*** Info about simulation
   integer(kind=si) :: nsim
@@ -52,7 +52,7 @@ module global_parameters_mod
   character(len=10),  allocatable, dimension(:,:) :: src_type
 
   !*** Post process
-  real(kind=sp), allocatable, dimension(:) :: f1, f2, phi
+  real(kind=dp), allocatable, dimension(:) :: f1, f2, phi
   
   !*** Mpi 
   integer(kind=si) :: irecmin, irecmax

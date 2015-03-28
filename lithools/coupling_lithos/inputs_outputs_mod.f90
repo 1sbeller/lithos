@@ -155,8 +155,8 @@ contains
     
     integer(kind=si) :: i
     
-    real(kind=cp) :: srclon,  srclat,  srccolat
-    real(kind=cp) :: meshlon, meshlat, meshcolat, az_mesh
+    real(kind=dp) :: srclon,  srclat,  srccolat, az_mesh
+    real(kind=dp) :: meshlon, meshlat, meshcolat, meshalpha
     
     !*** Read recontruction parameter file
     open(10,file='../reconstruction.par',status='old') 
@@ -165,6 +165,7 @@ contains
     read(10,*)nbproc
     read(10,*)lat_src,lon_src
     read(10,*)lat_mesh,lon_mesh,az_mesh
+    read(10,*)nsim
     close(10)
 
     !*** Define AxiSEM solutions files
@@ -196,23 +197,22 @@ contains
     
     !*** Compute rotation matrices 
     !* For the source
-    srclon = lon_src * pi / 180.   
-    srccolat =  (90. - lat_src) * pi / 180. 
+    srclon = lon_src * pi / 180._dp   
+    srccolat =  (90._dp - lat_src) * pi / 180._dp 
     call def_rot_matrix(srccolat,srclon,rot_mat,trans_rot_mat)
     
     !* For the mesh
-    meshlon = lon_mesh * pi / 180.   
-    meshlat = lat_mesh * pi / 180.
-    meshcolat =  (90. - lat_mesh) * pi / 180. 
+    meshlon = lon_mesh * pi / 180._dp   
+    meshlat = lat_mesh * pi / 180._dp
+    meshcolat =  (90._dp - lat_mesh) * pi / 180._dp
+    meshalpha = az_mesh * pi/ 180._dp 
     select case (coup_tool)
     case ('DG')
        call def_rot_matrix_DG(meshcolat,meshlon,rot_mat_mesh,trans_rot_mat_mesh)
     case ('SEM')
-!       call def_rot_matrix_SEM(meshcolat,meshlon,rot_mat_mesh,trans_rot_mat_mesh)
-        call def_rot_matrix_SEM(meshlat,meshlon,az_mesh*pi/180,rot_mat_mesh,trans_rot_mat_mesh)
+        call def_rot_matrix_SEM(meshlat,meshlon,meshalpha,rot_mat_mesh,trans_rot_mat_mesh)
     case ('FD')
-        call def_rot_matrix_SEM(meshlat,meshlon,az_mesh*pi/180,rot_mat_mesh,trans_rot_mat_mesh)
-!       call def_rot_matrix_FD(meshcolat,meshlon,rot_mat_mesh,trans_rot_mat_mesh)
+        call def_rot_matrix_SEM(meshlat,meshlon,meshalpha,rot_mat_mesh,trans_rot_mat_mesh)
     end select
     
     !*** Define permuation matrix
@@ -240,9 +240,9 @@ contains
     do i=1,nbrec !! radius, latitude, longitude
        read(10,*) reciever_geogr(1,i),reciever_geogr(2,i),reciever_geogr(3,i)
 
-       reciever_sph(1,i) = reciever_geogr(1,i)*1000.
-       reciever_sph(2,i) = (90. - reciever_geogr(2,i)) * pi / 180.  
-       reciever_sph(3,i) = reciever_geogr(3,i)  * pi / 180.
+       reciever_sph(1,i) = reciever_geogr(1,i)*1000._dp
+       reciever_sph(2,i) = (90._dp - reciever_geogr(2,i)) * pi / 180._dp  
+       reciever_sph(3,i) = reciever_geogr(3,i)  * pi / 180._dp
 
        call rotate_box(reciever_sph(1,i), reciever_sph(2,i), reciever_sph(3,i),trans_rot_mat)
 
