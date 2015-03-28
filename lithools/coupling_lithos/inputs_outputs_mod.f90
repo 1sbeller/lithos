@@ -44,7 +44,7 @@ contains
     integer(kind=si)             :: iostat, ioerr, isim
     real(kind=cp)                ::  tshift
     character(len=12)            :: src_file_type
-    character(len=256)  :: keyword, keyvalue, line
+    character(len=256)  :: keyword, keyvalue, line, junk
     
     character(len=100), allocatable, dimension(:) :: bkgrndmodel, rot_rec
     character(len=7),   allocatable, dimension(:) :: stf_type
@@ -57,6 +57,9 @@ contains
     integer(kind=si), allocatable, dimension(:) :: ishift_deltat, ishift_seisdt, ishift_straindt
     integer(kind=si), allocatable, dimension(:) :: ibeg, iend
     integer(kind=si), allocatable, dimension(:) :: nt, nt_strain, nrec_tmp, nt_seis_tmp
+
+    real(kind=cp) :: amplitude
+
 
     !*** Define working directory
     working_axisem_dir='./'
@@ -106,7 +109,7 @@ contains
     allocate(shift_fact_tmp(nsim))
     allocate(ishift_deltat(nsim), ishift_seisdt(nsim), ishift_straindt(nsim))
     
-    !*** For each simulation, read the file SIMULATION.INFO
+    !*** For each simulation, read the file SIMULATION.INFO and the the source parameter info 
     do isim = 1,nsim
        open(unit=99,file=trim(simdir(isim))//'/simulation.info')
        read(99,*) bkgrndmodel(isim)
@@ -139,6 +142,75 @@ contains
        read(99,*)
        read(99,*) use_netcdf
        close(99)
+
+
+!!$       !*** Tensor moment
+!!$       select case(src_type(isim,1))
+!!$       case('moment')
+!!$          write(6,*)'  reading CMTSOLUTION file....'
+!!$          open(unit=20000,file='CMTSOLUTION',POSITION='REWIND',status='old')
+!!$          read(20000,*) junk
+!!$          read(20000,*) junk
+!!$          read(20000,*) junk
+!!$          read(20000,*) junk
+!!$          read(20000,*) junk
+!!$          read(20000,*) junk
+!!$          read(20000,*) junk
+!!$          read(20000,*) junk, Mij(isim,1) !Mrr
+!!$          read(20000,*) junk, Mij(isim,2) !Mtt
+!!$          read(20000,*) junk, Mij(isim,3) !Mpp
+!!$          read(20000,*) junk, Mij(isim,4) !Mrt
+!!$          read(20000,*) junk, Mij(isim,5) !Mrp
+!!$          read(20000,*) junk, Mij(isim,6) !Mtp
+!!$          close(20000)
+!!$          
+!!$          Mij = Mij / 1.E7 ! CMTSOLUTION given in dyn-cm
+!!$          
+!!$       case('single')
+!!$          iinparam_source = 1132
+!!$          open(unit=iinparam_source, file='inparam_source', status='old', action='read', iostat=ioerr)
+!!$          if (ioerr /= 0) stop 'Check input file ''inparam_source''! Is it still there?'
+!!$          
+!!$          do
+!!$             read(iinparam_source, fmt='(a256)', iostat=ioerr) line
+!!$             if (ioerr < 0) exit
+!!$             if (len(trim(line)) < 1 .or. line(1:1) == '#') cycle
+!!$             
+!!$             read(line,*) keyword, keyvalue
+!!$             
+!!$             if (trim(keyword) == 'SOURCE_AMPLITUDE') then
+!!$                read(keyvalue,*) amplitude
+!!$             end if
+!!$          end do
+!!$          Mij = 0.0
+!!$          select case(src_type(isim,,2))
+!!$          case('mrr')
+!!$             Mij(isim,1) =  amplitude
+!!$          case('mtt_p_mpp')
+!!$             Mij(isim,2) =  amplitude
+!!$             Mij(isim,3) =  amplitude
+!!$          case('mtr', 'mrt')
+!!$             Mij(isim,4) =  amplitude
+!!$          case('mpr', 'mrp')
+!!$             Mij(isim,5) =  amplitude
+!!$          case('mtp', 'mpt')
+!!$             Mij(isim,6) =  amplitude
+!!$          case('mtt_m_mpp')
+!!$             Mij(isim,2) =  amplitude
+!!$             Mij(isim,3) = -amplitude
+!!$          case('explosion')
+!!$             Mij(isim,1) =  amplitude
+!!$             Mij(isim,2) =  amplitude
+!!$             Mij(isim,3) =  amplitude
+!!$          case default
+!!$             write(6,*) 'unknown source type: ', src_type(isim,2)
+!!$          end select
+!!$          
+!!$       case default
+!!$          write(6,*)'unknown simulation type!', src_type(isim,1)
+!!$          stop
+!!$       end select
+   
     end do
     
   end subroutine read_info_simu

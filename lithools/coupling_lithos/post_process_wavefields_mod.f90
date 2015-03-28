@@ -541,6 +541,8 @@ contains
     character(len=10), intent(in) :: Mcomp
     integer(kind=si) :: irec
 
+
+    !*** Prefactors
     select case (trim(src_type))
     case('monopole')
        f1=1.
@@ -583,6 +585,65 @@ contains
        end select
        
     end select
+
+!!$    !*** For moment tensor
+!!$    Mij_scale = Mij / magnitude(isim)
+!!$    
+!!$    write(6,*)'Mij scaled:'
+!!$    write(6,fmtstring) Mij_scale
+!!$    
+!!$    select case(src_type(isim,2))
+!!$    case('mrr')
+!!$       mij_prefact(:,isim,:) = Mij_scale(1)
+!!$       mij_prefact(:,isim,2) = 0.
+!!$       write(6,*) isim, 'Simulation is mrr, prefact:', &
+!!$            mij_prefact(1,isim,1), mij_prefact(1,isim,2), &
+!!$            mij_prefact(1,isim,3)
+!!$    case('mtt_p_mpp')
+!!$       mij_prefact(:,isim,:) = Mij_scale(2) + Mij_scale(3)
+!!$       mij_prefact(:,isim,2) = 0.
+!!$       write(6,*) isim, 'Simulation is mpp, prefact:', &
+!!$            mij_prefact(1,isim,1), mij_prefact(1,isim,2), &
+!!$            mij_prefact(1,isim,3)
+!!$       
+!!$    case('mtr', 'mrt', 'mpr', 'mrp')
+!!$       mij_prefact(:,isim,1) =   Mij_scale(4) * cos(longit) &
+!!$            + Mij_scale(5) * sin(longit)
+!!$       mij_prefact(:,isim,2) = - Mij_scale(4) * sin(longit) &
+!!$            + Mij_scale(5) * cos(longit)
+!!$       mij_prefact(:,isim,3) =   Mij_scale(4) * cos(longit) &
+!!$            + Mij_scale(5) * sin(longit)
+!!$       
+!!$       write(6,*) isim, 'Simulation is mtr, prefact:', &
+!!$            mij_prefact(1,isim,1), mij_prefact(1,isim,2), &
+!!$            mij_prefact(1,isim,3)
+!!$       
+!!$    case('mtp', 'mpt', 'mtt_m_mpp')
+!!$       mij_prefact(:,isim,1) = (Mij_scale(2) - Mij_scale(3)) * cos(2. * longit)  &
+!!$            + 2. * Mij_scale(6)  * sin(2. * longit)
+!!$       mij_prefact(:,isim,2) = (Mij_scale(3) - Mij_scale(2)) * sin(2. * longit) &
+!!$            + 2. * Mij_scale(6)  * cos(2. * longit)
+!!$       mij_prefact(:,isim,3) = (Mij_scale(2) - Mij_scale(3)) * cos(2. * longit)  &
+!!$            + 2. * Mij_scale(6)  * sin(2. * longit)
+!!$       
+!!$       write(6,*) isim, 'Simulation is mtp, prefact:', &
+!!$            mij_prefact(1,isim,1), mij_prefact(1,isim,2), &
+!!$            mij_prefact(1,isim,3)
+!!$       
+!!$    case('explosion')
+!!$       mij_prefact(:,isim,:) = (Mij_scale(1) + Mij_scale(2) + Mij_scale(3)) / 3.
+!!$       write(6,*) isim, 'Simulation is explosion, prefact:', &
+!!$            mij_prefact(1,isim,1), mij_prefact(1,isim,2), &
+!!$            mij_prefact(1,isim,3)
+!!$       
+!!$    case default
+!!$       write(6,*) 'unknown source type ', src_type(isim,2)
+!!$       stop
+!!$    end select
+!!$    
+!!$    write(6,*) 'Mij phi prefactor:', maxval(mij_prefact(:,isim,1)), &
+!!$         maxval(mij_prefact(:,isim,2)), maxval(mij_prefact(:,isim,3))
+!!$    
     
   end subroutine compute_prefactor
 !--------------------------------------------------------------------------------
