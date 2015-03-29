@@ -47,7 +47,12 @@ contains
     ivy=i
     i=i+1
     ivz=i
-        
+
+    !*** Compute prefactor for wavefield reconstruction
+    do isim = 1, nsim
+       call compute_prefactor(src_type(isim,1),src_type(isim,2),isim)
+    end do
+
     !*** Open AxiSEM solutions files and outputs
     if (myid == 0) then
 
@@ -100,9 +105,6 @@ contains
        
        do isim=1,nsim
           
-          !*** Compute prefactor for wavefield reconstruction
-          call compute_prefactor(src_type(isim,1),src_type(isim,2),isim)
-
           data_rec=0.
           indx_stored=1
           
@@ -270,6 +272,11 @@ contains
     isyz=i
 
 
+    !*** Compute prefactor for wavefield reconstruction
+    do isim = 1, nsim
+       call compute_prefactor(src_type(isim,1),src_type(isim,2),isim)
+    end do
+
     !*** Open AxiSEM solutions files and outputs
     if (myid == 0) then  
 
@@ -327,8 +334,6 @@ contains
        
        do isim = 1, nsim
           
-          !*** Compute prefactor for wavefield reconstruction
-          call compute_prefactor(src_type(isim,1),src_type(isim,2),isim)
 
           stress_rec=0. 
           indx_stored=1
@@ -628,14 +633,14 @@ contains
 
        select case(Mcomp)
        case('mrr')
-          f1 = Mij_scale(1)
-          f2 = 0.
+          f1(isim,:) = Mij_scale(1)
+          f2(isim,:) = 0.
        case('mtt_p_mpp')
-          f1 = Mij_scale(2) + Mij_scale(3)
-          f2 = 0.
+          f1(isim,:) = Mij_scale(2) + Mij_scale(3)
+          f2(isim,:) = 0.
        case('explosion')
-          f1 = (Mij_scale(1) + Mij_scale(2) + Mij_scale(3)) / 3.
-          f2 = 0.
+          f1(isim,:) = (Mij_scale(1) + Mij_scale(2) + Mij_scale(3)) / 3.
+          f2(isim,:) = 0.
        end select
 
     case('dipole')
@@ -643,25 +648,25 @@ contains
        select case (trim(Mcomp))
        case('mtr','mrt')
           do irec=1,nbrec
-             f1(irec) =   Mij_scale(4) * cos(phi(irec)) + Mij_scale(5) * sin(phi(irec))   !   Mij_scale(4) * cos(phi(irec))
-             f2(irec) = - Mij_scale(4) * sin(phi(irec)) + Mij_scale(5) * cos(phi(irec))  ! - Mij_scale(4) * sin(phi(irec))
+             f1(isim,irec) =   Mij_scale(4) * cos(phi(irec)) + Mij_scale(5) * sin(phi(irec))   !   Mij_scale(4) * cos(phi(irec))
+             f2(isim,irec) = - Mij_scale(4) * sin(phi(irec)) + Mij_scale(5) * cos(phi(irec))  ! - Mij_scale(4) * sin(phi(irec))
           end do
        case ('thetaforce')   !!! TO verify
           do irec=1,nbrec
-             f1(irec) =   cos(phi(irec))
-             f2(irec) = - sin(phi(irec))
+             f1(isim,irec) =   cos(phi(irec))
+             f2(isim,irec) = - sin(phi(irec))
           end do
        case('mpr','mrp')
           do irec=1,nbrec
-             f1(irec) =   Mij_scale(4) * cos(phi(irec)) + Mij_scale(5) * sin(phi(irec))   !   Mij_scale(4) * cos(phi(irec))
-             f2(irec) = - Mij_scale(4) * sin(phi(irec)) + Mij_scale(5) * cos(phi(irec))  ! - Mij_scale(4) * sin(phi(irec))
-!             f1(irec) = Mij_scale(5) * sin(phi(irec))
-!             f2(irec) = Mij_scale(5) * cos(phi(irec))
+             f1(isim,irec) =   Mij_scale(4) * cos(phi(irec)) + Mij_scale(5) * sin(phi(irec))   !   Mij_scale(4) * cos(phi(irec))
+             f2(isim,irec) = - Mij_scale(4) * sin(phi(irec)) + Mij_scale(5) * cos(phi(irec))  ! - Mij_scale(4) * sin(phi(irec))
+!             f1(isim,irec) = Mij_scale(5) * sin(phi(irec))
+!             f2(isim,irec) = Mij_scale(5) * cos(phi(irec))
           end do
        case('phiforce')      !!! TO verify
           do irec=1,nbrec
-             f1(irec) = sin(phi(irec))
-             f2(irec) = cos(phi(irec))
+             f1(isim,irec) = sin(phi(irec))
+             f2(isim,irec) = cos(phi(irec))
           end do
        end select
 
@@ -670,17 +675,17 @@ contains
        select case (trim(Mcomp))
        case ('mtt_m_mpp')
           do irec=1,nbrec
-             f1(irec) = (Mij_scale(2) - Mij_scale(3)) * cos(2.*phi(irec)) + 2. * Mij_scale(6) * sin(2.*phi(irec)) !!! Check -1/2 
-             f2(irec) = (Mij_scale(3) - Mij_scale(2)) * sin(2.*phi(irec)) + 2. * Mij_scale(6) * cos(2.*phi(irec)) !!! Check -1/2
-!             f1(irec)=   (Mij_scale(2) - Mij_scale(3)) * cos(2.*phi(irec)) !!! Check -1/2 
-!             f2(irec)= - (Mij_scale(3) - Mij_scale(2)) * sin(2.*phi(irec)) !!! Check -1/2
+             f1(isim,irec) = (Mij_scale(2) - Mij_scale(3)) * cos(2.*phi(irec)) + 2. * Mij_scale(6) * sin(2.*phi(irec)) !!! Check -1/2 
+             f2(isim,irec) = (Mij_scale(3) - Mij_scale(2)) * sin(2.*phi(irec)) + 2. * Mij_scale(6) * cos(2.*phi(irec)) !!! Check -1/2
+!             f1(isim,irec)=   (Mij_scale(2) - Mij_scale(3)) * cos(2.*phi(irec)) !!! Check -1/2 
+!             f2(isim,irec)= - (Mij_scale(3) - Mij_scale(2)) * sin(2.*phi(irec)) !!! Check -1/2
           end do
        case('mtp','mpt')
           do irec=1,nbrec
-!             f1(irec) =  2. * Mij_scale(6) * sin(2*phi(irec))    !!! Check -1/2  .. 2.*
-!             f2(irec) =  2. * Mij_scale(6) * cos(2*phi(irec))    !!! Check -1/2  .. 2./*
-             f1(irec) = (Mij_scale(2) - Mij_scale(3)) * cos(2.*phi(irec)) + 2. * Mij_scale(6) * sin(2.*phi(irec)) !!! Check -1/2 
-             f2(irec) = (Mij_scale(3) - Mij_scale(2)) * sin(2.*phi(irec)) + 2. * Mij_scale(6) * cos(2.*phi(irec)) !!! Check -1/2
+!             f1(isim,irec) =  2. * Mij_scale(6) * sin(2*phi(irec))    !!! Check -1/2  .. 2.*
+!             f2(isim,irec) =  2. * Mij_scale(6) * cos(2*phi(irec))    !!! Check -1/2  .. 2./*
+             f1(isim,irec) = (Mij_scale(2) - Mij_scale(3)) * cos(2.*phi(irec)) + 2. * Mij_scale(6) * sin(2.*phi(irec)) !!! Check -1/2 
+             f2(isim,irec) = (Mij_scale(3) - Mij_scale(2)) * sin(2.*phi(irec)) + 2. * Mij_scale(6) * cos(2.*phi(irec)) !!! Check -1/2
           end do
        end select
        
@@ -803,9 +808,9 @@ contains
     integer(kind=si), intent(in) :: isim
 
     do irec=irecmin,irecmax
-       data_rec_all(irec,1) = data_rec_all(irec,1) + f1(irec) * data_rec(irec,1) !f1
-       data_rec_all(irec,2) = data_rec_all(irec,2) + f2(irec) * data_rec(irec,2)          !f2
-       data_rec_all(irec,3) = data_rec_all(irec,3) + f1(irec) * data_rec(irec,3)          !f1
+       data_rec_all(irec,1) = data_rec_all(irec,1) + f1(isim,irec) * data_rec(irec,1) !f1
+       data_rec_all(irec,2) = data_rec_all(irec,2) + f2(isim,irec) * data_rec(irec,2)          !f2
+       data_rec_all(irec,3) = data_rec_all(irec,3) + f1(isim,irec) * data_rec(irec,3)          !f1
     end do
 
   end subroutine compute_3D_cyl
@@ -822,12 +827,12 @@ contains
     integer(kind=si), intent(in) :: isim
 
     do irec=irecmin,irecmax
-       stress_rec_all(irec,1) = stress_rec_all(irec,1) + f1(irec) * stress_rec(irec,1) !f1
-       stress_rec_all(irec,2) = stress_rec_all(irec,2) + f1(irec) * stress_rec(irec,2) !f1
-       stress_rec_all(irec,3) = stress_rec_all(irec,3) + f1(irec) * stress_rec(irec,3) !f1
-       stress_rec_all(irec,4) = stress_rec_all(irec,4) + f2(irec) * stress_rec(irec,4) !f2
-       stress_rec_all(irec,5) = stress_rec_all(irec,5) + f1(irec) * stress_rec(irec,5) !f1
-       stress_rec_all(irec,6) = stress_rec_all(irec,6) + f2(irec) * stress_rec(irec,6) !f2
+       stress_rec_all(irec,1) = stress_rec_all(irec,1) + f1(isim,irec) * stress_rec(irec,1) !f1
+       stress_rec_all(irec,2) = stress_rec_all(irec,2) + f1(isim,irec) * stress_rec(irec,2) !f1
+       stress_rec_all(irec,3) = stress_rec_all(irec,3) + f1(isim,irec) * stress_rec(irec,3) !f1
+       stress_rec_all(irec,4) = stress_rec_all(irec,4) + f2(isim,irec) * stress_rec(irec,4) !f2
+       stress_rec_all(irec,5) = stress_rec_all(irec,5) + f1(isim,irec) * stress_rec(irec,5) !f1
+       stress_rec_all(irec,6) = stress_rec_all(irec,6) + f2(isim,irec) * stress_rec(irec,6) !f2
     end do
     
   end subroutine compute_stress_3D_cyl

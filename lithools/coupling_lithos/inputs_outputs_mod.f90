@@ -109,7 +109,7 @@ contains
     allocate(shift_fact_tmp(nsim))
     allocate(ishift_deltat(nsim), ishift_seisdt(nsim), ishift_straindt(nsim))
     allocate(Mij(nsim,1:6)) 
-       Mij = 0.
+    Mij = 0.
     
     !*** For each simulation, read the file SIMULATION.INFO and the the source parameter info 
     do isim = 1,nsim
@@ -217,7 +217,6 @@ contains
   
 	write(6,*)'Simu : ',isim
 	write(6,*)'Mij = ',Mij(isim,:)
-
  
     end do
   
@@ -319,7 +318,7 @@ contains
     allocate(data_rec_all(nbrec,3),stress_rec_all(nbrec,6))
     stress_rec_all = 0.
     data_rec_all   = 0.   
-    allocate(f1(nbrec),f2(nbrec),phi(nbrec))
+    allocate(f1(nsim,nbrec),f2(nsim,nbrec),phi(nbrec))
     
     !* Read and computes coordinates for each point
     do i=1,nbrec !! radius, latitude, longitude

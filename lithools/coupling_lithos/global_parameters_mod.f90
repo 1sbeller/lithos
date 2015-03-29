@@ -53,7 +53,8 @@ module global_parameters_mod
   character(len=10),  allocatable, dimension(:,:) :: src_type
 
   !*** Post process
-  real(kind=dp), allocatable, dimension(:) :: f1, f2, phi
+  real(kind=dp), allocatable, dimension(:,:) :: f1, f2
+  real(kind=dp), allocatable, dimension(:)   :: phi
   
   !*** Mpi 
   integer(kind=si) :: irecmin, irecmax
