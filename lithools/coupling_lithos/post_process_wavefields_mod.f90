@@ -47,10 +47,7 @@ contains
     ivy=i
     i=i+1
     ivz=i
-    
-    !*** Compute prefactor for wavefield reconstruction
-    call compute_prefactor(src_type(isim,1),src_type(isim,2),isim)
-    
+        
     !*** Open AxiSEM solutions files and outputs
     if (myid == 0) then
 
@@ -103,6 +100,9 @@ contains
        
        do isim=1,nsim
           
+          !*** Compute prefactor for wavefield reconstruction
+          call compute_prefactor(src_type(isim,1),src_type(isim,2),isim)
+
           data_rec=0.
           indx_stored=1
           
@@ -269,8 +269,6 @@ contains
     i=i+1
     isyz=i
 
-    !*** Compute prefactor for wavefield reconstruction
-    call compute_prefactor(src_type(isim,1),src_type(isim,2),isim)
 
     !*** Open AxiSEM solutions files and outputs
     if (myid == 0) then  
@@ -328,6 +326,9 @@ contains
        stress_rec_all = 0.    ! sum over source simulations
        
        do isim = 1, nsim
+          
+          !*** Compute prefactor for wavefield reconstruction
+          call compute_prefactor(src_type(isim,1),src_type(isim,2),isim)
 
           stress_rec=0. 
           indx_stored=1
