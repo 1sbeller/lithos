@@ -33,17 +33,17 @@ contains
        B(3,2)= 0. 
        B(3,3)= 1. 
        
-       st(1,1)=stress_rec(irec,1)
-       st(1,2)=stress_rec(irec,4)
-       st(1,3)=stress_rec(irec,5)
+       st(1,1)=stress_rec_all(irec,1)
+       st(1,2)=stress_rec_all(irec,4)
+       st(1,3)=stress_rec_all(irec,5)
        
-       st(2,1)=stress_rec(irec,4)
-       st(2,2)=stress_rec(irec,2)
-       st(2,3)=stress_rec(irec,6)
+       st(2,1)=stress_rec_all(irec,4)
+       st(2,2)=stress_rec_all(irec,2)
+       st(2,3)=stress_rec_all(irec,6)
 
-       st(3,1)=stress_rec(irec,5)
-       st(3,2)=stress_rec(irec,6)
-       st(3,3)=stress_rec(irec,3)
+       st(3,1)=stress_rec_all(irec,5)
+       st(3,2)=stress_rec_all(irec,6)
+       st(3,3)=stress_rec_all(irec,3)
 
        ! st*Bt
        tmp=0.
@@ -66,12 +66,12 @@ contains
        end do
        
        ! stress in cartesian coordinates 
-       stress_rec(irec,1)=tmp1(1,1)
-       stress_rec(irec,2)=tmp1(2,2)
-       stress_rec(irec,3)=tmp1(3,3)
-       stress_rec(irec,4)=tmp1(1,2) 
-       stress_rec(irec,5)=tmp1(1,3)
-       stress_rec(irec,6)=tmp1(2,3)
+       stress_rec_all(irec,1)=tmp1(1,1)
+       stress_rec_all(irec,2)=tmp1(2,2)
+       stress_rec_all(irec,3)=tmp1(3,3)
+       stress_rec_all(irec,4)=tmp1(1,2) 
+       stress_rec_all(irec,5)=tmp1(1,3)
+       stress_rec_all(irec,6)=tmp1(2,3)
        
     end do
     
@@ -90,9 +90,9 @@ contains
     do irec=irecmin,irecmax
        
        ! veloc in cylindical coordinates
-       veloc(1)=data_rec(irec,1)
-       veloc(2)=data_rec(irec,2)
-       veloc(3)=data_rec(irec,3)
+       veloc(1)=data_rec_all(irec,1)
+       veloc(2)=data_rec_all(irec,2)
+       veloc(3)=data_rec_all(irec,3)
        
        ! R*veloc
        tmp=0.  
@@ -103,9 +103,9 @@ contains
        end do
        
        ! valocity in cartesian
-       data_rec(irec,1)=tmp(1)
-       data_rec(irec,2)=tmp(2)
-       data_rec(irec,3)=tmp(3)
+       data_rec_all(irec,1)=tmp(1)
+       data_rec_all(irec,2)=tmp(2)
+       data_rec_all(irec,3)=tmp(3)
        
     end do
       
@@ -124,9 +124,9 @@ contains
     do irec=irecmin,irecmax
            
        ! veloc in global coordinates
-       veloc(1)=data_rec(irec,1)
-       veloc(2)=data_rec(irec,2)
-       veloc(3)=data_rec(irec,3)
+       veloc(1)=data_rec_all(irec,1)
+       veloc(2)=data_rec_all(irec,2)
+       veloc(3)=data_rec_all(irec,3)
           
        ! Rt*veloc
        tmp=0.  
@@ -140,17 +140,17 @@ contains
        select case (coup_tool)
        case('DG')
           ! valocity in cartesian
-          data_rec(irec,1)=tmp(1)
-          data_rec(irec,2)=tmp(2)
-          data_rec(irec,3)=tmp(3)
+          data_rec_all(irec,1)=tmp(1)
+          data_rec_all(irec,2)=tmp(2)
+          data_rec_all(irec,3)=tmp(3)
        case('SEM')
-          data_rec(irec,1)=tmp(2)
-          data_rec(irec,2)=tmp(3)
-          data_rec(irec,3)=tmp(1)
+          data_rec_all(irec,1)=tmp(2)
+          data_rec_all(irec,2)=tmp(3)
+          data_rec_all(irec,3)=tmp(1)
        case('FD')
-          data_rec(irec,1)=tmp(2)
-          data_rec(irec,2)=tmp(3)
-          data_rec(irec,3)=tmp(1)
+          data_rec_all(irec,1)=tmp(2)
+          data_rec_all(irec,2)=tmp(3)
+          data_rec_all(irec,3)=tmp(1)
        end select
     end do
 
@@ -169,17 +169,17 @@ contains
     do irec=irecmin,irecmax
        
        ! stress in cylindical coordinates
-       st(1,1)=stress_rec(irec,1)
-       st(1,2)=stress_rec(irec,4)
-       st(1,3)=stress_rec(irec,5)
+       st(1,1)=stress_rec_all(irec,1)
+       st(1,2)=stress_rec_all(irec,4)
+       st(1,3)=stress_rec_all(irec,5)
        
-       st(2,1)=stress_rec(irec,4)
-       st(2,2)=stress_rec(irec,2)
-       st(2,3)=stress_rec(irec,6)
+       st(2,1)=stress_rec_all(irec,4)
+       st(2,2)=stress_rec_all(irec,2)
+       st(2,3)=stress_rec_all(irec,6)
        
-       st(3,1)=stress_rec(irec,5)
-       st(3,2)=stress_rec(irec,6)
-       st(3,3)=stress_rec(irec,3)
+       st(3,1)=stress_rec_all(irec,5)
+       st(3,2)=stress_rec_all(irec,6)
+       st(3,3)=stress_rec_all(irec,3)
        
        ! st*Rt
        tmp=0.
@@ -202,12 +202,12 @@ contains
        end do
        
        ! stress in cartesian
-       stress_rec(irec,1)=tmp1(1,1)
-       stress_rec(irec,2)=tmp1(2,2)
-       stress_rec(irec,3)=tmp1(3,3)
-       stress_rec(irec,4)=tmp1(1,2) 
-       stress_rec(irec,5)=tmp1(1,3)
-       stress_rec(irec,6)=tmp1(2,3)
+       stress_rec_all(irec,1)=tmp1(1,1)
+       stress_rec_all(irec,2)=tmp1(2,2)
+       stress_rec_all(irec,3)=tmp1(3,3)
+       stress_rec_all(irec,4)=tmp1(1,2) 
+       stress_rec_all(irec,5)=tmp1(1,3)
+       stress_rec_all(irec,6)=tmp1(2,3)
        
     end do
     
@@ -226,17 +226,17 @@ contains
     do irec=irecmin,irecmax
            
        ! stress in cylindical coordinates
-       st(1,1)=stress_rec(irec,1)
-       st(1,2)=stress_rec(irec,4)
-       st(1,3)=stress_rec(irec,5)
+       st(1,1)=stress_rec_all(irec,1)
+       st(1,2)=stress_rec_all(irec,4)
+       st(1,3)=stress_rec_all(irec,5)
        
-       st(2,1)=stress_rec(irec,4)
-       st(2,2)=stress_rec(irec,2)
-       st(2,3)=stress_rec(irec,6)
+       st(2,1)=stress_rec_all(irec,4)
+       st(2,2)=stress_rec_all(irec,2)
+       st(2,3)=stress_rec_all(irec,6)
        
-       st(3,1)=stress_rec(irec,5)
-       st(3,2)=stress_rec(irec,6)
-       st(3,3)=stress_rec(irec,3)
+       st(3,1)=stress_rec_all(irec,5)
+       st(3,2)=stress_rec_all(irec,6)
+       st(3,3)=stress_rec_all(irec,3)
        
        ! st*R
        tmp=0.
@@ -262,26 +262,26 @@ contains
        select case (coup_tool)
        case('DG')
           ! stress in cartesian
-          stress_rec(irec,1)=tmp1(1,1)
-          stress_rec(irec,2)=tmp1(2,2)
-          stress_rec(irec,3)=tmp1(3,3)
-          stress_rec(irec,4)=tmp1(1,2) 
-          stress_rec(irec,5)=tmp1(1,3)
-          stress_rec(irec,6)=tmp1(2,3)
+          stress_rec_all(irec,1)=tmp1(1,1)
+          stress_rec_all(irec,2)=tmp1(2,2)
+          stress_rec_all(irec,3)=tmp1(3,3)
+          stress_rec_all(irec,4)=tmp1(1,2) 
+          stress_rec_all(irec,5)=tmp1(1,3)
+          stress_rec_all(irec,6)=tmp1(2,3)
        case('SEM')
-          stress_rec(irec,1)=tmp1(2,2)
-          stress_rec(irec,2)=tmp1(3,3)
-          stress_rec(irec,3)=tmp1(1,1)
-          stress_rec(irec,4)=tmp1(2,3)
-          stress_rec(irec,5)=tmp1(2,1)
-          stress_rec(irec,6)=tmp1(3,1)
+          stress_rec_all(irec,1)=tmp1(2,2)
+          stress_rec_all(irec,2)=tmp1(3,3)
+          stress_rec_all(irec,3)=tmp1(1,1)
+          stress_rec_all(irec,4)=tmp1(2,3)
+          stress_rec_all(irec,5)=tmp1(2,1)
+          stress_rec_all(irec,6)=tmp1(3,1)
        case('FD')
-          stress_rec(irec,1)=tmp1(2,2)
-          stress_rec(irec,2)=tmp1(3,3)
-          stress_rec(irec,3)=tmp1(1,1)
-          stress_rec(irec,4)=tmp1(2,3)
-          stress_rec(irec,5)=tmp1(2,1)
-          stress_rec(irec,6)=tmp1(3,1)
+          stress_rec_all(irec,1)=tmp1(2,2)
+          stress_rec_all(irec,2)=tmp1(3,3)
+          stress_rec_all(irec,3)=tmp1(1,1)
+          stress_rec_all(irec,4)=tmp1(2,3)
+          stress_rec_all(irec,5)=tmp1(2,1)
+          stress_rec_all(irec,6)=tmp1(3,1)
        end select
     end do
     
@@ -314,9 +314,9 @@ contains
        B(3,3)= 1. 
        
        ! veloc in cylindical coordinates
-       veloc(1)=data_rec(irec,1)
-       veloc(2)=data_rec(irec,2)
-       veloc(3)=data_rec(irec,3)
+       veloc(1)=data_rec_all(irec,1)
+       veloc(2)=data_rec_all(irec,2)
+       veloc(3)=data_rec_all(irec,3)
 
        ! B*veloc
        tmp=0.  
@@ -327,9 +327,9 @@ contains
        end do
        
        ! valocity in cartesian
-       data_rec(irec,1)=tmp(1)
-       data_rec(irec,2)=tmp(2)
-       data_rec(irec,3)=tmp(3)
+       data_rec_all(irec,1)=tmp(1)
+       data_rec_all(irec,2)=tmp(2)
+       data_rec_all(irec,3)=tmp(3)
        
     end do
     

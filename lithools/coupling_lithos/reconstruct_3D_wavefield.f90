@@ -29,11 +29,11 @@ program reconstruct_3D_wavefield
   call MPI_barrier(MPI_COMM_WORLD, ierr_mpi)
 
   !*** Reconstruct wavefields
-  do isim=1,nsim
-     if (myid == 0) write(6,*)'Process source component: ',isim
-     call reconstruct_velocity(isim)
-     call reconstruct_stress(isim)
-  end do
+!  do isim=1,nsim
+!     if (myid == 0) write(6,*)'Process source component: ',isim
+     call reconstruct_velocity  !(isim)
+     call reconstruct_stress    !(isim)
+!  end do
 
   !*** End the program (mpi)
   call finish_program

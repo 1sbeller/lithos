@@ -316,6 +316,9 @@ contains
     allocate(data_rec(nbrec,3),stress_rec(nbrec,6),stress_to_write(nbrec,6),strain_rec(nbrec,6))
     stress_rec=0.
     data_rec=0.
+    allocate(data_rec_all(nbrec,3),stress_rec_all(nbrec,6))
+    stress_rec_all = 0.
+    data_rec_all   = 0.   
     allocate(f1(nbrec),f2(nbrec),phi(nbrec))
     
     !* Read and computes coordinates for each point
@@ -424,13 +427,13 @@ contains
 ! Write output velocity files
   subroutine write_veloc3D(ivx,ivy,ivz)
     
-    use global_parameters_mod, only: data_rec
+    use global_parameters_mod, only: data_rec_all
     
     integer(kind=si), intent(in) :: ivx, ivy, ivz
 
-    write(ivx) data_rec(:,1)
-    write(ivy) data_rec(:,2)
-    write(ivz) data_rec(:,3)
+    write(ivx) data_rec_all(:,1)
+    write(ivy) data_rec_all(:,2)
+    write(ivz) data_rec_all(:,3)
 
   end subroutine write_veloc3D
 !--------------------------------------------------------------------------------
@@ -440,16 +443,16 @@ contains
 ! Write output stress files 
   subroutine write_stress3D(isxx,isyy,iszz,isxy,isxz,isyz)
 
-    use global_parameters_mod, only: stress_rec
+    use global_parameters_mod, only: stress_rec_all
 
     integer(kind=si), intent(in) :: isxx, isyy, iszz, isxy, isxz, isyz
  
-    write(isxx) stress_rec(:,1)
-    write(isyy) stress_rec(:,2)
-    write(iszz) stress_rec(:,3)
-    write(isxy) stress_rec(:,4)
-    write(isxz) stress_rec(:,5)
-    write(isyz) stress_rec(:,6)
+    write(isxx) stress_rec_all(:,1)
+    write(isyy) stress_rec_all(:,2)
+    write(iszz) stress_rec_all(:,3)
+    write(isxy) stress_rec_all(:,4)
+    write(isxz) stress_rec_all(:,5)
+    write(isyz) stress_rec_all(:,6)
     
   end subroutine write_stress3D
 !--------------------------------------------------------------------------------

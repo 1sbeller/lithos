@@ -28,6 +28,7 @@ module global_parameters_mod
   real(kind=sp), allocatable, dimension(:,:,:) :: data_read
   real(kind=sp), allocatable, dimension(:,:)   :: data_rec, stress_rec, stress_to_write
   real(kind=sp), allocatable, dimension(:,:)   :: strain_rec
+  real(kind=sp), allocatable, dimension(:,:)   :: data_rec_all, stress_rec_all
 
   !*** Work arrays 
   real(kind=sp), allocatable, dimension(:,:)   :: data_reduce, stress_reduce

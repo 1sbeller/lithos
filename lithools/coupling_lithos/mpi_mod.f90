@@ -80,6 +80,7 @@ contains
    if (myid >  0) then 
       allocate(reciever_geogr(3,nbrec),reciever_sph(3,nbrec),reciever_cyl(3,nbrec),reciever_interp_value(nbrec))
       allocate(data_rec(nbrec,3),stress_rec(nbrec,6),stress_to_write(nbrec,6),strain_rec(nbrec,6))
+      allocate(data_rec_all(nbrec,3),stress_rec_all(nbrec,6))
       allocate(f1(nbrec),f2(nbrec))
       allocate(phi(nbrec))
       allocate(magnitude(nsim))
@@ -104,8 +105,10 @@ contains
     
     ! single
     call mpi_bcast(data_rec,3*nbrec,MPI_REAL4,0,MPI_COMM_WORLD,ierr_mpi)
+    call mpi_bcast(data_rec_all,3*nbrec,MPI_REAL4,0,MPI_COMM_WORLD,ierr_mpi)
     call mpi_bcast(stress_to_write,6*nbrec,MPI_REAL4,0,MPI_COMM_WORLD,ierr_mpi)
     call mpi_bcast(stress_rec,6*nbrec,MPI_REAL4,0,MPI_COMM_WORLD,ierr_mpi)
+    call mpi_bcast(stress_rec_all,6*nbrec,MPI_REAL4,0,MPI_COMM_WORLD,ierr_mpi)
     call mpi_bcast(strain_rec,6*nbrec,MPI_REAL4,0,MPI_COMM_WORLD,ierr_mpi)
     call mpi_bcast(f1,nbrec,MPI_REAL8,0,MPI_COMM_WORLD,ierr_mpi)
     call mpi_bcast(f2,nbrec,MPI_REAL8,0,MPI_COMM_WORLD,ierr_mpi)
@@ -158,8 +161,8 @@ contains
 ! Reduce velocity
   subroutine reduce_mpi_veloc
 
-    call mpi_reduce(data_rec,data_reduce,nbrec*3,MPI_REAL4,MPI_SUM,0,MPI_COMM_WORLD,ierr_mpi)
-    data_rec(:,:)=data_reduce(:,:)
+    call mpi_reduce(data_rec_all,data_reduce,nbrec*3,MPI_REAL4,MPI_SUM,0,MPI_COMM_WORLD,ierr_mpi)
+    data_rec_all(:,:)=data_reduce(:,:)
 
   end subroutine reduce_mpi_veloc
 !--------------------------------------------------------------------------------
@@ -168,8 +171,8 @@ contains
 ! Reduce stress
   subroutine reduce_mpi_stress
     
-    call mpi_reduce(stress_rec,stress_reduce,nbrec*6,MPI_REAL4,MPI_SUM,0,MPI_COMM_WORLD,ierr_mpi)
-    stress_rec(:,:)=stress_reduce(:,:)
+    call mpi_reduce(stress_rec_all,stress_reduce,nbrec*6,MPI_REAL4,MPI_SUM,0,MPI_COMM_WORLD,ierr_mpi)
+    stress_rec_all(:,:)=stress_reduce(:,:)
   
   end subroutine reduce_mpi_stress
 !--------------------------------------------------------------------------------

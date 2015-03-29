@@ -9,35 +9,38 @@ contains
 
 !================================================================================
 ! Routine reconstructing the 3D velocity wavefield
-  subroutine reconstruct_velocity(isim)
+  subroutine reconstruct_velocity  !(isim)
 
     use global_parameters_mod
     use rotation_matrix_mod
     use inputs_outputs_mod
     
-    integer(kind=si), intent(in) :: isim
+    integer(kind=si) :: isim    
+    !, intent(in) :: isim
 
     integer(kind=si) :: itime, iproc, ifield, i, ivx, ivy, ivz    
     integer(kind=si), dimension(3) :: indx_stored
-    integer(kind=si), dimension(:,:), allocatable :: iunit
+    integer(kind=si), dimension(:,:,:), allocatable :: iunit
 
     real(kind=sp), allocatable, dimension(:,:,:) :: data_to_read
 
     character(len=4)   :: appmynum
     character(len=256) :: fichier
 
-    allocate(iunit(0:nbproc-1,3))
-    
+    allocate(iunit(0:nbproc-1,3,nsim))
     
     !*** Unit file
     i=150
-    do ifield=1,3
-       do iproc=0, nbproc-1
-          i=i+1
-          iunit(iproc,ifield)=i
+    do isim = 1,nsim    
+       do ifield=1,3
+          do iproc=0, nbproc-1
+             i=i+1
+             iunit(iproc,ifield,isim)=i
+          end do
        end do
     end do
-    
+
+    !*** For output
     i=i+1
     ivx=i
     i=i+1
@@ -48,14 +51,16 @@ contains
     !*** Compute prefactor for wavefield reconstruction
     call compute_prefactor(src_type(isim,1),src_type(isim,2),isim)
     
-    !*** Read AxiSEM solutions
+    !*** Open AxiSEM solutions files and outputs
     if (myid == 0) then
-       write(fichier,'(a6,a15)') '/Data/',output_veloc_name(1)
-       open(ivx,file= trim(working_axisem_dir)//trim(simdir(isim))//trim(fichier), FORM="UNFORMATTED")
-       write(fichier,'(a6,a15)') '/Data/',output_veloc_name(2)
-       open(ivy,file= trim(working_axisem_dir)//trim(simdir(isim))//trim(fichier), FORM="UNFORMATTED")
-       write(fichier,'(a6,a15)') '/Data/',output_veloc_name(3)
-       open(ivz,file= trim(working_axisem_dir)//trim(simdir(isim))//trim(fichier), FORM="UNFORMATTED")
+
+       !*** Outputs velocity
+       write(fichier,'(a15)') output_veloc_name(1)
+       open(ivx,file= trim(working_axisem_dir)//trim(fichier), FORM="UNFORMATTED")
+       write(fichier,'(a15)') output_veloc_name(2)
+       open(ivy,file= trim(working_axisem_dir)//trim(fichier), FORM="UNFORMATTED")
+       write(fichier,'(a15)') output_veloc_name(3)
+       open(ivz,file= trim(working_axisem_dir)//trim(fichier), FORM="UNFORMATTED")
        
        write(*,*) 'nbrec to write', nbrec
        write(*,*) 'nbrec to read ',sum(nb_stored(:))
@@ -67,58 +72,85 @@ contains
        
        data_rec=0.
        
-       !*** For each velocity component
-       do ifield=1,3 
-          write(*,*) ifield
-          if (trim(src_type(isim,1))=='monopole' .and. ifield==2) then
-             write(*,*) 'monopole => not up'
-             cycle
-          end if
-          
-          !* Open files
-          do iproc=0, nbproc-1
-             call define_io_appendix(appmynum,iproc)
-             write(fichier,'(a6,a15,a1)') '/Data/',input_veloc_name(ifield),'_'
-             open(unit=iunit(iproc,ifield), file=trim(working_axisem_dir)//trim(simdir(isim))//trim(fichier) &
-                  //appmynum//'.bindat', &
-                  FORM="UNFORMATTED", STATUS="UNKNOWN", POSITION="REWIND")
+       !*** For each velocity component input
+       do isim = 1,nsim
+          do ifield=1,3 
+             write(*,*) isim, ifield
+             if (trim(src_type(isim,1))=='monopole' .and. ifield==2) then
+                write(*,*) 'monopole => not up'
+                cycle
+             end if
+             
+             !* Open files
+             do iproc=0, nbproc-1
+                call define_io_appendix(appmynum,iproc)
+                write(fichier,'(a6,a15,a1)') '/Data/',input_veloc_name(ifield),'_'
+                open(unit= iunit(iproc,ifield,isim), file=trim(working_axisem_dir)//trim(simdir(isim))//trim(fichier) &
+                     //appmynum//'.bindat', &
+                     FORM="UNFORMATTED", STATUS="UNKNOWN", POSITION="REWIND")
+             end do
           end do
        end do
     end if
     
-    
+        
     if (myid==0) write(6,*)'Percentage : '
-    !*** Read those files
+    
+    !*** Read those files at each time step
     do itime=1,ntime
-       data_rec=0.
-       indx_stored=1
-       !** us comp
-       ifield=1
-       if (myid ==0) then
-          do iproc=0, nbproc-1
-             if (nb_stored(iproc) > 0) then
-                allocate(data_to_read(ibeg:iend,ibeg:iend, nb_stored(iproc)))
-                read(iunit(iproc,ifield))  data_to_read(ibeg:iend,ibeg:iend,:)
-                data_read(ibeg:iend, ibeg:iend, indx_stored(ifield):indx_stored(ifield)+nb_stored(iproc)-1) &
-                     = data_to_read(ibeg:iend,ibeg:iend,:)
-                indx_stored(ifield)=indx_stored(ifield)+nb_stored(iproc)
-                
-                deallocate(data_to_read)
-             end if
-          end do
-       end if
-       call mpi_bcast(data_read,(iend-ibeg+1)*(iend-ibeg+1)*nel,MPI_REAL,0,MPI_COMM_WORLD,ierr_mpi) 
+
+       data_rec_all = 0.   ! sum over source simulations
        
-       !* Interpolate us comp
-       call interpol_field(ifield)
-       
-       if (.not.(trim(src_type(isim,1))=='monopole')) then
-          ifield=2
-          if (myid == 0) then
+       do isim=1,nsim
+          
+          data_rec=0.
+          indx_stored=1
+          
+          !** us comp
+          ifield=1
+          if (myid ==0) then
              do iproc=0, nbproc-1
                 if (nb_stored(iproc) > 0) then
                    allocate(data_to_read(ibeg:iend,ibeg:iend, nb_stored(iproc)))
-                   read(iunit(iproc,ifield))  data_to_read(ibeg:iend,ibeg:iend,:)
+                   read( iunit(iproc,ifield,isim))  data_to_read(ibeg:iend,ibeg:iend,:)
+                   data_read(ibeg:iend, ibeg:iend, indx_stored(ifield):indx_stored(ifield)+nb_stored(iproc)-1) &
+                        = data_to_read(ibeg:iend,ibeg:iend,:)
+                   indx_stored(ifield)=indx_stored(ifield)+nb_stored(iproc)
+                   
+                   deallocate(data_to_read)
+                end if
+             end do
+          end if
+          call mpi_bcast(data_read,(iend-ibeg+1)*(iend-ibeg+1)*nel,MPI_REAL,0,MPI_COMM_WORLD,ierr_mpi) 
+          call interpol_field(ifield)
+          
+
+          !** up comp
+          if (.not.(trim(src_type(isim,1))=='monopole')) then
+             ifield=2
+             if (myid == 0) then
+                do iproc=0, nbproc-1
+                   if (nb_stored(iproc) > 0) then
+                      allocate(data_to_read(ibeg:iend,ibeg:iend, nb_stored(iproc)))
+                      read( iunit(iproc,ifield,isim))  data_to_read(ibeg:iend,ibeg:iend,:)
+                      data_read(ibeg:iend, ibeg:iend, indx_stored(ifield):indx_stored(ifield)+nb_stored(iproc)-1) &
+                           = data_to_read(ibeg:iend,ibeg:iend,:)
+                      indx_stored(ifield)=indx_stored(ifield)+nb_stored(iproc)
+                      deallocate(data_to_read)
+                   end if
+                end do
+             end if
+             call mpi_bcast(data_read,(iend-ibeg+1)*(iend-ibeg+1)*nel,MPI_REAL,0,MPI_COMM_WORLD,ierr_mpi)
+             call interpol_field(ifield)
+          end if
+          
+          !** uz comp
+          ifield=3
+          if (myid ==0) then
+             do iproc=0, nbproc-1
+                if (nb_stored(iproc) > 0) then
+                   allocate(data_to_read(ibeg:iend,ibeg:iend, nb_stored(iproc)))
+                   read( iunit(iproc,ifield,isim))  data_to_read(ibeg:iend,ibeg:iend,:)
                    data_read(ibeg:iend, ibeg:iend, indx_stored(ifield):indx_stored(ifield)+nb_stored(iproc)-1) &
                         = data_to_read(ibeg:iend,ibeg:iend,:)
                    indx_stored(ifield)=indx_stored(ifield)+nb_stored(iproc)
@@ -127,28 +159,13 @@ contains
              end do
           end if
           call mpi_bcast(data_read,(iend-ibeg+1)*(iend-ibeg+1)*nel,MPI_REAL,0,MPI_COMM_WORLD,ierr_mpi)
-          call interpol_field(ifield)
-       end if
+          call interpol_field(ifield)           
        
-       !** uz comp
-       ifield=3
-       if (myid ==0) then
-          do iproc=0, nbproc-1
-             if (nb_stored(iproc) > 0) then
-                allocate(data_to_read(ibeg:iend,ibeg:iend, nb_stored(iproc)))
-                read(iunit(iproc,ifield))  data_to_read(ibeg:iend,ibeg:iend,:)
-                data_read(ibeg:iend, ibeg:iend, indx_stored(ifield):indx_stored(ifield)+nb_stored(iproc)-1) &
-                     = data_to_read(ibeg:iend,ibeg:iend,:)
-                indx_stored(ifield)=indx_stored(ifield)+nb_stored(iproc)
-                deallocate(data_to_read)
-             end if
-          end do
-       end if
-       call mpi_bcast(data_read,(iend-ibeg+1)*(iend-ibeg+1)*nel,MPI_REAL,0,MPI_COMM_WORLD,ierr_mpi)
-       call interpol_field(ifield)           
-       
-       !*** Compute cylindrical components (prefactors)
-       call compute_3D_cyl(isim)
+          !*** Compute cylindrical components (prefactors) and sum 
+          call compute_3D_cyl(isim)
+          data_rec_all = data_rec_all + data_rec
+          
+       end do !isim
 
        !*** Perform rotations
        call rotate2cartesian_with_source_in_pole
@@ -162,14 +179,19 @@ contains
            write(6,*)itime,ntime                  
        end if
     end do ! time step
+    
 
+    !*** Close files
     if (myid ==0) then
-       !*** Close files 
-       do ifield=1,3
-          do iproc=0, nbproc-1
-             close(iunit(iproc,ifield))
+       !*** Close files read
+       do isim = 1, nsim
+          do ifield=1,3
+             do iproc=0, nbproc-1
+                close( iunit(iproc,ifield,isim))
+             end do
           end do
        end do
+       !*** Close output files
        close(ivx)
        close(ivy)
        close(ivz)
@@ -200,36 +222,40 @@ contains
 
 !================================================================================
 ! Routine reconstructing the 3D velocity wavefield
-  subroutine reconstruct_stress(isim)
+  subroutine reconstruct_stress   !(isim)
   
     use mpi_mod
     use global_parameters_mod
     use rotation_matrix_mod
     use inputs_outputs_mod
     
-    integer(kind=si), intent(in) :: isim
+    integer(kind=si) :: isim   
+    !, intent(in) :: isim
 
     integer(kind=si) :: itime, iproc, ifield, i
     integer(kind=si) :: isxx, isyy, iszz, isxy, isxz, isyz
     integer(kind=si), dimension(6) :: indx_stored
-    integer(kind=si), allocatable, dimension(:,:) :: iunit
+    integer(kind=si), allocatable, dimension(:,:,:) :: iunit
     
     real(kind=sp), allocatable, dimension(:,:,:)  :: data_to_read
     
     character(len=4)   :: appmynum
     character(len=256) :: fichier
         
-    allocate(iunit(0:nbproc-1,6))
+    allocate(iunit(0:nbproc-1,6,nsim))
         
-    ! unit file
+    !*** Unit file to read
     i=150
-    do ifield=1,6
-       do iproc=0, nbproc-1
-          i=i+1
-          iunit(iproc,ifield)=i
+    do isim = 1, nsim
+       do ifield=1,6
+          do iproc=0, nbproc-1
+             i=i+1
+             iunit(iproc,ifield,isim)=i
+          end do
        end do
     end do
-    
+
+    !*** For outputs
     i=i+1
     isxx=i
     i=i+1
@@ -243,20 +269,25 @@ contains
     i=i+1
     isyz=i
 
+    !*** Compute prefactor for wavefield reconstruction
     call compute_prefactor(src_type(isim,1),src_type(isim,2),isim)
+
+    !*** Open AxiSEM solutions files and outputs
     if (myid == 0) then  
-       write(fichier,'(a6,a15)') '/Data/',output_stress_name(1)
-       open(isxx,file= trim(working_axisem_dir)//trim(simdir(isim))//trim(fichier), FORM="UNFORMATTED")
-       write(fichier,'(a6,a15)') '/Data/',output_stress_name(2)
-       open(isyy,file= trim(working_axisem_dir)//trim(simdir(isim))//trim(fichier), FORM="UNFORMATTED")
-       write(fichier,'(a6,a15)') '/Data/',output_stress_name(3)
-       open(iszz,file= trim(working_axisem_dir)//trim(simdir(isim))//trim(fichier), FORM="UNFORMATTED")
-       write(fichier,'(a6,a15)') '/Data/',output_stress_name(4)
-       open(isxy,file= trim(working_axisem_dir)//trim(simdir(isim))//trim(fichier), FORM="UNFORMATTED")
-       write(fichier,'(a6,a15)') '/Data/',output_stress_name(5)
-       open(isxz,file= trim(working_axisem_dir)//trim(simdir(isim))//trim(fichier), FORM="UNFORMATTED")
-       write(fichier,'(a6,a15)') '/Data/',output_stress_name(6)
-       open(isyz,file= trim(working_axisem_dir)//trim(simdir(isim))//trim(fichier), FORM="UNFORMATTED")
+
+       !*** Outputs stress
+       write(fichier,'(a15)') output_stress_name(1)
+       open(isxx,file= trim(working_axisem_dir)//trim(fichier), FORM="UNFORMATTED")
+       write(fichier,'(a15)') output_stress_name(2)
+       open(isyy,file= trim(working_axisem_dir)//trim(fichier), FORM="UNFORMATTED")
+       write(fichier,'(a15)') output_stress_name(3)
+       open(iszz,file= trim(working_axisem_dir)//trim(fichier), FORM="UNFORMATTED")
+       write(fichier,'(a15)') output_stress_name(4)
+       open(isxy,file= trim(working_axisem_dir)//trim(fichier), FORM="UNFORMATTED")
+       write(fichier,'(a15)') output_stress_name(5)
+       open(isxz,file= trim(working_axisem_dir)//trim(fichier), FORM="UNFORMATTED")
+       write(fichier,'(a15)') output_stress_name(6)
+       open(isyz,file= trim(working_axisem_dir)//trim(fichier), FORM="UNFORMATTED")
        
        write(isxx) nbrec,ntime
        write(isyy) nbrec,ntime
@@ -266,101 +297,53 @@ contains
        write(isyz) nbrec,ntime
        
        data_rec=0.
-       do ifield=1,6 
-          write(*,*) ifield
-          if (trim(src_type(isim,1))=='monopole' .and. (ifield==4 .or. ifield==6)) then
-             write(*,*) 'monopole => not up'
-             cycle
-          end if
-          ! open files
-          do iproc=0, nbproc-1
-             call define_io_appendix(appmynum,iproc)
-             write(fichier,'(a6,a15,a1)') '/Data/',input_stress_name(ifield),'_'
-             open(unit=iunit(iproc,ifield), file=trim(working_axisem_dir)//trim(simdir(isim))//trim(fichier) &
-                  //appmynum//'.bindat', &
-                  FORM="UNFORMATTED", STATUS="UNKNOWN", POSITION="REWIND")
+
+       !*** For each inpuut stress components
+       do isim = 1, nsim
+          do ifield=1,6 
+             write(*,*) ifield
+             if (trim(src_type(isim,1))=='monopole' .and. (ifield==4 .or. ifield==6)) then
+                write(*,*) 'monopole => not up'
+                cycle
+             end if
+             ! open files
+             do iproc=0, nbproc-1
+                call define_io_appendix(appmynum,iproc)
+                write(fichier,'(a6,a15,a1)') '/Data/',input_stress_name(ifield),'_'
+                open(unit= iunit(iproc,ifield,isim), file=trim(working_axisem_dir)//trim(simdir(isim))//trim(fichier) &
+                     //appmynum//'.bindat', &
+                     FORM="UNFORMATTED", STATUS="UNKNOWN", POSITION="REWIND")
+             end do
           end do
        end do
     end if
     
     
     if (myid==0) write(6,*)'Percentage : '
-    ! read files
+
+
+    !*** Read those files at each time step
     do itime=1,ntime
-       stress_rec=0. 
-       indx_stored=1
-       !! s11
-       ifield=1
-       if (myid == 0) then
-          do iproc=0, nbproc-1
-             if (nb_stored(iproc) > 0) then
-                
-                allocate(data_to_read(ibeg:iend,ibeg:iend, nb_stored(iproc)))
-                read(iunit(iproc,ifield))  data_to_read(ibeg:iend,ibeg:iend,:)
-                data_read(ibeg:iend, ibeg:iend, indx_stored(ifield):indx_stored(ifield)+nb_stored(iproc)-1) &
-                     = data_to_read(ibeg:iend,ibeg:iend,:)
-                
-                indx_stored(ifield)=indx_stored(ifield)+nb_stored(iproc)
-                deallocate(data_to_read)
-                
-             end if
-          end do
-       end if
-       call mpi_bcast(data_read,(iend-ibeg+1)*(iend-ibeg+1)*nel,MPI_REAL,0,MPI_COMM_WORLD,ierr_mpi)
-       call interpol_stress(ifield)
+
+       stress_rec_all = 0.    ! sum over source simulations
        
-       
-       !! s22
-       ifield=2
-       if (myid==0) then
-          do iproc=0, nbproc-1
-             if (nb_stored(iproc) > 0) then
-                
-                allocate(data_to_read(ibeg:iend,ibeg:iend, nb_stored(iproc)))
-                read(iunit(iproc,ifield))  data_to_read(ibeg:iend,ibeg:iend,:)
-                data_read(ibeg:iend, ibeg:iend, indx_stored(ifield):indx_stored(ifield)+nb_stored(iproc)-1) &
-                     = data_to_read(ibeg:iend,ibeg:iend,:)
-                indx_stored(ifield)=indx_stored(ifield)+nb_stored(iproc)
-                deallocate(data_to_read)
-                
-             end if
-          end do
-       end if
-       call mpi_bcast(data_read,(iend-ibeg+1)*(iend-ibeg+1)*nel,MPI_REAL,0,MPI_COMM_WORLD,ierr_mpi)
-       call interpol_stress(ifield)
-       
-       
-       !! s33
-       ifield=3
-       if (myid==0) then
-          do iproc=0, nbproc-1
-             if (nb_stored(iproc) > 0) then
-                
-                allocate(data_to_read(ibeg:iend,ibeg:iend, nb_stored(iproc)))
-                read(iunit(iproc,ifield))  data_to_read(ibeg:iend,ibeg:iend,:)
-                data_read(ibeg:iend, ibeg:iend, indx_stored(ifield):indx_stored(ifield)+nb_stored(iproc)-1) &
-                     = data_to_read(ibeg:iend,ibeg:iend,:)
-                indx_stored(ifield)=indx_stored(ifield)+nb_stored(iproc)
-                deallocate(data_to_read)
-                
-             end if
-             
-          end do
-       end if
-       call mpi_bcast(data_read,(iend-ibeg+1)*(iend-ibeg+1)*nel,MPI_REAL,0,MPI_COMM_WORLD,ierr_mpi)
-       call interpol_stress(ifield)
-       
-       !! s12
-       if (.not.(trim(src_type(isim,1))=='monopole')) then
-          ifield=4
-          if (myid==0) then 
+       do isim = 1, nsim
+
+          stress_rec=0. 
+          indx_stored=1
+
+
+          !*** s11 comp
+          ifield=1
+          if (myid == 0) then
              do iproc=0, nbproc-1
                 if (nb_stored(iproc) > 0) then
                    
                    allocate(data_to_read(ibeg:iend,ibeg:iend, nb_stored(iproc)))
-                   read(iunit(iproc,ifield))  data_to_read(ibeg:iend,ibeg:iend,:)
+                   read( iunit(iproc,ifield,isim))  data_to_read(ibeg:iend,ibeg:iend,:)
                    data_read(ibeg:iend, ibeg:iend, indx_stored(ifield):indx_stored(ifield)+nb_stored(iproc)-1) &
                         = data_to_read(ibeg:iend,ibeg:iend,:)
+                   
                    indx_stored(ifield)=indx_stored(ifield)+nb_stored(iproc)
                    deallocate(data_to_read)
                    
@@ -369,55 +352,119 @@ contains
           end if
           call mpi_bcast(data_read,(iend-ibeg+1)*(iend-ibeg+1)*nel,MPI_REAL,0,MPI_COMM_WORLD,ierr_mpi)
           call interpol_stress(ifield)
-       end if
        
-       
-       !! s13
-       ifield=5
-       if (myid == 0) then
-          do iproc=0, nbproc-1
-             if (nb_stored(iproc) > 0) then
-                
-                allocate(data_to_read(ibeg:iend,ibeg:iend, nb_stored(iproc)))
-                read(iunit(iproc,ifield))  data_to_read(ibeg:iend,ibeg:iend,:)
-                data_read(ibeg:iend, ibeg:iend, indx_stored(ifield):indx_stored(ifield)+nb_stored(iproc)-1) &
-                     = data_to_read(ibeg:iend,ibeg:iend,:)
-                indx_stored(ifield)=indx_stored(ifield)+nb_stored(iproc)
-                deallocate(data_to_read)
-                
-             end if
-             
-          end do
-       end if
-       call mpi_bcast(data_read,(iend-ibeg+1)*(iend-ibeg+1)*nel,MPI_REAL,0,MPI_COMM_WORLD,ierr_mpi) 
-       call interpol_stress(ifield)
-       
-       
-       !! s23
-       if (.not.(trim(src_type(isim,1))=='monopole')) then
-          ifield=6
-          if (myid ==0) then 
-             do iproc=0, nbproc-1
-                if (nb_stored(iproc) > 0) then
-                   
-                   allocate(data_to_read(ibeg:iend,ibeg:iend, nb_stored(iproc)))
-                   read(iunit(iproc,ifield))  data_to_read(ibeg:iend,ibeg:iend,:)
-                   data_read(ibeg:iend, ibeg:iend, indx_stored(ifield):indx_stored(ifield)+nb_stored(iproc)-1) &
-                        = data_to_read(ibeg:iend,ibeg:iend,:)
-                   indx_stored(ifield)=indx_stored(ifield)+nb_stored(iproc)
-                   deallocate(data_to_read)
-                   
-                end if
-             end do
-          end if
-          call mpi_bcast(data_read,(iend-ibeg+1)*(iend-ibeg+1)*nel,MPI_REAL,0,MPI_COMM_WORLD,ierr_mpi)
-          call interpol_stress(ifield)
-       end if
-       
-       
-       !*** compute cylindrical componenets (with prefactors)
-       call compute_stress_3D_cyl(isim)
           
+          !*** s22 comp
+          ifield=2
+          if (myid==0) then
+             do iproc=0, nbproc-1
+                if (nb_stored(iproc) > 0) then
+                   
+                   allocate(data_to_read(ibeg:iend,ibeg:iend, nb_stored(iproc)))
+                   read( iunit(iproc,ifield,isim))  data_to_read(ibeg:iend,ibeg:iend,:)
+                   data_read(ibeg:iend, ibeg:iend, indx_stored(ifield):indx_stored(ifield)+nb_stored(iproc)-1) &
+                        = data_to_read(ibeg:iend,ibeg:iend,:)
+                   indx_stored(ifield)=indx_stored(ifield)+nb_stored(iproc)
+                   deallocate(data_to_read)
+                   
+                end if
+             end do
+          end if
+          call mpi_bcast(data_read,(iend-ibeg+1)*(iend-ibeg+1)*nel,MPI_REAL,0,MPI_COMM_WORLD,ierr_mpi)
+          call interpol_stress(ifield)
+          
+       
+          !*** s33 comp
+          ifield=3
+          if (myid==0) then
+             do iproc=0, nbproc-1
+                if (nb_stored(iproc) > 0) then
+                   
+                   allocate(data_to_read(ibeg:iend,ibeg:iend, nb_stored(iproc)))
+                   read( iunit(iproc,ifield,isim))  data_to_read(ibeg:iend,ibeg:iend,:)
+                   data_read(ibeg:iend, ibeg:iend, indx_stored(ifield):indx_stored(ifield)+nb_stored(iproc)-1) &
+                        = data_to_read(ibeg:iend,ibeg:iend,:)
+                   indx_stored(ifield)=indx_stored(ifield)+nb_stored(iproc)
+                   deallocate(data_to_read)
+                   
+                end if
+                
+             end do
+          end if
+          call mpi_bcast(data_read,(iend-ibeg+1)*(iend-ibeg+1)*nel,MPI_REAL,0,MPI_COMM_WORLD,ierr_mpi)
+          call interpol_stress(ifield)
+       
+          !*** s12 comp
+          if (.not.(trim(src_type(isim,1))=='monopole')) then
+             ifield=4
+             if (myid==0) then 
+                do iproc=0, nbproc-1
+                   if (nb_stored(iproc) > 0) then
+                      
+                      allocate(data_to_read(ibeg:iend,ibeg:iend, nb_stored(iproc)))
+                      read( iunit(iproc,ifield,isim))  data_to_read(ibeg:iend,ibeg:iend,:)
+                      data_read(ibeg:iend, ibeg:iend, indx_stored(ifield):indx_stored(ifield)+nb_stored(iproc)-1) &
+                           = data_to_read(ibeg:iend,ibeg:iend,:)
+                      indx_stored(ifield)=indx_stored(ifield)+nb_stored(iproc)
+                      deallocate(data_to_read)
+                      
+                   end if
+                end do
+             end if
+             call mpi_bcast(data_read,(iend-ibeg+1)*(iend-ibeg+1)*nel,MPI_REAL,0,MPI_COMM_WORLD,ierr_mpi)
+             call interpol_stress(ifield)
+          end if
+       
+       
+          !*** s13 comp
+          ifield=5
+          if (myid == 0) then
+             do iproc=0, nbproc-1
+                if (nb_stored(iproc) > 0) then
+                   
+                   allocate(data_to_read(ibeg:iend,ibeg:iend, nb_stored(iproc)))
+                   read( iunit(iproc,ifield,isim))  data_to_read(ibeg:iend,ibeg:iend,:)
+                   data_read(ibeg:iend, ibeg:iend, indx_stored(ifield):indx_stored(ifield)+nb_stored(iproc)-1) &
+                        = data_to_read(ibeg:iend,ibeg:iend,:)
+                   indx_stored(ifield)=indx_stored(ifield)+nb_stored(iproc)
+                   deallocate(data_to_read)
+                   
+                end if
+                
+             end do
+          end if
+          call mpi_bcast(data_read,(iend-ibeg+1)*(iend-ibeg+1)*nel,MPI_REAL,0,MPI_COMM_WORLD,ierr_mpi) 
+          call interpol_stress(ifield)
+          
+       
+          !*** s23 comp
+          if (.not.(trim(src_type(isim,1))=='monopole')) then
+             ifield=6
+             if (myid ==0) then 
+                do iproc=0, nbproc-1
+                   if (nb_stored(iproc) > 0) then
+                      
+                      allocate(data_to_read(ibeg:iend,ibeg:iend, nb_stored(iproc)))
+                      read( iunit(iproc,ifield,isim))  data_to_read(ibeg:iend,ibeg:iend,:)
+                      data_read(ibeg:iend, ibeg:iend, indx_stored(ifield):indx_stored(ifield)+nb_stored(iproc)-1) &
+                           = data_to_read(ibeg:iend,ibeg:iend,:)
+                      indx_stored(ifield)=indx_stored(ifield)+nb_stored(iproc)
+                      deallocate(data_to_read)
+                      
+                   end if
+                end do
+             end if
+             call mpi_bcast(data_read,(iend-ibeg+1)*(iend-ibeg+1)*nel,MPI_REAL,0,MPI_COMM_WORLD,ierr_mpi)
+             call interpol_stress(ifield)
+          end if
+       
+       
+          !*** compute cylindrical componenets (with prefactors) and sum
+          call compute_stress_3D_cyl(isim)
+          stress_rec_all = stress_rec_all + stress_rec
+          
+       end do ! isim
+       
        !*** Perform rotations
        call rotate2cartesian_with_source_in_pole_stress
        call rotate_back_source_stress                    ! global earth cartesian 
@@ -432,20 +479,25 @@ contains
        
     end do
     
-    ! close files 
-    do ifield=1,6
-       do iproc=0, nbproc-1
-          close(iunit(iproc,ifield))
+    !*** Close files 
+    if (myid == 0) then
+       !*** Close inputs files
+       do isim = 1, nsim
+          do ifield=1,6
+             do iproc=0, nbproc-1
+                close( iunit(iproc,ifield,isim))
+             end do
+          end do
        end do
-    end do
-    
-    close(isxx)
-    close(isyy)
-    close(iszz)
-    close(isxy)
-    close(isxz)
-    close(isyz)
-    
+       !*** Close output files
+       close(isxx)
+       close(isyy)
+       close(iszz)
+       close(isxy)
+       close(isxz)
+       close(isyz)
+    end if
+
  contains
     
     !================================================================================
@@ -750,9 +802,9 @@ contains
     integer(kind=si), intent(in) :: isim
 
     do irec=irecmin,irecmax
-       data_rec(irec,1) = f1(irec) * data_rec(irec,1) !f1
-       data_rec(irec,2) = f2(irec) * data_rec(irec,2)          !f2
-       data_rec(irec,3) = f1(irec) * data_rec(irec,3)          !f1
+       data_rec_all(irec,1) = data_rec_all(irec,1) + f1(irec) * data_rec(irec,1) !f1
+       data_rec_all(irec,2) = data_rec_all(irec,2) + f2(irec) * data_rec(irec,2)          !f2
+       data_rec_all(irec,3) = data_rec_all(irec,3) + f1(irec) * data_rec(irec,3)          !f1
     end do
 
   end subroutine compute_3D_cyl
@@ -769,12 +821,12 @@ contains
     integer(kind=si), intent(in) :: isim
 
     do irec=irecmin,irecmax
-       stress_rec(irec,1) = f1(irec) * stress_rec(irec,1) !f1
-       stress_rec(irec,2) = f1(irec) * stress_rec(irec,2) !f1
-       stress_rec(irec,3) = f1(irec) * stress_rec(irec,3) !f1
-       stress_rec(irec,4) = f2(irec) * stress_rec(irec,4) !f2
-       stress_rec(irec,5) = f1(irec) * stress_rec(irec,5) !f1
-       stress_rec(irec,6) = f2(irec) * stress_rec(irec,6) !f2
+       stress_rec_all(irec,1) = stress_rec_all(irec,1) + f1(irec) * stress_rec(irec,1) !f1
+       stress_rec_all(irec,2) = stress_rec_all(irec,2) + f1(irec) * stress_rec(irec,2) !f1
+       stress_rec_all(irec,3) = stress_rec_all(irec,3) + f1(irec) * stress_rec(irec,3) !f1
+       stress_rec_all(irec,4) = stress_rec_all(irec,4) + f2(irec) * stress_rec(irec,4) !f2
+       stress_rec_all(irec,5) = stress_rec_all(irec,5) + f1(irec) * stress_rec(irec,5) !f1
+       stress_rec_all(irec,6) = stress_rec_all(irec,6) + f2(irec) * stress_rec(irec,6) !f2
     end do
     
   end subroutine compute_stress_3D_cyl

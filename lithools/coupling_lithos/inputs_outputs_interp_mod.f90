@@ -44,7 +44,7 @@ contains
     close(10)
 
     if(.not.allocated(working_axisem_dir)) allocate(working_axisem_dir(nsim))
-
+    
     if (nsim == 1) then
        working_axisem_dir(1)="./"
     else
@@ -83,6 +83,10 @@ contains
     allocate(isxx(nsim),isyy(nsim),iszz(nsim))
     allocate(isxy(nsim),isxz(nsim),isyz(nsim))
     
+    !*** new
+    nsim = 1
+    working_axisem_dir(1)="./"
+       
     do isim=1,nsim
        ivx(isim)=next_iunit(iunit)
        ivy(isim)=next_iunit(iunit)
@@ -94,23 +98,23 @@ contains
        isxz(isim)=next_iunit(iunit)
        isyz(isim)=next_iunit(iunit)
        
-       write(fichier,'(a6,a15)') '/Data/',output_veloc_name(1)
+       write(fichier,'(a15)') output_veloc_name(1)
        open(ivx(isim),file= trim(working_axisem_dir(isim))//trim(fichier), FORM="UNFORMATTED")
-       write(fichier,'(a6,a15)') '/Data/',output_veloc_name(2)
+       write(fichier,'(a15)') output_veloc_name(2)
        open(ivy(isim),file= trim(working_axisem_dir(isim))//trim(fichier), FORM="UNFORMATTED")
-       write(fichier,'(a6,a15)') '/Data/',output_veloc_name(3)
+       write(fichier,'(a15)') output_veloc_name(3)
        open(ivz(isim),file= trim(working_axisem_dir(isim))//trim(fichier), FORM="UNFORMATTED")
-       write(fichier,'(a6,a15)') '/Data/',output_stress_name(1)
+       write(fichier,'(a15)') output_stress_name(1)
        open(isxx(isim),file= trim(working_axisem_dir(isim))//trim(fichier), FORM="UNFORMATTED")
-       write(fichier,'(a6,a15)') '/Data/',output_stress_name(2)
+       write(fichier,'(a15)') output_stress_name(2)
        open(isyy(isim),file= trim(working_axisem_dir(isim))//trim(fichier), FORM="UNFORMATTED")
-       write(fichier,'(a6,a15)') '/Data/',output_stress_name(3)
+       write(fichier,'(a15)') output_stress_name(3)
        open(iszz(isim),file= trim(working_axisem_dir(isim))//trim(fichier), FORM="UNFORMATTED")
-       write(fichier,'(a6,a15)') '/Data/',output_stress_name(4)
+       write(fichier,'(a15)') output_stress_name(4)
        open(isxy(isim),file= trim(working_axisem_dir(isim))//trim(fichier), FORM="UNFORMATTED")
-       write(fichier,'(a6,a15)') '/Data/',output_stress_name(5)
+       write(fichier,'(a15)') output_stress_name(5)
        open(isxz(isim),file= trim(working_axisem_dir(isim))//trim(fichier), FORM="UNFORMATTED")
-       write(fichier,'(a6,a15)') '/Data/',output_stress_name(6)
+       write(fichier,'(a15)') output_stress_name(6)
        open(isyz(isim),file= trim(working_axisem_dir(isim))//trim(fichier), FORM="UNFORMATTED")
     end do
     
