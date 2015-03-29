@@ -74,7 +74,7 @@ contains
    call mpi_bcast(rot_mat_mesh,9,MPI_REAL8,0,MPI_COMM_WORLD,ierr_mpi)
    call mpi_bcast(trans_rot_mat_mesh,9,MPI_REAL8,0,MPI_COMM_WORLD,ierr_mpi)
 
-   if (.not.allocated(Mij_scale)) allocate(Mij_scale(6))
+   allocate(Mij_scale(6))
    mij_scale = 0.
 
    if (myid >  0) then 
@@ -83,12 +83,12 @@ contains
       allocate(f1(nbrec),f2(nbrec))
       allocate(phi(nbrec))
       allocate(magnitude(nsim))
+      allocate(Mij(nsim,6))
       allocate(scoor(ibeg:iend,ibeg:iend,nel),zcoor(ibeg:iend,ibeg:iend,nel))
       allocate(data_read(ibeg:iend,ibeg:iend,nel))
       allocate(xi_rec(nbrec),eta_rec(nbrec))
       allocate(rec2elm(nbrec))
       allocate(src_type(nsim,2))
-      allocate(Mij(nsim,6))
 
    end if
    allocate(stress_reduce(nbrec,6),data_reduce(nbrec,3))

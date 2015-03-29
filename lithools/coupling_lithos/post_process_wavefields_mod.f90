@@ -532,7 +532,7 @@ contains
 ! Routine computing prefactor for wavefield extrapolation
   subroutine compute_prefactor(src_type,Mcomp,isim)
     
-    use global_parameters_mod, only: Mij, phi, nbrec, nsim, magnitude, mij_scale
+!    use global_parameters_mod, only: Mij, phi, nbrec, nsim, magnitude, mij_scale
     
     integer(kind=si), intent(in) :: isim
     character(len=10), intent(in)  :: src_type
@@ -590,8 +590,8 @@ contains
        select case (trim(Mcomp))
        case('mtr','mrt')
           do irec=1,nbrec
-             f1(irec) =   Mij_scale(4) * cos(phi(irec))
-             f2(irec) = - Mij_scale(4) * sin(phi(irec))
+             f1(irec) =   Mij_scale(4) * cos(phi(irec)) + Mij_scale(5) * sin(phi(irec))   !   Mij_scale(4) * cos(phi(irec))
+             f2(irec) = - Mij_scale(4) * sin(phi(irec)) + Mij_scale(5) * cos(phi(irec))  ! - Mij_scale(4) * sin(phi(irec))
           end do
        case ('thetaforce')   !!! TO verify
           do irec=1,nbrec
@@ -600,8 +600,10 @@ contains
           end do
        case('mpr','mrp')
           do irec=1,nbrec
-             f1(irec) = Mij_scale(5) * sin(phi(irec))
-             f2(irec) = Mij_scale(5) * cos(phi(irec))
+             f1(irec) =   Mij_scale(4) * cos(phi(irec)) + Mij_scale(5) * sin(phi(irec))   !   Mij_scale(4) * cos(phi(irec))
+             f2(irec) = - Mij_scale(4) * sin(phi(irec)) + Mij_scale(5) * cos(phi(irec))  ! - Mij_scale(4) * sin(phi(irec))
+!             f1(irec) = Mij_scale(5) * sin(phi(irec))
+!             f2(irec) = Mij_scale(5) * cos(phi(irec))
           end do
        case('phiforce')      !!! TO verify
           do irec=1,nbrec
@@ -615,13 +617,17 @@ contains
        select case (trim(Mcomp))
        case ('mtt_m_mpp')
           do irec=1,nbrec
-             f1(irec)=   (Mij_scale(2) - Mij_scale(3)) * cos(2.*phi(irec)) !!! Check -1/2 
-             f2(irec)= - (Mij_scale(2) - Mij_scale(3)) * sin(2.*phi(irec)) !!! Check -1/2
+             f1(irec) = (Mij_scale(2) - Mij_scale(3)) * cos(2.*phi(irec)) + 2. * Mij_scale(6) * sin(2.*phi(irec)) !!! Check -1/2 
+             f2(irec) = (Mij_scale(3) - Mij_scale(2)) * sin(2.*phi(irec)) + 2. * Mij_scale(6) * cos(2.*phi(irec)) !!! Check -1/2
+!             f1(irec)=   (Mij_scale(2) - Mij_scale(3)) * cos(2.*phi(irec)) !!! Check -1/2 
+!             f2(irec)= - (Mij_scale(3) - Mij_scale(2)) * sin(2.*phi(irec)) !!! Check -1/2
           end do
        case('mtp','mpt')
           do irec=1,nbrec
-             f1(irec) = 2. * Mij_scale(6) * sin(2*phi(irec))    !!! Check -1/2
-             f2(irec) = 2. * Mij_scale(6) * cos(2*phi(irec))    !!! Check -1/2
+!             f1(irec) =  2. * Mij_scale(6) * sin(2*phi(irec))    !!! Check -1/2  .. 2.*
+!             f2(irec) =  2. * Mij_scale(6) * cos(2*phi(irec))    !!! Check -1/2  .. 2./*
+             f1(irec) = (Mij_scale(2) - Mij_scale(3)) * cos(2.*phi(irec)) + 2. * Mij_scale(6) * sin(2.*phi(irec)) !!! Check -1/2 
+             f2(irec) = (Mij_scale(3) - Mij_scale(2)) * sin(2.*phi(irec)) + 2. * Mij_scale(6) * cos(2.*phi(irec)) !!! Check -1/2
           end do
        end select
        

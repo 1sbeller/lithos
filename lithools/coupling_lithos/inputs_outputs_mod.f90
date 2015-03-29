@@ -108,6 +108,8 @@ contains
     allocate(ibeg(nsim), iend(nsim), srccolat_tmp(nsim), srclon_tmp(nsim), src_depth_tmp(nsim))
     allocate(shift_fact_tmp(nsim))
     allocate(ishift_deltat(nsim), ishift_seisdt(nsim), ishift_straindt(nsim))
+    allocate(Mij(nsim,1:6)) 
+       Mij = 0.
     
     !*** For each simulation, read the file SIMULATION.INFO and the the source parameter info 
     do isim = 1,nsim
@@ -146,8 +148,6 @@ contains
 
        !*** Tensor moment
        magnitude(isim) = mag(isim)
-       if(.not.allocated(Mij)) allocate(Mij(nsim,6))
-       Mij = 0.
 
        select case(src_file_type)
        case('moment')
