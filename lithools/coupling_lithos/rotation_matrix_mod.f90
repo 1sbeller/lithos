@@ -14,25 +14,27 @@ contains
     use global_parameters_mod
     
     integer(kind=si) :: irec, i, j, k
-    real(kind=cp), dimension(3,3) :: tmp1, B, st
+    real(kind=cp), dimension(3,3) :: tmp1, B, st, Bt
     real(kind=cp), dimension(6,6) :: tmp
 
     ! compute B*st*Bt
     do irec=irecmin,irecmax
           
        ! rotation matrix 
-       B(1,1)=  cos(phi(irec))
-       B(1,2)= - sin(phi(irec))
-       B(1,3)= 0. 
+       Bt(1,1)=  cos(phi(irec))
+       Bt(1,2)= - sin(phi(irec))
+       Bt(1,3)= 0. 
        
-       B(2,1)=  sin(phi(irec))
-       B(2,2)=  cos(phi(irec))
-       B(2,3)=  0.
+       Bt(2,1)=  sin(phi(irec))
+       Bt(2,2)=  cos(phi(irec))
+       Bt(2,3)=  0.
 
-       B(3,1)= 0. 
-       B(3,2)= 0. 
-       B(3,3)= 1. 
+       Bt(3,1)= 0. 
+       Bt(3,2)= 0. 
+       Bt(3,3)= 1. 
        
+       B=transpose(Bt)
+
        st(1,1)=stress_rec_all(irec,1)
        st(1,2)=stress_rec_all(irec,4)
        st(1,3)=stress_rec_all(irec,5)
@@ -50,7 +52,7 @@ contains
        do j=1,3
           do i=1,3
              do k=1,3
-                tmp(i,j)=tmp(i,j)+st(i,k)*B(j,k)
+                tmp(i,j)=tmp(i,j)+st(i,k)*B(k,j)   !*B(j,k)
              end do
           end do
        end do
@@ -60,7 +62,7 @@ contains
        do j=1,3
           do i=1,3
              do k=1,3
-                tmp1(i,j)=tmp1(i,j)+B(i,k)*tmp(k,j)
+                tmp1(i,j)=tmp1(i,j) + Bt(i,k)*tmp(k,j) !B(i,k)*tmp(k,j)
              end do
           end do
        end do
@@ -98,7 +100,7 @@ contains
        tmp=0.  
        do i=1,3
           do k=1,3
-             tmp(i)=tmp(i)+veloc(k)*rot_mat(i,k)
+             tmp(i)=tmp(i)+veloc(k)*rot_mat(i,k) !trans_rot_mat(i,k)
           end do
        end do
        
@@ -132,7 +134,7 @@ contains
        tmp=0.  
        do i=1,3
           do k=1,3
-             tmp(i)=tmp(i)+veloc(k)*trans_rot_mat_mesh(i,k)  
+             tmp(i)=tmp(i)+veloc(k)*rot_mat_mesh(i,k)  
           end do
        end do
        
@@ -186,7 +188,7 @@ contains
        do j=1,3
           do i=1,3
              do k=1,3
-                tmp(i,j)=tmp(i,j)+st(i,k)*trans_rot_mat(k,j)
+                tmp(i,j)=tmp(i,j)+st(i,k) * trans_rot_mat(k,j)   !*trans_rot_mat(k,j)
              end do
           end do
        end do
@@ -196,7 +198,7 @@ contains
        do j=1,3
           do i=1,3
              do k=1,3
-                tmp1(i,j)=tmp1(i,j)+tmp(k,j)*rot_mat(i,k)
+                tmp1(i,j)=tmp1(i,j)+tmp(k,j) * rot_mat(i,k) !*rot_mat(i,k)
              end do
           end do
        end do
@@ -243,7 +245,7 @@ contains
        do j=1,3
           do i=1,3
              do k=1,3
-                tmp(i,j)=tmp(i,j)+st(i,k)*rot_mat_mesh(k,j)
+                tmp(i,j)=tmp(i,j)+st(i,k)*trans_rot_mat_mesh(k,j)
              end do
           end do
        end do
@@ -253,7 +255,7 @@ contains
        do j=1,3
           do i=1,3
              do k=1,3
-                tmp1(i,j)=tmp1(i,j)+trans_rot_mat_mesh(i,k)*tmp(k,j) 
+                tmp1(i,j)=tmp1(i,j)+rot_mat_mesh(i,k)*tmp(k,j) 
              end do
           end do
        end do
@@ -296,23 +298,25 @@ contains
     
     integer(kind=si) :: irec, i, k
     real(kind=sp), dimension(3)   :: tmp, veloc
-    real(kind=sp), dimension(3,3) :: B
+    real(kind=sp), dimension(3,3) :: B, Bt
 
     do irec=irecmin,irecmax
            
        ! rotation matrix
-       B(1,1)=  cos(phi(irec))
-       B(1,2)= - sin(phi(irec))
-       B(1,3)= 0. 
+       Bt(1,1)=  cos(phi(irec))
+       Bt(1,2)= - sin(phi(irec))
+       Bt(1,3)= 0. 
        
-       B(2,1)=  sin(phi(irec))
-       B(2,2)=  cos(phi(irec))
-       B(2,3)=  0.
+       Bt(2,1)=  sin(phi(irec))
+       Bt(2,2)=  cos(phi(irec))
+       Bt(2,3)=  0.
        
-       B(3,1)= 0. 
-       B(3,2)= 0. 
-       B(3,3)= 1. 
+       Bt(3,1)= 0. 
+       Bt(3,2)= 0. 
+       Bt(3,3)= 1. 
        
+       B = transpose(Bt)
+
        ! veloc in cylindical coordinates
        veloc(1)=data_rec_all(irec,1)
        veloc(2)=data_rec_all(irec,2)
@@ -322,7 +326,7 @@ contains
        tmp=0.  
        do i=1,3
           do k=1,3
-             tmp(i)=tmp(i)+veloc(k)*B(i,k)
+             tmp(i)=tmp(i)+veloc(k)*Bt(i,k)
           end do
        end do
        
@@ -411,10 +415,13 @@ contains
 
 !================================================================================
 ! Roation matrix for SEM mesh
-  subroutine def_rot_matrix_SEM(lat,lon,alpha,transrotmat,rotmat)
+  subroutine def_rot_matrix_SEM(lat,lon,alpha,rotmat,transrotmat)
 
     real(kind=dp), intent(in)                  :: lon, lat, alpha
     real(kind=dp), dimension(3,3), intent(out) :: rotmat, transrotmat
+    real(kind=dp)                              :: smallval
+
+    smallval=1e-11_dp
 
     rotmat(1,1) =  dcos(lat) * dcos(lon)
     rotmat(1,2) =  dcos(lat) * dsin(lon)
@@ -426,10 +433,15 @@ contains
     rotmat(3,2) = -dcos(lon) * dsin(alpha) - dcos(alpha) * dsin(lat) * dsin(lon)
     rotmat(3,3) =  dcos(alpha) * dcos(lat)
 
+    where (abs(rotmat)<smallval) rotmat = 0.0_dp
+
     transrotmat = transpose(rotmat)
 
     write(*,*) 'MESH ROT SEM'
-    write(*,*) transrotmat
+    write(*,*) rotmat(1,1),rotmat(1,2),rotmat(1,3)
+    write(*,*) rotmat(2,1),rotmat(2,2),rotmat(2,3)
+    write(*,*) rotmat(3,1),rotmat(3,2),rotmat(3,3)
+
 
   end subroutine def_rot_matrix_SEM
 !--------------------------------------------------------------------------------
