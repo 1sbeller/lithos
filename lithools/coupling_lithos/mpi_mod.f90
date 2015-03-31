@@ -75,7 +75,7 @@ contains
    call mpi_bcast(trans_rot_mat_mesh,9,MPI_REAL8,0,MPI_COMM_WORLD,ierr_mpi)
 
    allocate(Mij_scale(6))
-   mij_scale = 0.
+   Mij_scale(:) = 0.
 
    if (myid >  0) then 
       allocate(reciever_geogr(3,nbrec),reciever_sph(3,nbrec),reciever_cyl(3,nbrec),reciever_interp_value(nbrec))
@@ -113,7 +113,7 @@ contains
     call mpi_bcast(f1,nbrec*nsim,MPI_REAL8,0,MPI_COMM_WORLD,ierr_mpi)
     call mpi_bcast(f2,nbrec*nsim,MPI_REAL8,0,MPI_COMM_WORLD,ierr_mpi)
     call mpi_bcast(Mij,nsim*6,MPI_REAL8,0,MPI_COMM_WORLD,ierr_mpi)
-    call mpi_bcast(mij_scale,6,MPI_REAL8,0,MPI_COMM_WORLD,ierr_mpi)
+    call mpi_bcast(Mij_scale,6,MPI_REAL8,0,MPI_COMM_WORLD,ierr_mpi)
     call mpi_bcast(magnitude,nsim,MPI_REAL8,0,MPI_COMM_WORLD,ierr_mpi)
 
     call mpi_bcast(phi,nbrec,MPI_REAL8,0,MPI_COMM_WORLD,ierr_mpi)

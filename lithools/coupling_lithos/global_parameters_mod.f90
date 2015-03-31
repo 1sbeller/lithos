@@ -61,6 +61,6 @@ module global_parameters_mod
 
   !*** Moment tensor
   real(kind=dp), dimension(:,:), allocatable :: Mij
-  real(kind=dp), dimension(:), allocatable :: magnitude, Mij_scale
+  real(kind=dp), dimension(:),   allocatable :: magnitude, Mij_scale
 
 end module global_parameters_mod

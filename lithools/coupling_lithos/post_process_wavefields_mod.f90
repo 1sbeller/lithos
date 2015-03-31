@@ -2,7 +2,7 @@ module post_process_wavefields_mod
 
   use precision_mod
   use constants_mod
-  use mpi_mod
+!  use mpi_mod
   implicit none
 
 contains
@@ -14,7 +14,8 @@ contains
     use global_parameters_mod
     use rotation_matrix_mod
     use inputs_outputs_mod
-    
+    use mpi_mod
+
     integer(kind=si) :: isim    
     !, intent(in) :: isim
 
@@ -590,7 +591,11 @@ contains
 ! Routine computing prefactor for wavefield extrapolation
   subroutine compute_prefactor(src_type,Mcomp,isim)
     
-!    use global_parameters_mod, only: Mij, phi, nbrec, nsim, magnitude, mij_scale
+    
+    use mpi_mod, only: myid, ierr_mpi, MPI_COMM_WORLD 
+    use global_parameters_mod, only: Mij, phi, nbrec, nsim, magnitude, mij_scale, f1, f2
+    
+    implicit none
     
     integer(kind=si), intent(in) :: isim
     character(len=10), intent(in)  :: src_type
@@ -598,6 +603,8 @@ contains
     integer(kind=si) :: irec
 
     !*** Scale tensor
+    Mij_scale(:) = 0.
+
     Mij_scale(1) = Mij(isim,1) / magnitude(isim) 
     Mij_scale(2) = Mij(isim,2) / magnitude(isim) 
     Mij_scale(3) = Mij(isim,3) / magnitude(isim) 
@@ -607,6 +614,9 @@ contains
 
     call MPI_barrier(MPI_COMM_WORLD, ierr_mpi)
     if (myid == 0) then
+        print *,'src_type, Mcomp, isim '
+        print *,src_type, Mcomp, isim
+
        write(6,*)'Mij scaled: on proc 0'
        write(6,*) Mij_scale
        write(6,*)'-----------------'
@@ -631,6 +641,8 @@ contains
     select case (trim(src_type))
     case('monopole')
 
+       if(myid==0) print *,'i fond monopole'
+
        select case(Mcomp)
        case('mrr')
           f1(isim,:) = Mij_scale(1)
@@ -644,6 +656,8 @@ contains
        end select
 
     case('dipole')
+
+       if(myid==0) print *,'i fond diple'
 
        select case (trim(Mcomp))
        case('mtr','mrt')
@@ -672,6 +686,8 @@ contains
 
     case('quadpole')
 
+       if(myid==0) print *,'i fond quadpole'
+
        select case (trim(Mcomp))
        case ('mtt_m_mpp')
           do irec=1,nbrec
@@ -690,6 +706,21 @@ contains
        end select
        
     end select
+
+
+    ! check for debug
+    call MPI_barrier(MPI_COMM_WORLD, ierr_mpi)
+    if (myid == 0) then
+       write(6,*) 'F1,F2 prefactor max proc0:', maxval(f1(isim,:)), maxval(f2(isim,:))
+       write(6,*) 'F1,F2 prefactor min proc0:', minval(f1(isim,:)), minval(f2(isim,:))
+    end if
+    call MPI_barrier(MPI_COMM_WORLD, ierr_mpi)
+    if (myid == 1) then
+       write(6,*) 'F1,F2 prefactor max proc1:', maxval(f1(isim,:)), maxval(f2(isim,:))
+       write(6,*) 'F1,F2 prefactor min proc1:', minval(f1(isim,:)), minval(f2(isim,:))
+    end if
+    call MPI_barrier(MPI_COMM_WORLD, ierr_mpi)
+
 
 !!$    !*** For moment tensor
 !!$!    if (.not.allocated(mij_prefact)) allocate(mij_prefact(nbrec,nsim,3))

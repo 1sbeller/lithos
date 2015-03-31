@@ -109,7 +109,7 @@ contains
     allocate(shift_fact_tmp(nsim))
     allocate(ishift_deltat(nsim), ishift_seisdt(nsim), ishift_straindt(nsim))
     allocate(Mij(nsim,1:6)) 
-    Mij = 0.
+    Mij(:,:) = 0.
     
     !*** For each simulation, read the file SIMULATION.INFO and the the source parameter info 
     do isim = 1,nsim
@@ -168,7 +168,7 @@ contains
           read(20000,*) junk, Mij(isim,6) !Mtp
           close(20000)
           
-          Mij = Mij / 1.e7 ! CMTSOLUTION given in dyn-cm
+          Mij(isim,:) = Mij(isim,:) / 1.e7 ! CMTSOLUTION given in dyn-cm
           
        case('single')
           iinparam_source = 1132
@@ -186,7 +186,7 @@ contains
                 read(keyvalue,*) amplitude
              end if
           end do
-          Mij = 0.0
+          Mij(isim,:) = 0.0
           select case(src_type(isim,2))
           case('mrr')
              Mij(isim,1) =  amplitude
@@ -319,7 +319,9 @@ contains
     stress_rec_all = 0.
     data_rec_all   = 0.   
     allocate(f1(nsim,nbrec),f2(nsim,nbrec),phi(nbrec))
-    
+    f1 = 0.
+    f2 = 0.
+
     !* Read and computes coordinates for each point
     do i=1,nbrec !! radius, latitude, longitude
        read(10,*) reciever_geogr(1,i),reciever_geogr(2,i),reciever_geogr(3,i)
