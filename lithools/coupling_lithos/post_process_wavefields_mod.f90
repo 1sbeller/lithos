@@ -166,7 +166,7 @@ contains
        
           !*** Compute cylindrical components (prefactors) and sum 
           call compute_3D_cyl(isim)
-          data_rec_all = data_rec_all + data_rec
+          !data_rec_all = data_rec_all + data_rec
           
        end do !isim
 
@@ -302,7 +302,7 @@ contains
        write(isxz) nbrec,ntime
        write(isyz) nbrec,ntime
        
-       data_rec=0.
+       stress_rec=0.
 
        !*** For each inpuut stress components
        do isim = 1, nsim
@@ -468,7 +468,7 @@ contains
        
           !*** compute cylindrical componenets (with prefactors) and sum
           call compute_stress_3D_cyl(isim)
-          stress_rec_all = stress_rec_all + stress_rec
+          !stress_rec_all = stress_rec_all + stress_rec
           
        end do ! isim
        
@@ -713,11 +713,15 @@ contains
     if (myid == 0) then
        write(6,*) 'F1,F2 prefactor max proc0:', maxval(f1(isim,:)), maxval(f2(isim,:))
        write(6,*) 'F1,F2 prefactor min proc0:', minval(f1(isim,:)), minval(f2(isim,:))
+       write(6,*) 'Phi min and max, proc 0 ', minval(phi(:)), maxval(phi(:))
+       write(6,*) 'Nbrec: ',nbrec
     end if
     call MPI_barrier(MPI_COMM_WORLD, ierr_mpi)
     if (myid == 1) then
        write(6,*) 'F1,F2 prefactor max proc1:', maxval(f1(isim,:)), maxval(f2(isim,:))
        write(6,*) 'F1,F2 prefactor min proc1:', minval(f1(isim,:)), minval(f2(isim,:))
+       write(6,*) 'Phi min and max, proc 0 ', minval(phi(:)), maxval(phi(:))
+       write(6,*) 'Nbrec: ',nbrec
     end if
     call MPI_barrier(MPI_COMM_WORLD, ierr_mpi)
 
