@@ -120,98 +120,6 @@ program interpolate_3D_wavefield
      end if
      
      !*** Send-receive to scatter data
-     !* Vx
-!     if (myid ==0) then ! SEND
-!        vxold1(:,itime)  =  vxold2(i_inf(1):i_sup(1),1)
-!        do iproc=1,nb_proc-1
-!           call mpi_send( vxold2(i_inf(iproc+1):i_sup(iproc+1),1),nb_received_sv(iproc+1),MPI_REAL,iproc,etq,MPI_COMM_WORLD,ierr_mpi)
-!        end do
-!     else ! RECEIVE
-!        call mpi_recv( vxold1(:,itime),nb_received_sv(myid+1),MPI_REAL,0,etq,MPI_COMM_WORLD,statut,ierr_mpi)
-!     end if
-!
-!     !* Vy
-!     if (myid ==0) then ! SEND
-!        vyold1(:,itime)  =  vyold2(i_inf(1):i_sup(1),1)
-!        do iproc=1,nb_proc-1
-!           call mpi_send( vyold2(i_inf(iproc+1):i_sup(iproc+1),1),nb_received_sv(iproc+1),MPI_REAL,iproc,etq,MPI_COMM_WORLD,ierr_mpi)
-!        end do
-!     else ! RECEIVE
-!        call mpi_recv( vyold1(:,itime),nb_received_sv(myid+1),MPI_REAL,0,etq,MPI_COMM_WORLD,statut,ierr_mpi)
-!     end if
-!
-!     !* Vz
-!     if (myid ==0) then ! SEND
-!        vzold1(:,itime)  =  vzold2(i_inf(1):i_sup(1),1)
-!        do iproc=1,nb_proc-1
-!           call mpi_send( vzold2(i_inf(iproc+1):i_sup(iproc+1),1),nb_received_sv(iproc+1),MPI_REAL,iproc,etq,MPI_COMM_WORLD,ierr_mpi)
-!        end do
-!     else ! RECEIVE
-!        call mpi_recv( vzold1(:,itime),nb_received_sv(myid+1),MPI_REAL,0,etq,MPI_COMM_WORLD,statut,ierr_mpi)
-!     end if
-!
-!     !* Sxx
-!     if (myid ==0) then ! SEND
-!        sxxold1(:,itime) = sxxold2(i_inf(1):i_sup(1),1)
-!        do iproc=1,nb_proc-1
-!           call mpi_send(sxxold2(i_inf(iproc+1):i_sup(iproc+1),1),nb_received_sv(iproc+1),MPI_REAL,iproc,etq,MPI_COMM_WORLD,ierr_mpi)
-!        end do
-!     else ! RECEIVE
-!        call mpi_recv(sxxold1(:,itime),nb_received_sv(myid+1),MPI_REAL,0,etq,MPI_COMM_WORLD,statut,ierr_mpi)
-!     end if
-!!
-!     !* Syy
-!     if (myid ==0) then ! SEND
-!        syyold1(:,itime) = syyold2(i_inf(1):i_sup(1),1)
-!        do iproc=1,nb_proc-1
-!           call mpi_send(syyold2(i_inf(iproc+1):i_sup(iproc+1),1),nb_received_sv(iproc+1),MPI_REAL,iproc,etq,MPI_COMM_WORLD,ierr_mpi)
-!        end do
-!     else ! RECEIVE
-!        call mpi_recv(syyold1(:,itime),nb_received_sv(myid+1),MPI_REAL,0,etq,MPI_COMM_WORLD,statut,ierr_mpi)
-!     end if
-!
-!     !* Szz
-!     if (myid ==0) then ! SEND
-!        szzold1(:,itime) = szzold2(i_inf(1):i_sup(1),1)
-!        do iproc=1,nb_proc-1
-!           call mpi_send(szzold2(i_inf(iproc+1):i_sup(iproc+1),1),nb_received_sv(iproc+1),MPI_REAL,iproc,etq,MPI_COMM_WORLD,ierr_mpi)
-!        end do
-!     else ! RECEIVE
-!        call mpi_recv(szzold1(:,itime),nb_received_sv(myid+1),MPI_REAL,0,etq,MPI_COMM_WORLD,statut,ierr_mpi)
-!     end if
-!
-!     !* Sxy
-!     if (myid ==0) then ! SEND
-!        sxyold1(:,itime) = sxyold2(i_inf(1):i_sup(1),1)
-!        do iproc=1,nb_proc-1
-!           call mpi_send(sxyold2(i_inf(iproc+1):i_sup(iproc+1),1),nb_received_sv(iproc+1),MPI_REAL,iproc,etq,MPI_COMM_WORLD,ierr_mpi)
-!        end do
-!     else ! RECEIVE
-!        call mpi_recv(sxyold1(:,itime),nb_received_sv(myid+1),MPI_REAL,0,etq,MPI_COMM_WORLD,statut,ierr_mpi)
-!     end if
-!
-!     !* Sxz
-!     if (myid ==0) then ! SEND
-!        sxzold1(:,itime) = sxzold2(i_inf(1):i_sup(1),1)
-!        do iproc=1,nb_proc-1
-!           call mpi_send(sxzold2(i_inf(iproc+1):i_sup(iproc+1),1),nb_received_sv(iproc+1),MPI_REAL,iproc,etq,MPI_COMM_WORLD,ierr_mpi)
-!        end do
-!     else ! RECEIVE
-!        call mpi_recv(sxzold1(:,itime),nb_received_sv(myid+1),MPI_REAL,0,etq,MPI_COMM_WORLD,statut,ierr_mpi)
-!
-!     end if
-!
-!     !* Syz
-!     if (myid ==0) then ! SEND
-!        syzold1(:,itime) = syzold2(i_inf(1):i_sup(1),1)
-!        do iproc=1,nb_proc-1
-!           call mpi_send(syzold2(i_inf(iproc+1):i_sup(iproc+1),1),nb_received_sv(iproc+1),MPI_REAL,iproc,etq,MPI_COMM_WORLD,ierr_mpi)
-!        end do
-!     else ! RECEIVE
-!        call mpi_recv(syzold1(:,itime),nb_received_sv(myid+1),MPI_REAL,0,etq,MPI_COMM_WORLD,statut,ierr_mpi)
-!     end if
-!     
-     !*** Send-receive to scatter data
      if (myid ==0) then ! SEND
 
         vxold1(:,itime)  =  vxold2(i_inf(1):i_sup(1),1)
@@ -341,7 +249,9 @@ program interpolate_3D_wavefield
         write(6,*)'corresponding to time step:'
 	write(6,*)(ind - 1)* dtold
 	write(6,*)'dont quit but beware that stalta may have failed'
-        warning =1 
+        warning =1
+	call finalize_mpi
+	stop 
    else 
 	ind = alpha
    end if
@@ -475,7 +385,7 @@ program interpolate_3D_wavefield
    else
        ind = ceiling(real(ntstf/2,kind=cp))
    end if
-   ind = 1
+  ! ind = 1
 
    vxold(:,:)  = convtmpvx(:,ind:ind+ntold-1)
    vyold(:,:)  = convtmpvy(:,ind:ind+ntold-1)
