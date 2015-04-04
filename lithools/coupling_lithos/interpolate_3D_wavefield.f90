@@ -218,9 +218,12 @@ program interpolate_3D_wavefield
   open(26,file='verif.bin',access='direct',recl=cp*ntold)
   write(26,rec=1)vpow
   close(26)
-  open(26,file='stfint.bin',access='direct',recl=cp*ntold)
-  write(26,rec=1)stf
-  close(26)
+
+          if (isconv ==1) then         
+                  open(26,file='stfint.bin',access='direct',recl=cp*ntold)
+                write(26,rec=1)stf
+                close(26)
+        end if
   end if
 
 

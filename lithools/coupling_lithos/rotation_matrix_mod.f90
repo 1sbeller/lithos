@@ -47,7 +47,7 @@ contains
        st(3,2)=stress_rec_all(irec,6)
        st(3,3)=stress_rec_all(irec,3)
 
-       ! st*Bt
+       ! st*B
        tmp=0.
        do j=1,3
           do i=1,3
@@ -57,7 +57,7 @@ contains
           end do
        end do
 
-       ! B*st*Bt
+       ! Bt*st*B
        tmp1=0.
        do j=1,3
           do i=1,3
