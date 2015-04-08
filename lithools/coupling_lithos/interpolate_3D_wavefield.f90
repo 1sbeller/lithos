@@ -190,6 +190,50 @@ program interpolate_3D_wavefield
   end if
 
   !================================================================================
+  !*** Filter seismograms
+  if(.not.allocated(taper)) allocate(taper(ntold))
+  if(.not.allocated(convfilt)) allocate(convfilt(ntold))
+  convfilt = 0._cp
+  alph1 = 2./(dtold*ntold)          ! Warning 2s taper
+  taper = tuckeywin(nt,alph1)
+  
+  do ipt = 1, nrec_to_store
+     
+     !*** Taper on residuals
+     vxold1(ipt,:) = vxold1(ipt,:) * taper(:)
+     call bwfilt(vxold1(ipt,:),convfilt,dtold,ntold,1,4,1e-3_cp,fmax)
+     vxold1(irec,:) = convfilt(:)
+     vyold1(ipt,:) = vyold1(ipt,:) * taper(:)
+     call bwfilt(vyold1(ipt,:),convfilt,dtold,ntold,1,4,1e-3_cp,fmax)
+     vyold1(irec,:) = convfilt(:)
+     vzold1(ipt,:) = vzold1(ipt,:) * taper(:)
+     call bwfilt(vzold1(ipt,:),convfilt,dtold,ntold,1,4,1e-3_cp,fmax)
+     vzold1(irec,:) = convfilt(:)
+     sxxold1(ipt,:) = sxxold1(ipt,:) * taper(:)
+     call bwfilt(sxxold1(ipt,:),convfilt,dtold,ntold,1,4,1e-3_cp,fmax)
+     sxxold1(irec,:) = convfilt(:)
+     syyold1(ipt,:) = syyold1(ipt,:) * taper(:)
+     call bwfilt(syyold1(ipt,:),convfilt,dtold,ntold,1,4,1e-3_cp,fmax)
+     syyold1(irec,:) = convfilt(:)
+     szzold1(ipt,:) = szzold1(ipt,:) * taper(:)
+     call bwfilt(szzold1(ipt,:),convfilt,dtold,ntold,1,4,1e-3_cp,fmax)
+     szzold1(irec,:) = convfilt(:)
+     syzold1(ipt,:) = syzold1(ipt,:) * taper(:)
+     call bwfilt(syzold1(ipt,:),convfilt,dtold,ntold,1,4,1e-3_cp,fmax)
+     syzold1(irec,:) = convfilt(:)
+     sxzold1(ipt,:) = sxzold1(ipt,:) * taper(:)
+     call bwfilt(sxzold1(ipt,:),convfilt,dtold,ntold,1,4,1e-3_cp,fmax)
+     sxzold1(irec,:) = convfilt(:)
+     sxyold1(ipt,:) = sxyold1(ipt,:) * taper(:)
+     call bwfilt(sxyold1(ipt,:),convfilt,dtold,ntold,1,4,1e-3_cp,fmax)
+     sxyold1(irec,:) = convfilt(:)
+     
+  end do
+
+  if (allocated(convfilt)) deallocate(convfilt)
+  if (allocated(taper)) deallocate(taper)
+
+  !================================================================================
   ! Compute velocity energy and STA/LTA this could be done on many procs)
   !--------------------------------------------------
   !*** Compute energy

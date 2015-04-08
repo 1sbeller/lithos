@@ -36,7 +36,7 @@ module interpolation_parameters_mod
   real(kind=cp), dimension(:,:), allocatable :: sxxold2, syyold2, szzold2
   real(kind=cp), dimension(:,:), allocatable :: syzold2, sxzold2, sxyold2
 
-  real(kind=cp), dimension(:), allocatable   :: vpow, stalta, taper
+  real(kind=cp), dimension(:), allocatable   :: vpow, stalta, taper, convfilt
   real(kind=cp), dimension(:,:), allocatable :: data_tmp
 
   !*** Parameters
@@ -54,7 +54,7 @@ module interpolation_parameters_mod
   integer(kind=si) :: nbrec, ntime, istap, itime, iptglob, isconv, ntstf
 
   integer(kind=si) :: nptsa, nelx, nely, nelz, nelem, ngllx, nglly, ngllz, nlta, nsta, itbeg, itend
-  real(kind=cp)    :: thres, tbeg, tend, fmax
+  real(kind=cp)    :: thres, tbeg, tend, fmax, alph1
 
   !** For filter
   real(kind=cp), dimension(:), allocatable :: conv, taptap, stf
