@@ -34,7 +34,7 @@ contains
 ! Read reconstruction parameters file and prepare the reading of data
   subroutine read_reconstruction_param
 
-    open(10,file='../reconstruction.par',status='old') 
+    open(10,file='reconstruction.par',status='old') 
     read(10,'(a)')fwdtool
     read(10,'(a)')input_point_file
     read(10,*)dummy
@@ -142,7 +142,7 @@ contains
 ! Interpolation    parameter file
   subroutine read_interpolation_param
 
-    open(10,file='../interpolation.par')
+    open(10,file='interpolation.par')
     read(10,*)fwdtool
     read(10,'(a)')rep
     read(10,*)nsta,nlta,thres
@@ -161,9 +161,9 @@ contains
   subroutine read_stf
 
     real(kind=cp), dimension(:), allocatable :: tmpstf
-    real(kind=cp) :: festf
+    real(kind=cp) :: festf, fenew, told
 
-    integer(kind=si) :: itnew, itold
+    integer(kind=si) :: itnew, itold, ntwe
 
     !*** Read STF
     if(.not.allocated(tmpstf)) allocate(tmpstf(ntstf))     
@@ -174,18 +174,24 @@ contains
     
     !*** Interpolate
     write(6,*)'Interpolate source time function...'
-    if(.not.allocated(stf)) allocate(stf(ntold))
-    stf(:) = 0._cp
+
     festf = 1. / dtstf
- 
-    do itnew = 1, ntold
+    fenew = 1. / dtold
+    told  = ntstf * dtstf
+
+    ntwe = ceiling(told * fenew)
+
+    if(.not.allocated(stf)) allocate(stf(ntwe))
+    stf(:) = 0._cp
+   
+    do itnew = 1, ntwe
        do itold = 1, ntstf
           stf(itnew) = stf(itnew) + tmpstf(itold) * mysinc(real(festf * itnew * dtold - itold))
        end do
     end do
     if(allocated(tmpstf)) deallocate(tmpstf)
 
-    ntstf = ntold
+    ntstf = ntwe
 
     write(6,*)'Done !'
     
@@ -203,12 +209,6 @@ contains
       end if
       
     end function mysinc
-
-     !*** Interpolate to axisem 
-
-
-     
-
 
   end subroutine read_stf
 !--------------------------------------------------------------------------------

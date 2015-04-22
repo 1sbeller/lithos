@@ -1,7 +1,12 @@
 #!/bin/bash
 
 clear
-source /softs/env_default.sh 
+module load intel/15.0.0.090
+#module load intelmpi/5.0.1.035
+#module load bullmpi/1.2.8.1
+module load bullxmpi/1.2.8.3
+#source obj/tosource_on.sh
+#source /softs/env_default.sh 
  
 ./clean.sh
 

@@ -2,7 +2,7 @@ module interp_process_mod
 
   use precision_mod
   use constants_mod
-  use interpolation_parameters_mod
+!  use interpolation_parameters_mod
 
   implicit none
 
@@ -161,7 +161,7 @@ contains
     else
         ind = ceiling(real(n2/2,kind=cp))
     end if
-    ind = 1
+!    ind = 1
     conv(1:n1) = convtmp(ind:ind+n1-1)
 
 !	print *,'Indice ',ind,'size ',n1+n2-1

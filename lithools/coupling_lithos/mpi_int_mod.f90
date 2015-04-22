@@ -148,6 +148,7 @@ contains
     call mpi_bcast(ngllz,1,MPI_INTEGER,0,MPI_COMM_WORLD,ierr_mpi)
     call mpi_bcast(nelem,1,MPI_INTEGER,0,MPI_COMM_WORLD,ierr_mpi)
     call mpi_bcast(isconv,1,MPI_INTEGER,0,MPI_COMM_WORLD,ierr_mpi)
+    call mpi_bcast(istap,1,MPI_INTEGER,0,MPI_COMM_WORLD,ierr_mpi)
     call mpi_bcast(ntstf,1,MPI_INTEGER,0,MPI_COMM_WORLD,ierr_mpi)
 
        if(.not.allocated(loc2glob)) allocate(loc2glob(ngllx,nglly,ngllz,nelem))

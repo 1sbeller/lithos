@@ -240,7 +240,7 @@ contains
     real(kind=dp) :: meshlon, meshlat, meshcolat, meshalpha
     
     !*** Read recontruction parameter file
-    open(10,file='../reconstruction.par',status='old') 
+    open(10,file='reconstruction.par',status='old') 
     read(10,'(a)')coup_tool
     read(10,'(a)')input_point_file
     read(10,*)nbproc
