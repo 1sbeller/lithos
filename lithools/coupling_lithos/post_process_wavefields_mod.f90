@@ -9,14 +9,14 @@ contains
 
 !================================================================================
 ! Routine reconstructing the 3D velocity wavefield
-  subroutine reconstruct_velocity  !(isim)
+  subroutine reconstruct_velocity(ipart)  !(isim)
 
     use global_parameters_mod
     use rotation_matrix_mod
     use inputs_outputs_mod
     use mpi_mod
 
-    integer(kind=si) :: isim    
+    integer(kind=si) :: isim, ipart    
     !, intent(in) :: isim
 
     integer(kind=si) :: itime, iproc, ifield, i, ivx, ivy, ivz    
@@ -26,6 +26,7 @@ contains
     real(kind=sp), allocatable, dimension(:,:,:) :: data_to_read
 
     character(len=4)   :: appmynum
+    character(len=5)   :: myfileend
     character(len=256) :: fichier
 
     allocate(iunit(0:nbproc-1,3,nsim))
@@ -58,12 +59,14 @@ contains
     if (myid == 0) then
 
        !*** Outputs velocity
+       write(myfileend,'(a,i4.4)')'_',ipart
+
        write(fichier,'(a15)') output_veloc_name(1)
-       open(ivx,file= trim(working_axisem_dir)//trim(fichier), FORM="UNFORMATTED")
+       open(ivx,file= trim(working_axisem_dir)//trim(fichier)//myfileend, FORM="UNFORMATTED")
        write(fichier,'(a15)') output_veloc_name(2)
-       open(ivy,file= trim(working_axisem_dir)//trim(fichier), FORM="UNFORMATTED")
+       open(ivy,file= trim(working_axisem_dir)//trim(fichier)//myfileend, FORM="UNFORMATTED")
        write(fichier,'(a15)') output_veloc_name(3)
-       open(ivz,file= trim(working_axisem_dir)//trim(fichier), FORM="UNFORMATTED")
+       open(ivz,file= trim(working_axisem_dir)//trim(fichier)//myfileend, FORM="UNFORMATTED")
        
        write(*,*) 'nbrec to write', nbrec
        write(*,*) 'nbrec to read ',sum(nb_stored(:))
@@ -178,8 +181,12 @@ contains
        
        !*** Write wavefield
        if (myid == 0) then
-           call write_veloc3D(ivx,ivy,ivz)
-           write(6,*)itime,ntime                  
+          !* Compute energy
+          energy(itime) = energy(itime) + sum(sqrt(data_rec_all(:,1)**2 + data_rec_all(:,2)**2 + data_rec_all(:,3)**2))
+          
+          !* Write to disk
+          call write_veloc3D(ivx,ivy,ivz)
+          write(6,*)itime,ntime                  
        end if
     end do ! time step
     
@@ -225,14 +232,14 @@ contains
 
 !================================================================================
 ! Routine reconstructing the 3D velocity wavefield
-  subroutine reconstruct_stress   !(isim)
+  subroutine reconstruct_stress(ipart)   !(isim)
   
     use mpi_mod
     use global_parameters_mod
     use rotation_matrix_mod
     use inputs_outputs_mod
     
-    integer(kind=si) :: isim   
+    integer(kind=si) :: isim, ipart   
     !, intent(in) :: isim
 
     integer(kind=si) :: itime, iproc, ifield, i
@@ -243,6 +250,7 @@ contains
     real(kind=sp), allocatable, dimension(:,:,:)  :: data_to_read
     
     character(len=4)   :: appmynum
+    character(len=5)   :: myfileend
     character(len=256) :: fichier
         
     allocate(iunit(0:nbproc-1,6,nsim))
@@ -282,18 +290,19 @@ contains
     if (myid == 0) then  
 
        !*** Outputs stress
+       write(myfileend,'(a,i4.4)')'_',ipart
        write(fichier,'(a15)') output_stress_name(1)
-       open(isxx,file= trim(working_axisem_dir)//trim(fichier), FORM="UNFORMATTED")
+       open(isxx,file= trim(working_axisem_dir)//trim(fichier)//myfileend, FORM="UNFORMATTED")
        write(fichier,'(a15)') output_stress_name(2)
-       open(isyy,file= trim(working_axisem_dir)//trim(fichier), FORM="UNFORMATTED")
+       open(isyy,file= trim(working_axisem_dir)//trim(fichier)//myfileend, FORM="UNFORMATTED")
        write(fichier,'(a15)') output_stress_name(3)
-       open(iszz,file= trim(working_axisem_dir)//trim(fichier), FORM="UNFORMATTED")
+       open(iszz,file= trim(working_axisem_dir)//trim(fichier)//myfileend, FORM="UNFORMATTED")
        write(fichier,'(a15)') output_stress_name(4)
-       open(isxy,file= trim(working_axisem_dir)//trim(fichier), FORM="UNFORMATTED")
+       open(isxy,file= trim(working_axisem_dir)//trim(fichier)//myfileend, FORM="UNFORMATTED")
        write(fichier,'(a15)') output_stress_name(5)
-       open(isxz,file= trim(working_axisem_dir)//trim(fichier), FORM="UNFORMATTED")
+       open(isxz,file= trim(working_axisem_dir)//trim(fichier)//myfileend, FORM="UNFORMATTED")
        write(fichier,'(a15)') output_stress_name(6)
-       open(isyz,file= trim(working_axisem_dir)//trim(fichier), FORM="UNFORMATTED")
+       open(isyz,file= trim(working_axisem_dir)//trim(fichier)//myfileend, FORM="UNFORMATTED")
        
        write(isxx) nbrec,ntime
        write(isyy) nbrec,ntime

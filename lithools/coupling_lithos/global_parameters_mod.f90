@@ -63,4 +63,8 @@ module global_parameters_mod
   real(kind=dp), dimension(:,:), allocatable :: Mij
   real(kind=dp), dimension(:),   allocatable :: magnitude, Mij_scale
 
+  !*** STA/LTA
+  real(kind=cp), dimension(:), allocatable :: energy
+  integer(kind=si) :: npart
+
 end module global_parameters_mod

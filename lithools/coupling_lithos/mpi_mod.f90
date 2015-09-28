@@ -74,24 +74,61 @@ contains
    call mpi_bcast(rot_mat_mesh,9,MPI_REAL8,0,MPI_COMM_WORLD,ierr_mpi)
    call mpi_bcast(trans_rot_mat_mesh,9,MPI_REAL8,0,MPI_COMM_WORLD,ierr_mpi)
 
+   if(allocated(Mij_scale)) deallocate(Mij_scale)
    allocate(Mij_scale(6))
    Mij_scale(:) = 0.
 
    if (myid >  0) then 
+      if (allocated(reciever_geogr)) deallocate(reciever_geogr)
+      if (allocated(reciever_sph)) deallocate(reciever_sph)
+      if (allocated(reciever_cyl)) deallocate(reciever_cyl)
+      if (allocated(reciever_interp_value)) deallocate(reciever_interp_value)
       allocate(reciever_geogr(3,nbrec),reciever_sph(3,nbrec),reciever_cyl(3,nbrec),reciever_interp_value(nbrec))
+
+      if (allocated(data_rec)) deallocate(data_rec)
+      if (allocated(stress_rec)) deallocate(stress_rec)
+      if (allocated(stress_to_write)) deallocate(stress_to_write)
+      if (allocated(strain_rec)) deallocate(strain_rec)
       allocate(data_rec(nbrec,3),stress_rec(nbrec,6),stress_to_write(nbrec,6),strain_rec(nbrec,6))
+
+      if (allocated(data_rec_all)) deallocate(data_rec_all)
+      if (allocated(stress_rec_all)) deallocate(stress_rec_all)
       allocate(data_rec_all(nbrec,3),stress_rec_all(nbrec,6))
+
+      if (allocated(f1)) deallocate(f1)
+      if (allocated(f2)) deallocate(f2)
       allocate(f1(nsim,nbrec),f2(nsim,nbrec))
+
+      if (allocated(phi)) deallocate(phi)
       allocate(phi(nbrec))
+      
+      if (allocated(magnitude)) deallocate(magnitude)
       allocate(magnitude(nsim))
+      
+      if (allocated(Mij)) deallocate(Mij)
       allocate(Mij(nsim,6))
+
+      if (allocated(scoor)) deallocate(scoor)
+      if (allocated(zcoor)) deallocate(zcoor)
       allocate(scoor(ibeg:iend,ibeg:iend,nel),zcoor(ibeg:iend,ibeg:iend,nel))
+
+      if (allocated(data_read)) deallocate(data_read)
       allocate(data_read(ibeg:iend,ibeg:iend,nel))
+
+      if (allocated(xi_rec)) deallocate(xi_rec)
+      if (allocated(eta_rec)) deallocate(eta_rec)
       allocate(xi_rec(nbrec),eta_rec(nbrec))
+
+      if (allocated(rec2elm)) deallocate(rec2elm)
       allocate(rec2elm(nbrec))
+
+      if (allocated(src_type)) deallocate(src_type)
       allocate(src_type(nsim,2))
 
    end if
+
+   if (allocated(stress_reduce)) deallocate(stress_reduce)
+   if (allocated(data_reduce)) deallocate(data_reduce)
    allocate(stress_reduce(nbrec,6),data_reduce(nbrec,3))
    call MPI_barrier(MPI_COMM_WORLD, ierr_mpi)
 

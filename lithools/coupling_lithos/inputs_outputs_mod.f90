@@ -275,7 +275,11 @@ contains
     open(10,file=trim(working_axisem_dir)//trim(simdir(isim))//'/nb_rec_to_read.par')
     read(10,*) ntime
     close(10)
-    
+
+    !*** Alocate energy vector
+    if (.not.allocated(energy)) allocate(energy(ntime))
+    energy = 0.
+
     !*** Compute rotation matrices 
     !* For the source
     srclon = lon_src * pi / 180._dp   
@@ -305,19 +309,59 @@ contains
     tmat(2,1)=mat(1,2);    tmat(2,2)=mat(2,2);    tmat(2,3)=mat(3,2)
     tmat(3,1)=mat(1,3);    tmat(3,2)=mat(2,3);    tmat(3,3)=mat(3,3)
     
+
+  end subroutine read_reconstruction_inputs
+!--------------------------------------------------------------------------------
+
+
+!================================================================================
+! Read inputs_box files
+  subroutine  read_input_box_file(isim,ipart)
+
+    use global_parameters_mod
+    use rotation_matrix_mod
+
+    integer(kind=si), intent(in) :: isim, ipart
+    
+    integer(kind=si) :: i
+    
+    real(kind=dp) :: srclon,  srclat,  srccolat, az_mesh
+    real(kind=dp) :: meshlon, meshlat, meshcolat, meshalpha
+
+    character(len=5) :: myfileend
+
     !*** Read input box files (containing coordinates of the mesh boundaries)
+    !*** Find the file
+    write(myfileend,'(a,i4.4)')'_',ipart
+    
     !* Number of points to be read
-    open(10,file=trim(working_axisem_dir)//trim(simdir(isim))//'/'//trim(input_point_file))
+    open(10,file=trim(working_axisem_dir)//trim(simdir(isim))//'/'//trim(input_point_file(1:len(input_point_file)-4))//myfileend)
     read(10,*) nbrec
     
     !* Allocate relevant arrays
+    if (allocated(reciever_geogr)) deallocate(reciever_geogr)
+    if (allocated(reciever_sph)) deallocate(reciever_sph)
+    if (allocated(reciever_cyl)) deallocate(reciever_cyl)
+    if (allocated(reciever_interp_value)) deallocate(reciever_interp_value)
     allocate(reciever_geogr(3,nbrec),reciever_sph(3,nbrec),reciever_cyl(3,nbrec),reciever_interp_value(nbrec))
+
+    if (allocated(data_rec)) deallocate(data_rec)
+    if (allocated(stress_rec)) deallocate(stress_rec)
+    if (allocated(stress_to_write)) deallocate(stress_to_write)
+    if (allocated(strain_rec)) deallocate(strain_rec)
     allocate(data_rec(nbrec,3),stress_rec(nbrec,6),stress_to_write(nbrec,6),strain_rec(nbrec,6))
     stress_rec=0.
     data_rec=0.
+
+    if (allocated(data_rec_all)) deallocate(data_rec_all)
+    if (allocated(stress_rec_all)) deallocate(stress_rec_all)
     allocate(data_rec_all(nbrec,3),stress_rec_all(nbrec,6))
     stress_rec_all = 0.
     data_rec_all   = 0.   
+
+    if (allocated(f1)) deallocate(f1)
+    if (allocated(f2)) deallocate(f2)
+    if (allocated(phi)) deallocate(phi)
     allocate(f1(nsim,nbrec),f2(nsim,nbrec),phi(nbrec))
     f1 = 0.
     f2 = 0.
@@ -341,7 +385,7 @@ contains
     end do
     close(10)
       
-  end subroutine read_reconstruction_inputs
+  end subroutine read_input_box_file
 !--------------------------------------------------------------------------------
 
 
