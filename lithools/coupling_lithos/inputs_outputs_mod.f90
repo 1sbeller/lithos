@@ -238,16 +238,57 @@ contains
     
     real(kind=dp) :: srclon,  srclat,  srccolat, az_mesh
     real(kind=dp) :: meshlon, meshlat, meshcolat, meshalpha
-    
+
+    integer(kind=si)   :: iin_file=12, ioerr
+    character(len=256) :: line
+    character(len=256) :: keyword, keyvalue
+
+    write(6, '(A)', advance='no')' Reading lithos.par for recon infos...'
+    open(unit=iin_file,file='lithos.par', status='old', action='read', iostat=ioerr)
+    if (ioerr /= 0) stop 'Check input file ''lithos.par''! Is it still there?' 
+       
+    do 
+          
+       read(iin_file,fmt='(a256)',iostat=ioerr) line
+       if (ioerr < 0) exit
+       if (len(trim(line)) < 1 .or. line(1:1) == '#') cycle
+       read(line,*) keyword, keyvalue
+          
+       parameters_recon : select case(trim(keyword))
+       case('modeling_tool')
+          read(keyvalue, *) coup_tool
+          
+       case('coupling_box_file')
+          read(keyvalue, *) input_point_file
+
+       case('coupling_nb_proc_axisem')
+          read(keyvalue, *) nbproc
+          
+       case('coupling_src_latlon')
+          read(line, *) keyword, lat_src, lon_src
+
+       case('coupling_axisem_nsim')
+          read(keyvalue, *) nsim
+
+       case('nb_partitions')
+          read(keyvalue, *) npart
+
+       case('mesh_coordinates')
+          read(line, *) keyword, lat_mesh, lon_mesh, az_mesh
+
+       end select parameters_recon
+    end do
+    close(iin_file)
+    write(6,*)'Done!'
     !*** Read recontruction parameter file
-    open(10,file='reconstruction.par',status='old') 
-    read(10,'(a)')coup_tool
-    read(10,'(a)')input_point_file
-    read(10,*)nbproc
-    read(10,*)lat_src,lon_src
-    read(10,*)lat_mesh,lon_mesh,az_mesh
-    read(10,*)nsim
-    close(10)
+!    open(10,file='reconstruction.par',status='old') 
+!    read(10,'(a)')coup_tool
+!    read(10,'(a)')input_point_file
+!    read(10,*)nbproc
+!    read(10,*)lat_src,lon_src
+!    read(10,*)lat_mesh,lon_mesh,az_mesh
+!    read(10,*)nsim
+!    close(10)
 
     !*** Define AxiSEM solutions files
     input_veloc_name(1)  = 'velocityfiel_us'
