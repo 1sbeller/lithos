@@ -354,10 +354,10 @@ contains
     real(kind=dp) :: smin, smax, zmin, zmax
 
     real(kind=dp), dimension(NGNOD,2) :: nodes_crd
-    real(kind=dp), parameter          :: eps=1e-1_dp  !!-3
+    real(kind=dp), parameter          :: eps=1e-3_dp  !!-3
 
     integer(kind=si), dimension(8) :: IGRIDs, IGRIDz
-    integer(kind=si) :: irec, iel, inode
+    integer(kind=si) :: irec, iel, inode, icheck
       
     ! conversion GLL point to 8-node control elements
     IGRIDs(1)=0
@@ -377,10 +377,16 @@ contains
     IGRIDz(6)=4
     IGRIDz(7)=4
     IGRIDz(8)=2
-    
+   
+    if (allocated(xi_rec)) deallocate(xi_rec)
+    if (allocated(eta_rec)) deallocate(eta_rec)
+    if (allocated(rec2elm)) deallocate(rec2elm)         
+    if (allocated(rec2elm2)) deallocate(rec2elm2)         
     allocate(xi_rec(nbrec),eta_rec(nbrec))
     allocate(rec2elm(nbrec))
+    allocate(rec2elm2(nbrec))
     rec2elm=-1
+    rec2elm2=-1
 
     !*** CONNECTION POINT <-> MESH------------
     do irec=1,nbrec
@@ -388,6 +394,7 @@ contains
        zcur=reciever_cyl(3,irec)
        do iel = 1, NEL
           !*** Element
+       icheck = 0
           smin=1e40_dp
           smax=-1e40_dp    !-1e25_cp
           zmin=1e40_dp  !smin
@@ -402,14 +409,20 @@ contains
           end do
           if ( scur > smin-eps .and. scur < smax + eps .and. zcur > zmin-eps .and. zcur < zmax + eps) then
              call find_xix_eta(nodes_crd,xi,eta,scur,zcur)
+             rec2elm2(irec)=iel
              if (xi > -1.05 .and. xi < 1.05 .and. eta > -1.05 .and. eta < 1.05) then
                 rec2elm(irec)=iel
                 xi_rec(irec)=xi
                 eta_rec(irec)=eta
                 exit
              end if
+          else
+                icheck = 1
           end if
        end do
+       if (icheck == 1) then 
+           write(6,*)scur,zcur
+       end if
     end do
     call check_rec2elm
     ! END CONNECTION POINT <-> MESH ----
@@ -420,14 +433,18 @@ contains
     ! Check if points have been ommited
     subroutine check_rec2elm()
             
-      integer :: irec,forgot_point
+      integer :: irec,forgot_point,forgot_point2
       
       forgot_point=0
       do irec=1,nbrec
          if(rec2elm(irec)==-1) then
             forgot_point= forgot_point+1
          end if
+         if(rec2elm2(irec)==-1) then
+            forgot_point2= forgot_point2+1
+         end if
       end do
+      if (forgot_point > 0) write(*,*) 'forgot ', forgot_point2,' points'
       if (forgot_point > 0) write(*,*) 'forgot ', forgot_point,' points'
       if (forgot_point > 0) stop
     end subroutine check_rec2elm

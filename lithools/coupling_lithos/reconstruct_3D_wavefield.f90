@@ -25,13 +25,16 @@ program reconstruct_3D_wavefield
 
   do ipart = 1, npart
 
+     if (myid ==0) write(6,*)'process subdom ',ipart,'over ',npart   
+
      !*** Read input_box file
      if (myid == 0) call read_input_box_file(isim,ipart)
+     call MPI_bcast(nbrec,1,MPI_INTEGER,0,MPI_COMM_WORLD,ierr_mpi)
 
      !*** Avoid empty subdomains
      if (nbrec < 1) then
         cycle
-     end if
+     end if   
 
      !*** Find points for current subdomain
      if (myid == 0) call determine_connectivity
@@ -40,16 +43,17 @@ program reconstruct_3D_wavefield
      call alloc_all_mpi
      call bcast_all_mpi
      call distribute_mpi
-     call MPI_barrier(MPI_COMM_WORLD, ierr_mpi)
-
+     
      !*** Reconstruct wavefields
      call reconstruct_velocity(ipart)  !(isim)
      call reconstruct_stress(ipart)    !(isim)
 
   end do
 
+  
   !*** Save energy for stalta
   if (myid == 0) then
+     write(6,*)'Reconstruction done !'
      open(17,file='energy_for_stalta.bin',status='replace',access='direct',recl=cp*ntime)
      write(17,rec=1)energy
      close(17)

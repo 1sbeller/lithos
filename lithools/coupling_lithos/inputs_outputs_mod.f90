@@ -376,7 +376,7 @@ contains
     write(myfileend,'(a,i4.4)')'_',ipart
     
     !* Number of points to be read
-    open(10,file=trim(working_axisem_dir)//trim(simdir(isim))//'/'//trim(input_point_file(1:len(input_point_file)-4))//myfileend)
+    open(10,file=trim(working_axisem_dir)//trim(simdir(isim))//'/'//trim(input_point_file(1:len(trim(input_point_file))-4))//myfileend//'.txt')
     read(10,*) nbrec
     
     !* Allocate relevant arrays

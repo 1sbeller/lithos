@@ -38,7 +38,7 @@ module global_parameters_mod
   real(kind=dp), allocatable, dimension(:,:) :: reciever_cyl, reciever_geogr, reciever_sph
   real(kind=dp), allocatable, dimension(:)   :: reciever_interp_value, xi_rec, eta_rec
 
-  integer(kind=si), allocatable :: rec2elm(:)
+  integer(kind=si), allocatable :: rec2elm(:), rec2elm2(:)
   
   !*** Rotation matrix with respect to the source
   real(kind=dp), dimension(3,3) :: rot_mat, trans_rot_mat
