@@ -34,15 +34,55 @@ contains
 ! Read reconstruction parameters file and prepare the reading of data
   subroutine read_reconstruction_param
 
-    open(10,file='reconstruction.par',status='old') 
-    read(10,'(a)')fwdtool
-    read(10,'(a)')input_point_file
-    read(10,*)dummy
-    read(10,*)lat_src,lon_src
-    read(10,*) lat_mesh,lon_mesh,alpha_mesh
-    read(10,*) nsim
-    close(10)
+    integer(kind=si)   :: iin_file=12, ioerr
+    character(len=256) :: line
+    character(len=256) :: keyword, keyvalue
 
+    write(6, '(A)', advance='no')' Reading lithos.par for recon infos...'
+    open(unit=iin_file,file='lithos.par', status='old', action='read', iostat=ioerr)
+    if (ioerr /= 0) stop 'Check input file ''lithos.par''! Is it still there?' 
+    
+    do 
+       
+       read(iin_file,fmt='(a256)',iostat=ioerr) line
+       if (ioerr < 0) exit
+       if (len(trim(line)) < 1 .or. line(1:1) == '#') cycle
+       read(line,*) keyword, keyvalue
+       
+       parameters_recon : select case(trim(keyword))
+       case('modeling_tool')
+          read(keyvalue, *) fwdtool
+          
+       case('coupling_box_file')
+          read(keyvalue, *) input_point_file
+          
+       case('coupling_src_latlon')
+          read(line, *) keyword, lat_src, lon_src
+          
+       case('coupling_axisem_nsim')
+          read(keyvalue, *) nsim
+          
+       case('nb_partitions')
+          read(keyvalue, *) npart
+          
+       case('mesh_coordinates')
+          read(line, *) keyword, lat_mesh, lon_mesh, alpha_mesh
+          
+       end select parameters_recon
+    end do
+    close(iin_file)
+    write(6,*)'Done!'
+    
+!    open(10,file='reconstruction.par',status='old') 
+!    read(10,'(a)')fwdtool
+!    read(10,'(a)')input_point_file
+!    read(10,*)dummy
+!    read(10,*)lat_src,lon_src
+!    read(10,*) lat_mesh,lon_mesh,alpha_mesh
+!    read(10,*) nsim
+!    close(10)
+
+    if (allocated(working_axisem_dir)) deallocate(working_axisem_dir)
     if(.not.allocated(working_axisem_dir)) allocate(working_axisem_dir(nsim))
     
     if (nsim == 1) then
@@ -66,7 +106,17 @@ contains
     !read(10,*) dtold,i
     !close(10)
     print *,ntold, dtold,i
-  
+
+  end subroutine read_reconstruction_param
+
+
+  subroutine define_axisem_dir(ipart)
+
+    integer(kind=si), intent(in) :: ipart
+    character(len=5)   :: myfileend
+
+    write(myfileend,'(a,i4.4)')'_',ipart
+
     output_veloc_name(1)  = 'velocityoutp_u1'
     output_veloc_name(2)  = 'velocityoutp_u2'
     output_veloc_name(3)  = 'velocityoutp_u3'
@@ -79,6 +129,15 @@ contains
     output_stress_name(6) = 'stress_Sg23_out'
     
     iunit=1000
+    if (allocated(ivx)) deallocate(ivx)
+    if (allocated(ivy)) deallocate(ivy)
+    if (allocated(ivz)) deallocate(ivz)
+    if (allocated(isxx)) deallocate(isxx)
+    if (allocated(isyy)) deallocate(isyy)
+    if (allocated(iszz)) deallocate(iszz)
+    if (allocated(isxy)) deallocate(isxy)
+    if (allocated(isyz)) deallocate(isyz)
+    if (allocated(isxz)) deallocate(isxz)
     allocate(ivx(nsim),ivy(nsim),ivz(nsim))
     allocate(isxx(nsim),isyy(nsim),iszz(nsim))
     allocate(isxy(nsim),isxz(nsim),isyz(nsim))
@@ -99,23 +158,23 @@ contains
        isyz(isim)=next_iunit(iunit)
        
        write(fichier,'(a15)') output_veloc_name(1)
-       open(ivx(isim),file= trim(working_axisem_dir(isim))//trim(fichier), FORM="UNFORMATTED")
+       open(ivx(isim),file= trim(working_axisem_dir(isim))//trim(fichier)//myfileend, FORM="UNFORMATTED")
        write(fichier,'(a15)') output_veloc_name(2)
-       open(ivy(isim),file= trim(working_axisem_dir(isim))//trim(fichier), FORM="UNFORMATTED")
+       open(ivy(isim),file= trim(working_axisem_dir(isim))//trim(fichier)//myfileend, FORM="UNFORMATTED")
        write(fichier,'(a15)') output_veloc_name(3)
-       open(ivz(isim),file= trim(working_axisem_dir(isim))//trim(fichier), FORM="UNFORMATTED")
+       open(ivz(isim),file= trim(working_axisem_dir(isim))//trim(fichier)//myfileend, FORM="UNFORMATTED")
        write(fichier,'(a15)') output_stress_name(1)
-       open(isxx(isim),file= trim(working_axisem_dir(isim))//trim(fichier), FORM="UNFORMATTED")
+       open(isxx(isim),file= trim(working_axisem_dir(isim))//trim(fichier)//myfileend, FORM="UNFORMATTED")
        write(fichier,'(a15)') output_stress_name(2)
-       open(isyy(isim),file= trim(working_axisem_dir(isim))//trim(fichier), FORM="UNFORMATTED")
+       open(isyy(isim),file= trim(working_axisem_dir(isim))//trim(fichier)//myfileend, FORM="UNFORMATTED")
        write(fichier,'(a15)') output_stress_name(3)
-       open(iszz(isim),file= trim(working_axisem_dir(isim))//trim(fichier), FORM="UNFORMATTED")
+       open(iszz(isim),file= trim(working_axisem_dir(isim))//trim(fichier)//myfileend, FORM="UNFORMATTED")
        write(fichier,'(a15)') output_stress_name(4)
-       open(isxy(isim),file= trim(working_axisem_dir(isim))//trim(fichier), FORM="UNFORMATTED")
+       open(isxy(isim),file= trim(working_axisem_dir(isim))//trim(fichier)//myfileend, FORM="UNFORMATTED")
        write(fichier,'(a15)') output_stress_name(5)
-       open(isxz(isim),file= trim(working_axisem_dir(isim))//trim(fichier), FORM="UNFORMATTED")
+       open(isxz(isim),file= trim(working_axisem_dir(isim))//trim(fichier)//myfileend, FORM="UNFORMATTED")
        write(fichier,'(a15)') output_stress_name(6)
-       open(isyz(isim),file= trim(working_axisem_dir(isim))//trim(fichier), FORM="UNFORMATTED")
+       open(isyz(isim),file= trim(working_axisem_dir(isim))//trim(fichier)//myfileend, FORM="UNFORMATTED")
     end do
     
     do isim=1,nsim
@@ -135,23 +194,64 @@ contains
     
     npts = nbrec
     
-  end subroutine read_reconstruction_param
+  end subroutine define_axisem_dir
 !--------------------------------------------------------------------------------
 
 !================================================================================
 ! Interpolation    parameter file
   subroutine read_interpolation_param
 
-    open(10,file='interpolation.par')
-    read(10,*)fwdtool
-    read(10,'(a)')rep
-    read(10,*)nsta,nlta,thres
-    read(10,*)istap,alpha
-    read(10,*)isconv,ntstf,dtstf
-    read(10,*)stf_file
-    read(10,*)dummy
-    read(10,*)fmax
-    close(10)
+    integer(kind=si)   :: iin_file=12, ioerr
+    character(len=256) :: line
+    character(len=256) :: keyword, keyvalue
+
+    write(6, '(A)', advance='no')' Reading lithos.par for interp infos...'
+    open(unit=iin_file,file='lithos.par', status='old', action='read', iostat=ioerr)
+    if (ioerr /= 0) stop 'Check input file ''lithos.par''! Is it still there?' 
+    
+    do 
+       
+       read(iin_file,fmt='(a256)',iostat=ioerr) line
+       if (ioerr < 0) exit
+       if (len(trim(line)) < 1 .or. line(1:1) == '#') cycle
+       read(line,*) keyword, keyvalue
+       
+       parameters_to_read : select case(trim(keyword))
+       case('coupling_interp_rep')
+          read(keyvalue, '(a)') rep
+
+       case('coupling_starttime_index')
+          read(keyvalue, *) ind
+
+       case('coupling_interp_stf')
+          read(keyvalue, *) isconv
+          if (isconv == 1) then
+             read(line, *) keyword, isconv, ntstf, dtstf, stf_file
+          end if
+          
+       case('coupling_interp_filter')
+          read(keyvalue, *) istap
+          if (istap == 1) then
+             read(line, *) keyword, istap, alpha, fmax
+          end if
+          
+       end select parameters_to_read
+       
+    end do
+    close(iin_file)
+    write(6,*)'Done!'
+    
+ 
+!    open(10,file='interpolation.par')
+!    read(10,*)fwdtool
+!    read(10,'(a)')rep
+!    read(10,*)nsta,nlta,thres
+!    read(10,*)istap,alpha
+!    read(10,*)isconv,ntstf,dtstf
+!    read(10,*)stf_file
+!    read(10,*)dummy
+!    read(10,*)fmax
+!    close(10)
 
   end subroutine read_interpolation_param
 !--------------------------------------------------------------------------------
@@ -217,55 +317,50 @@ contains
 ! Read modeling tools parameter
   subroutine read_modeling_params
     
+    integer(kind=si)   :: iin_file=12, ioerr
+    character(len=256) :: line
+    character(len=256) :: keyword, keyvalue
+
+
     select case (fwdtool)
     case('SEM')
-       print *,trim(rep)//'/sem.par'
-       open(10,file=trim(rep)//'/sem.par',action='read')
-       read(10,*)dummy
-       read(10,*)dummy
-       read(10,*)dummy
-       read(10,*)nelx,nely,nelz,dummy
-       read(10,*)ngllx,nglly,ngllz,dummy
-       read(10,*)dummy
-       read(10,*)dtnew,ntnew,dummy
-       read(10,*)dummy
-       read(10,*)num_bnd_faces,dummy
-       close(10)
+
+       write(6, '(A)', advance='no')' Reading lithos.par for general infos...'
+       open(unit=iin_file,file='lithos.par', status='old', action='read', iostat=ioerr)
+       if (ioerr /= 0) stop 'Check input file ''lithos.par''! Is it still there?' 
        
-       nelem = nelx * nely * nelz
-       ngllsquare = ngllx * nglly
-       nptsa = (nelx * (ngllx -1) +1)*(nely * (nglly -1) +1)*(nelz * (ngllz -1) +1)
-       
+       do 
+          
+          read(iin_file,fmt='(a256)',iostat=ioerr) line
+          if (ioerr < 0) exit
+          if (len(trim(line)) < 1 .or. line(1:1) == '#') cycle
+          read(line,*) keyword, keyvalue
+          
+          parameters_to_read : select case(trim(keyword))
+          case('modeling_order')
+             read(keyvalue, *) ord
+             ngll = ord+1
+             ngllsquare = ngll * ngll
+
+          case('simulation_duration')
+             read(keyvalue, *) tsimu
+
+          case('simulation_time_step')
+             read(keyvalue, *) dtnew
+
+          case('simulation_nb_time_step')
+             read(keyvalue, *) ntnew
+
+          case('simulation_nb_buffer')
+             read(keyvalue, *) tbuff
+
+          end select parameters_to_read
+
+       end do
+       close(iin_file)
+
        print *,dtnew, ntnew
-       
-       if(.not.allocated(loc2glob)) allocate(loc2glob(ngllx,nglly,ngllz,nelem))
-       if(.not.allocated(xcoord)) allocate(xcoord(nptsa))
-       if(.not.allocated(ycoord)) allocate(ycoord(nptsa))
-       if(.not.allocated(zcoord)) allocate(zcoord(nptsa))
-       if(.not.allocated(abs_bnd_ielem))       allocate(abs_bnd_ielem(num_bnd_faces))
-       if(.not.allocated(abs_bnd_ijk))         allocate(abs_bnd_ijk(3,ngllsquare,num_bnd_faces))
-       if(.not.allocated(abs_bnd_jacobian2Dw)) allocate(abs_bnd_jacobian2Dw(ngllsquare,num_bnd_faces))
-       if(.not.allocated(abs_bnd_normal))      allocate(abs_bnd_normal(3,ngllsquare,num_bnd_faces))
-       
-       open(unit=27,file=rep(1:len_trim(rep))//'/MESH/x.bin',status='old',form='unformatted')
-       read(27) xcoord
-       close(27)
-       open(unit=27,file=rep(1:len_trim(rep))//'/MESH/y.bin',status='old',form='unformatted')
-       read(27) ycoord
-       close(27)
-       open(unit=27,file=rep(1:len_trim(rep))//'/MESH/z.bin',status='old',form='unformatted')
-       read(27) zcoord
-       close(27)
-       open(unit=27,file=rep(1:len_trim(rep))//'/MESH/ibool.bin',status='old',form='unformatted')
-       read(27) loc2glob
-       close(27)
-       open(unit=27,file=rep(1:len_trim(rep))//'/MESH/boundary.bin',status='old',form='unformatted')
-       read(27) abs_bnd_ielem
-       read(27) abs_bnd_ijk
-       read(27) abs_bnd_normal
-       read(27) abs_bnd_jacobian2Dw
-       close(27)
-       
+
     case('FD')
        stop 'Not implemented yet....'
     end select

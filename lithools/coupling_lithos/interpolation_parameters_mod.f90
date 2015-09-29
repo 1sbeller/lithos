@@ -7,11 +7,11 @@ module interpolation_parameters_mod
   implicit none
 
   !*** Array for wavefields
-  real(kind=cp), dimension(:,:,:), allocatable :: vel_inc, trac_inc
-  real(kind=cp), dimension(:,:),   allocatable :: vel_inc2, stress_inc
+  real(kind=cp), dimension(:,:,:,:), allocatable :: vel_inc, trac_inc
+  real(kind=cp), dimension(:,:,:),   allocatable :: vel_inc2, stress_inc
 
   !*** Mapping arrays
-  integer(kind=si), dimension(:),       allocatable :: abs_bnd_ielem
+  integer(kind=si), dimension(:),       allocatable :: abs_bnd_ielem, abs_bnd_tag
   integer(kind=si), dimension(:,:),     allocatable :: mapipt
   integer(kind=si), dimension(:,:,:),   allocatable :: abs_bnd_ijk
   integer(kind=si), dimension(:,:,:,:), allocatable :: loc2glob
@@ -58,13 +58,14 @@ module interpolation_parameters_mod
 
   !** For filter
   real(kind=cp), dimension(:), allocatable :: conv, taptap, stf
-  integer(kind=si) :: ibeg, iend, nt, it, itstf, alpha
-  integer(kind=si) :: n1
-  real(kind=cp) :: dt, ttt2, ttt1, dtstf
+  integer(kind=si) :: ibeg, iend, nt, it, itstf, alpha, ngll, nbuf, ibuf
+  integer(kind=si) :: n1, tbuff, npart, ord
+  real(kind=cp) :: dt, ttt2, ttt1, dtstf, tsimu
   real(kind=cp), dimension(:), allocatable :: tab_sinc 
   real(kind=cp), dimension(:,:), allocatable :: convtmpvx,  convtmpvy,  convtmpvz  
   real(kind=cp), dimension(:,:), allocatable :: convtmpsxx, convtmpsyy, convtmpszz
   real(kind=cp), dimension(:,:), allocatable :: convtmpsyz, convtmpsxz, convtmpsxy
+  integer(kind=si), dimension(:,:), allocatable :: part_info
 
   !*** From vadim
   integer(kind=si), dimension(MPI_STATUS_SIZE) :: statut

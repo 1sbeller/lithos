@@ -11,6 +11,11 @@ program interpolate_3D_wavefield
 
   integer(kind=si) :: warning=0, ipart
   character(len=80) :: ficii
+  integer(kind=si), parameter :: IIN=11
+  character(len=5) :: myfileend 
+  character(len=9)  :: myfileend1
+  character(len=80) :: srcfile
+
 
   !================================================================================
   ! Prepare reconstruction
@@ -19,8 +24,83 @@ program interpolate_3D_wavefield
   call begin_program
   
   !*** Read inut files parameters
+  call read_all_inputs
+  call mpi_bcast(npart,1,MPI_INTEGER,0,MPI_COMM_WORLD,ierr_mpi)
+
+  !*** Read infos on partitionning
+  if (.not.allocated(part_info)) allocate(part_info(npart,6))
+  if (myid == 0) then
+     open(155,file='partition_info.txt',status='old',action='read')
+     do ipart = 1,npart
+        read(155,'(6i9.8)')part_info(ipart,1:6)  !npart, ipart, myne, myndof, myntag, myntag*25
+     end do
+     close(155)
+  end if
+  call MPI_bcast(MPI_IN_PLACE,part_info,6*npart,MPI_INTEGER,MPI_COMM_WORLD,ierr_mpi)
+
   do ipart = 1, npart
-     call read_all_inputs
+
+     !*** Get infos
+     nelem         = part_info(ipart,3)
+     nptsa         = part_info(ipart,4)
+     num_bnd_faces = part_info(ipart,5)
+     
+     if (num_bnd_faces < 1) then 
+        cycle
+     end if
+     call mpi_bcast(ngllsquare,1,MPI_INTEGER,0,MPI_COMM_WORLD,ierr_mpi)
+     call mpi_bcast(ngll,1,MPI_INTEGER,0,MPI_COMM_WORLD,ierr_mpi)
+
+     !*** Read arrays
+     write(myfileend,'(a,i4.4)')'_',ipart
+
+     if (myid == 0) then
+        if (allocated(loc2glob)) deallocate(loc2glob)
+        if (allocated(xcoord)) deallocate(xcoord)
+        if (allocated(ycoord)) deallocate(ycoord)
+        if (allocated(zcoord)) deallocate(zcoord)
+        if (allocated(abs_bnd_tag)) deallocate(abs_bnd_tag)
+        if (allocated(abs_bnd_ielem)) deallocate(abs_bnd_ielem)
+        if (allocated(abs_bnd_ijk)) deallocate(abs_bnd_ijk)
+        if (allocated(abs_bnd_jacobian2Dw)) deallocate(abs_bnd_jacobian2Dw)
+        if (allocated(abs_bnd_normal)) deallocate(abs_bnd_normal)
+
+        if(.not.allocated(loc2glob)) allocate(loc2glob(ngll,ngll,ngll,nelem))
+        if(.not.allocated(xcoord)) allocate(xcoord(nptsa))
+        if(.not.allocated(ycoord)) allocate(ycoord(nptsa))
+        if(.not.allocated(zcoord)) allocate(zcoord(nptsa))
+        if(.not.allocated(abs_bnd_tag))       allocate(abs_bnd_tag(num_bnd_faces))
+        if(.not.allocated(abs_bnd_ielem))       allocate(abs_bnd_ielem(num_bnd_faces))
+        if(.not.allocated(abs_bnd_ijk))         allocate(abs_bnd_ijk(3,ngllsquare,num_bnd_faces))
+        if(.not.allocated(abs_bnd_jacobian2Dw)) allocate(abs_bnd_jacobian2Dw(ngllsquare,num_bnd_faces))
+        if(.not.allocated(abs_bnd_normal))      allocate(abs_bnd_normal(3,ngllsquare,num_bnd_faces))
+        
+        !*** X-coord
+        open(unit=IIN,file=rep(1:len_trim(rep))//'coordinates'//myfileend//'.bin',status='old',form='unformatted')
+        read(IIN) xcoord(:)
+        read(IIN) ycoord(:)
+        read(IIN) zcoord(:)
+        close(IIN)
+        
+        !*** Global indexing
+        open(unit=IIN,file=rep(1:len_trim(rep))//'loc2glob'//myfileend//'.bin',status='old',form='unformatted')
+        read(IIN) loc2glob(:,:,:,:)
+        close(IIN)
+        
+        !*** Boundary conditions
+        open(unit=IIN,file=rep(1:len_trim(rep))//'boundary'//myfileend//'.bin',status='old',form='unformatted')
+        read(IIN) num_bnd_faces
+        read(IIN) abs_bnd_tag
+        read(IIN) abs_bnd_ielem
+        read(IIN) abs_bnd_ijk
+        read(IIN) abs_bnd_normal
+        read(IIN) abs_bnd_jacobian2Dw
+        close(IIN)
+     end if
+
+     !*** Inputs files
+     if(myid == 0)  call define_axisem_dir(ipart)
+
      call broadcast_all_data
 
      !*** Prepare reading of reconstructed AxiSEM outputs
@@ -191,105 +271,105 @@ program interpolate_3D_wavefield
         deallocate(sxyold2)
      end if
 
-     write(ficii,'(a,i4.4,a)')'sig_',myid,'.dat' 
-     open(20000+myid,file=trim(ficii),action='write')
-     write(20000+myid,*)vzold1(1,:)
-     close(20000+myid)
+!     write(ficii,'(a,i4.4,a)')'sig_',myid,'.dat' 
+!     open(20000+myid,file=trim(ficii),action='write')
+!     write(20000+myid,*)vzold1(1,:)
+!     close(20000+myid)
 
 
      !================================================================================
      ! Compute velocity energy and STA/LTA this could be done on many procs)
      !--------------------------------------------------
-     !*** Compute energy
-     if (myid==0) write(6,*)'Compute STA/LTA...'
-     if (.not.allocated(vpow)) allocate(vpow(ntold))
-     if (.not.allocated(stalta)) allocate(stalta(ntold))
-     vpow = 0.
-     stalta = 0.
-
-     do itold = 1, ntold
-        sumx = 0.
-        sumy = 0.
-        sumz = 0.
-        do ipt =  1, nrec_to_store  !irecmin, irecmax
-           sumx = sumx + vxold1(ipt,itold)**2
-           sumy = sumy + vyold1(ipt,itold)**2
-           sumz = sumz + vzold1(ipt,itold)**2
-        end do
-        call MPI_allreduce(MPI_IN_PLACE,sumx,1,MPI_REAL,MPI_SUM,MPI_COMM_WORLD,ierr_mpi)
-        call MPI_allreduce(MPI_IN_PLACE,sumy,1,MPI_REAL,MPI_SUM,MPI_COMM_WORLD,ierr_mpi)
-        call MPI_allreduce(MPI_IN_PLACE,sumz,1,MPI_REAL,MPI_SUM,MPI_COMM_WORLD,ierr_mpi)
-        vpow(itold) = sqrt(sumx + sumy +sumz)
-     end do
-
-     if (myid == 0) then
-        open(26,file='verif.bin',access='direct',recl=cp*ntold)
-        write(26,rec=1)vpow
-        close(26)
-
-        if (isconv ==1) then         
-           open(26,file='stfint.bin',access='direct',recl=cp*ntold)
-           write(26,rec=1)stf
-           close(26)
-        end if
-     end if
-
-
-     !*** Compute STA/LTA
-     if (isconv == 1) then
-        if(.not.allocated(conv)) allocate(conv(ntold))
-        call myconvolution(vpow,stf,ntold,ntstf,conv)
-        vpow = conv
-        if (allocated(conv)) deallocate(conv)
-     end if
-     if (myid ==0) then
-        open(26,file='verifconv.bin',access='direct',recl=cp*ntold)
-        write(26,rec=1)vpow
-        close(26)
-     end if
-     call substalta(vpow, ntold,  nsta, nlta, thres, stalta, ind)
-     if (myid ==0) then
-        open(26,file='stalta.bin',access='direct',recl=cp*ntold)
-        write(26,rec=1)stalta
-        close(26)
-     end if
-
-     if (istap == 0) then
-	write(6,*)'verif stalta, indice is: '
-	write(6,*)ind - 1 
-        write(6,*)'corresponding to time step:'
-	write(6,*)(ind - 1)* dtold
-	write(6,*)'dont quit but beware that stalta may have failed'
-        warning =1
-	call finalize_mpi
-	stop 
-     else 
-	ind = alpha
-     end if
-
-     !  do i=1,ntold
-     !     if (stalta(i) >= thres) then
-     !        ind = i;
-     !        exit
-     !     end if
-     !  end do
-     !  if (myid ==0) then
-     ! open(26,file='verifconv.bin',access='direct',recl=cp*ntold)
-     ! write(26,rec=1)vpow
-     ! close(26)
-     ! end if
-
-     deallocate(vpow)
-     deallocate(stalta)
-
-
-     if (myid==0) write(6,*)'Done'
+!!$     !*** Compute energy
+!!$     if (myid==0) write(6,*)'Compute STA/LTA...'
+!!$     if (.not.allocated(vpow)) allocate(vpow(ntold))
+!!$     if (.not.allocated(stalta)) allocate(stalta(ntold))
+!!$     vpow = 0.
+!!$     stalta = 0.
+!!$
+!!$     do itold = 1, ntold
+!!$        sumx = 0.
+!!$        sumy = 0.
+!!$        sumz = 0.
+!!$        do ipt =  1, nrec_to_store  !irecmin, irecmax
+!!$           sumx = sumx + vxold1(ipt,itold)**2
+!!$           sumy = sumy + vyold1(ipt,itold)**2
+!!$           sumz = sumz + vzold1(ipt,itold)**2
+!!$        end do
+!!$        call MPI_allreduce(MPI_IN_PLACE,sumx,1,MPI_REAL,MPI_SUM,MPI_COMM_WORLD,ierr_mpi)
+!!$        call MPI_allreduce(MPI_IN_PLACE,sumy,1,MPI_REAL,MPI_SUM,MPI_COMM_WORLD,ierr_mpi)
+!!$        call MPI_allreduce(MPI_IN_PLACE,sumz,1,MPI_REAL,MPI_SUM,MPI_COMM_WORLD,ierr_mpi)
+!!$        vpow(itold) = sqrt(sumx + sumy +sumz)
+!!$     end do
+!!$
+!!$     if (myid == 0) then
+!!$        open(26,file='verif.bin',access='direct',recl=cp*ntold)
+!!$        write(26,rec=1)vpow
+!!$        close(26)
+!!$
+!!$        if (isconv ==1) then         
+!!$           open(26,file='stfint.bin',access='direct',recl=cp*ntold)
+!!$           write(26,rec=1)stf
+!!$           close(26)
+!!$        end if
+!!$     end if
+!!$
+!!$
+!!$     !*** Compute STA/LTA
+!!$     if (isconv == 1) then
+!!$        if(.not.allocated(conv)) allocate(conv(ntold))
+!!$        call myconvolution(vpow,stf,ntold,ntstf,conv)
+!!$        vpow = conv
+!!$        if (allocated(conv)) deallocate(conv)
+!!$     end if
+!!$     if (myid ==0) then
+!!$        open(26,file='verifconv.bin',access='direct',recl=cp*ntold)
+!!$        write(26,rec=1)vpow
+!!$        close(26)
+!!$     end if
+!!$     call substalta(vpow, ntold,  nsta, nlta, thres, stalta, ind)
+!!$     if (myid ==0) then
+!!$        open(26,file='stalta.bin',access='direct',recl=cp*ntold)
+!!$        write(26,rec=1)stalta
+!!$        close(26)
+!!$     end if
+!!$
+!!$     if (istap == 0) then
+!!$	write(6,*)'verif stalta, indice is: '
+!!$	write(6,*)ind - 1 
+!!$        write(6,*)'corresponding to time step:'
+!!$	write(6,*)(ind - 1)* dtold
+!!$	write(6,*)'dont quit but beware that stalta may have failed'
+!!$        warning =1
+!!$	call finalize_mpi
+!!$	stop 
+!!$     else 
+!!$	ind = alpha
+!!$     end if
+!!$
+!!$     !  do i=1,ntold
+!!$     !     if (stalta(i) >= thres) then
+!!$     !        ind = i;
+!!$     !        exit
+!!$     !     end if
+!!$     !  end do
+!!$     !  if (myid ==0) then
+!!$     ! open(26,file='verifconv.bin',access='direct',recl=cp*ntold)
+!!$     ! write(26,rec=1)vpow
+!!$     ! close(26)
+!!$     ! end if
+!!$
+!!$     deallocate(vpow)
+!!$     deallocate(stalta)
+!!$
+!!$
+!!$     if (myid==0) write(6,*)'Done'
 
      !================================================================================
      ! Cut signal and convolve with stf
      !--------------------------------------------------
      !*** Cut old signal
-     itbeg  = ind-1-ceiling(2.5/fmax)
+     itbeg  = ind-ceiling(2.5/fmax)
      itend  = itbeg + ceiling(ntnew * dtnew / dtold)
      tbeg = itbeg * dtold      !*** Starting time of cut signal
      tend = itend * dtold
@@ -446,72 +526,73 @@ program interpolate_3D_wavefield
      if (myid==0) write(6,*)'Done.'
 
 
-     write(ficii,'(a,i4.4,a)')'convstf_',myid,'.dat' 
-     open(20000+myid,file=trim(ficii),action='write')
-     write(20000+myid,*)vzold(1,:)
-     close(20000+myid)
+!     write(ficii,'(a,i4.4,a)')'convstf_',myid,'.dat' 
+!     open(20000+myid,file=trim(ficii),action='write')
+!     write(20000+myid,*)vzold(1,:)
+!     close(20000+myid)
 
      !================================================================================
      !*** Filter seismograms
-     if(myid==0) write(6,*)'Filtering...'       
-     if(.not.allocated(taper)) allocate(taper(ntold))
-     if(.not.allocated(convfilt)) allocate(convfilt(ntold))
-     convfilt = 0._cp
-     alph1 = 2/(dtold*ntold)          ! Warning 2s taper
-     taper = tuckeywin(ntold,alph1)
+     if (istap == 1) then
+        if(myid==0) write(6,*)'Filtering...'       
+        if(.not.allocated(taper)) allocate(taper(ntold))
+        if(.not.allocated(convfilt)) allocate(convfilt(ntold))
+        convfilt = 0._cp
+        alph1 = 2/(dtold*ntold)          ! Warning 2s taper
+        taper = tuckeywin(ntold,alph1)
+        
 
+        print *,myid,fmax,dtold,0.5/dtold 
+        do ipt = 1, nrec_to_store
+           
+           !*** Taper on residuals
+           vxold(ipt,:) = vxold(ipt,:) * taper(:)
+           call bwfilt(vxold(ipt,:),convfilt,dtold,ntold,1,4,1e-3_cp,fmax)
+           vxold(ipt,:) = convfilt(:)
+           convfilt = 0._cp   
+           vyold(ipt,:) = vyold(ipt,:) * taper(:)
+           call bwfilt(vyold(ipt,:),convfilt,dtold,ntold,1,4,1e-3_cp,fmax)
+           vyold(ipt,:) = convfilt(:)
+           convfilt = 0._cp   
+           vzold(ipt,:) = vzold(ipt,:) * taper(:)
+           call bwfilt(vzold(ipt,:),convfilt,dtold,ntold,1,4,1e-3_cp,fmax)
+           vzold(ipt,:) = convfilt(:)
+           convfilt = 0._cp   
+           sxxold(ipt,:) = sxxold(ipt,:) * taper(:)
+           call bwfilt(sxxold(ipt,:),convfilt,dtold,ntold,1,4,1e-3_cp,fmax)
+           sxxold(ipt,:) = convfilt(:)
+           convfilt = 0._cp   
+           syyold(ipt,:) = syyold(ipt,:) * taper(:)
+           call bwfilt(syyold(ipt,:),convfilt,dtold,ntold,1,4,1e-3_cp,fmax)
+           syyold(ipt,:) = convfilt(:)
+           convfilt = 0._cp   
+           szzold(ipt,:) = szzold(ipt,:) * taper(:)
+           call bwfilt(szzold(ipt,:),convfilt,dtold,ntold,1,4,1e-3_cp,fmax)
+           szzold(ipt,:) = convfilt(:)
+           convfilt = 0._cp   
+           syzold(ipt,:) = syzold(ipt,:) * taper(:)
+           call bwfilt(syzold(ipt,:),convfilt,dtold,ntold,1,4,1e-3_cp,fmax)
+           syzold(ipt,:) = convfilt(:)
+           convfilt = 0._cp   
+           sxzold(ipt,:) = sxzold(ipt,:) * taper(:)
+           call bwfilt(sxzold(ipt,:),convfilt,dtold,ntold,1,4,1e-3_cp,fmax)
+           sxzold(ipt,:) = convfilt(:)
+           convfilt = 0._cp   
+           sxyold(ipt,:) = sxyold(ipt,:) * taper(:)
+           call bwfilt(sxyold(ipt,:),convfilt,dtold,ntold,1,4,1e-3_cp,fmax)
+           sxyold(ipt,:) = convfilt(:)
+           convfilt = 0._cp   
+           
+        end do
 
-     print *,myid,fmax,dtold,0.5/dtold 
-     do ipt = 1, nrec_to_store
-
-        !*** Taper on residuals
-        vxold(ipt,:) = vxold(ipt,:) * taper(:)
-        call bwfilt(vxold(ipt,:),convfilt,dtold,ntold,1,4,1e-3_cp,fmax)
-        vxold(ipt,:) = convfilt(:)
-        convfilt = 0._cp   
-        vyold(ipt,:) = vyold(ipt,:) * taper(:)
-        call bwfilt(vyold(ipt,:),convfilt,dtold,ntold,1,4,1e-3_cp,fmax)
-        vyold(ipt,:) = convfilt(:)
-        convfilt = 0._cp   
-        vzold(ipt,:) = vzold(ipt,:) * taper(:)
-        call bwfilt(vzold(ipt,:),convfilt,dtold,ntold,1,4,1e-3_cp,fmax)
-        vzold(ipt,:) = convfilt(:)
-        convfilt = 0._cp   
-        sxxold(ipt,:) = sxxold(ipt,:) * taper(:)
-        call bwfilt(sxxold(ipt,:),convfilt,dtold,ntold,1,4,1e-3_cp,fmax)
-        sxxold(ipt,:) = convfilt(:)
-        convfilt = 0._cp   
-        syyold(ipt,:) = syyold(ipt,:) * taper(:)
-        call bwfilt(syyold(ipt,:),convfilt,dtold,ntold,1,4,1e-3_cp,fmax)
-        syyold(ipt,:) = convfilt(:)
-        convfilt = 0._cp   
-        szzold(ipt,:) = szzold(ipt,:) * taper(:)
-        call bwfilt(szzold(ipt,:),convfilt,dtold,ntold,1,4,1e-3_cp,fmax)
-        szzold(ipt,:) = convfilt(:)
-        convfilt = 0._cp   
-        syzold(ipt,:) = syzold(ipt,:) * taper(:)
-        call bwfilt(syzold(ipt,:),convfilt,dtold,ntold,1,4,1e-3_cp,fmax)
-        syzold(ipt,:) = convfilt(:)
-        convfilt = 0._cp   
-        sxzold(ipt,:) = sxzold(ipt,:) * taper(:)
-        call bwfilt(sxzold(ipt,:),convfilt,dtold,ntold,1,4,1e-3_cp,fmax)
-        sxzold(ipt,:) = convfilt(:)
-        convfilt = 0._cp   
-        sxyold(ipt,:) = sxyold(ipt,:) * taper(:)
-        call bwfilt(sxyold(ipt,:),convfilt,dtold,ntold,1,4,1e-3_cp,fmax)
-        sxyold(ipt,:) = convfilt(:)
-        convfilt = 0._cp   
-
-     end do
-
-     if (allocated(convfilt)) deallocate(convfilt)
-     if (allocated(taper)) deallocate(taper)
-     if(myid==0) write(6,*)'Done!'
-
-     write(ficii,'(a,i4.4,a)')'filtconvstf_',myid,'.dat' 
-     open(20000+myid,file=trim(ficii),action='write')
-     write(20000+myid,*)vzold(1,:)
-     close(20000+myid)
+        if (allocated(convfilt)) deallocate(convfilt)
+        if (allocated(taper)) deallocate(taper)
+        if(myid==0) write(6,*)'Done!'
+     end if
+!     write(ficii,'(a,i4.4,a)')'filtconvstf_',myid,'.dat' 
+!     open(20000+myid,file=trim(ficii),action='write')
+!     write(20000+myid,*)vzold(1,:)
+!     close(20000+myid)
 
 
      !================================================================================
@@ -520,14 +601,27 @@ program interpolate_3D_wavefield
      if (myid==0) write(6,*)'Resample with sinc interpolation....'
 
      !*** Open file and allocate
-     if (myid==0) open(20,file='incident_field.bin',status='unknown',form='unformatted')
+     if (myid==0) then
+        if (fwdtool == 'SEM') then
+           write(srcfile,*)'incident_field'
+           write(myfileend1,'(a,i4.4)')'_vel_',ipart
+           open(73000,file=trim(srcfile)//myfileend1,status='replace',access='direct',recl=cp*3*ngllsquare*num_bnd_faces*tbuff)
+           write(myfileend1,'(a,i4.4)')'_tra_',ipart
+           open(73001,file=trim(srcfile)//myfileend1,status='replace',access='direct',recl=cp*3*ngllsquare*num_bnd_faces*tbuff)
+        else
+           open(20,file='incident_field.bin',status='unknown',form='unformatted')
+        end if
+     end if
      if (fwdtool == 'SEM') then
-        if (.not.allocated(vel_inc))    allocate(vel_inc(3,ngllsquare,num_bnd_faces))
-        if (.not.allocated(trac_inc)) allocate(trac_inc(3,ngllsquare,num_bnd_faces))
+        if (allocated(vel_inc)) deallocate(vel_inc)
+        if (allocated(trac_inc)) deallocate(trac_inc)
+        if (.not.allocated(vel_inc))    allocate(vel_inc(3,ngllsquare,num_bnd_faces,tbuff))
+        if (.not.allocated(trac_inc)) allocate(trac_inc(3,ngllsquare,num_bnd_faces,tbuff))
         vel_inc  = 0.
         trac_inc = 0.
 
 !!! Add local versions
+        if (allocated(mapipt)) deallocate(mapipt)
         if (.not.allocated(mapipt)) allocate(mapipt(2,ngllsquare*num_bnd_faces))
         mapipt = 0    
 
@@ -541,11 +635,14 @@ program interpolate_3D_wavefield
            end do
         end do
      else
-        if (.not.allocated(vel_inc2))    allocate(vel_inc2(3,npts))     ! warning npts may be wrong
-        if (.not.allocated(stress_inc)) allocate(stress_inc(6,npts))    ! warning "
+        if (allocated(vel_inc2)) deallocate(vel_inc2)
+        if (allocated(stress_inc)) deallocate(stress_inc)
+        if (.not.allocated(vel_inc2))    allocate(vel_inc2(3,npts,tbuff))     ! warning npts may be wrong
+        if (.not.allocated(stress_inc)) allocate(stress_inc(6,npts,tbuff))    ! warning "
         vel_inc2   = 0.
         stress_inc = 0.
      end if
+     if (allocated(tab_sinc)) deallocate(tab_sinc)
      if (.not.allocated(tab_sinc)) allocate(tab_sinc(ntold))
      feold = 1./dtold
 
@@ -558,6 +655,10 @@ program interpolate_3D_wavefield
 
      !*** Loop over new time steps
      do itnew = 1, ntnew
+
+        !*** Locate in buffer
+        ibuf = modulo(it-1,tbuff) +1    ! Indice in buffer
+        nbuf = ((it-1)/tbuff) +1        ! Current number of buffer
 
         if (fwdtool == 'SEM') then
            vel_inc  = 0.
@@ -605,12 +706,12 @@ program interpolate_3D_wavefield
               z=zcoord(iglob)
 
               !* 2. Normals
-              !nx = sign(abs_bnd_normal(1,igll,iface),x)
-              !ny = sign(abs_bnd_normal(2,igll,iface),y)
-              !nz = sign(abs_bnd_normal(3,igll,iface),z)
-              nx = abs_bnd_normal(1,igll,iface)
-              ny = abs_bnd_normal(2,igll,iface)
-              nz = abs_bnd_normal(3,igll,iface)
+              nx = sign(abs_bnd_normal(1,igll,iface),x)
+              ny = sign(abs_bnd_normal(2,igll,iface),y)
+              nz = sign(abs_bnd_normal(3,igll,iface),z)
+!              nx = abs_bnd_normal(1,igll,iface)
+!              ny = abs_bnd_normal(2,igll,iface)
+!              nz = abs_bnd_normal(3,igll,iface)
 
               !* 3. Tractions
               tx = sxx*nx + sxy*ny + sxz*nz
@@ -631,57 +732,70 @@ program interpolate_3D_wavefield
               iptglob = ipt + i_inf(myid+1) -1
 
               !*** Stock everything else
-              vel_inc2(1,iptglob) = vx
-              vel_inc2(2,iptglob) = vy
-              vel_inc2(3,iptglob) = vz
+              vel_inc2(1,iptglob,ibuf) = vx
+              vel_inc2(2,iptglob,ibuf) = vy
+              vel_inc2(3,iptglob,ibuf) = vz
 
-              stress_inc(1,iptglob) = sxx
-              stress_inc(2,iptglob) = syy
-              stress_inc(3,iptglob) = szz
-              stress_inc(4,iptglob) = syz
-              stress_inc(5,iptglob) = sxz
-              stress_inc(6,iptglob) = sxy
+              stress_inc(1,iptglob,ibuf) = sxx
+              stress_inc(2,iptglob,ibuf) = syy
+              stress_inc(3,iptglob,ibuf) = szz
+              stress_inc(4,iptglob,ibuf) = syz
+              stress_inc(5,iptglob,ibuf) = sxz
+              stress_inc(6,iptglob,ibuf) = sxy
 
            end select
 
         end do
 
    
+        if (ibuf == tbuff) then
 
-        !*** Write everything (check engine)
-        select case (fwdtool)
-        case('SEM')
-           call MPI_allreduce(MPI_IN_PLACE,vel_inc,3*ngllsquare*num_bnd_faces*tbuff,MPI_REAL,MPI_SUM,MPI_COMM_WORLD,ierr_mpi)
-           call MPI_allreduce(MPI_IN_PLACE,trac_inc,3*ngllsquare*num_bnd_faces*tbuff,MPI_REAL,MPI_SUM,MPI_COMM_WORLD,ierr_mpi)   
-           if (myid ==0) then 
-
-              !* Save buffer to disk
-              write(73000,rec=nbuf)vel_inc(:,:,:,:)
-              write(73001,rec=nbuf)trac_inc(:,:,:,:)
-              
-              !* Reinit to zero
-              vel_inc  = 0.
-              trac_inc = 0.
-              
-              write(6,*)'Progress : ',100.*itnew/ntnew,'%'   
+           !*** Write everything (check engine)
+           select case (fwdtool)
+           case('SEM')
+              call MPI_allreduce(MPI_IN_PLACE,vel_inc,3*ngllsquare*num_bnd_faces*tbuff,MPI_REAL,MPI_SUM,MPI_COMM_WORLD,ierr_mpi)
+              call MPI_allreduce(MPI_IN_PLACE,trac_inc,3*ngllsquare*num_bnd_faces*tbuff,MPI_REAL,MPI_SUM,MPI_COMM_WORLD,ierr_mpi)   
+              if (myid ==0) then 
+                 
+                 !* Save buffer to disk
+                 write(73000,rec=nbuf)vel_inc(:,:,:,:)
+                 write(73001,rec=nbuf)trac_inc(:,:,:,:)
+                 
+                 !* Reinit to zero
+                 vel_inc  = 0.
+                 trac_inc = 0.
+                 
+                 write(6,*)'Progress : ',100.*itnew/ntnew,'%'   
                             
-           end if
+              end if
 
-        case('FD')        
-           call MPI_allreduce(MPI_IN_PLACE,vel_inc2,3*npts,MPI_REAL,MPI_SUM,MPI_COMM_WORLD,ierr_mpi)
-           call MPI_allreduce(MPI_IN_PLACE,stress_inc,6*npts,MPI_REAL,MPI_SUM,MPI_COMM_WORLD,ierr_mpi) 
-           if (myid == 0) write(20)vel_inc2,stress_inc
-        end select
+           case('FD')        
+              call MPI_allreduce(MPI_IN_PLACE,vel_inc2,3*npts*tbuff,MPI_REAL,MPI_SUM,MPI_COMM_WORLD,ierr_mpi)
+              call MPI_allreduce(MPI_IN_PLACE,stress_inc,6*npts*tbuff,MPI_REAL,MPI_SUM,MPI_COMM_WORLD,ierr_mpi) 
+              if (myid == 0) write(20)vel_inc2,stress_inc
+           end select
+           
+        end if
 
      end do
 
      call MPI_barrier(MPI_COMM_WORLD,ierr_mpi)
-     if (myid==0) close(20)
+     if (myid==0) then
+        if (fwdtool == 'SEM') then
+           close(73000)
+           close(73001)
+        end if
+     else
+        close(20)
+     end if
 
-  end if
+     if (myid==0) write(6,*)'End of incident field computation for ',ipart
+     
+  end do
 
-  if (myid==0) write(*,*)'End of incident field computation.'
   
+
+
 !  if (warning == 1) then      
 !  if (myid==0) write(*,*)'WARNING automatic picking has been used it may be wrong...' 
 !  if (myid==0) write(6,*)'WARNING please verify.'
