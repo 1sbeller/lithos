@@ -793,7 +793,15 @@ program interpolate_3D_wavefield
      
   end do
 
-  
+  if(allocated(vxold)) deallocate(vxold)
+  if(allocated(vyold)) deallocate(vyold)
+  if(allocated(vzold)) deallocate(vzold)
+  if(allocated(sxxold)) deallocate(sxxold)
+  if(allocated(syyold)) deallocate(syyold)
+  if(allocated(szzold)) deallocate(szzold)
+  if(allocated(sxyold)) deallocate(sxyold)
+  if(allocated(sxzold)) deallocate(sxzold)
+  if(allocated(syzold)) deallocate(syzold)
 
 
 !  if (warning == 1) then      
