@@ -104,6 +104,7 @@ program interpolate_3D_wavefield
      call broadcast_all_data
 
      !*** Prepare reading of reconstructed AxiSEM outputs
+     ntold = ntime   
      if (myid==0) write(6,*)'Must read ',nbrec,' points for ',ntime,' time steps.'
      if (myid==0) write(6,*)'Check ntold and ntime : ',ntold,ntime
      npts = nbrec
@@ -162,7 +163,8 @@ program interpolate_3D_wavefield
      syzold1(:,:) = 0.
      sxzold1(:,:) = 0.
      sxyold1(:,:) = 0.
-     
+    
+ 
      !================================================================================
      ! Read AxiSEM reconstructed files
      !--------------------------------------------------
@@ -658,7 +660,7 @@ program interpolate_3D_wavefield
      if (myid==0) write(6,*)'Infos : feold, ntold, itbeg, itend, tbeg, tend, dtnew, dtold,ntnew'
      if (myid==0) write(6,*)feold,ntold,itbeg,itend,tbeg,tend,dtnew,dtold,ntnew
 
-     print *,myid,fwdtool
+!     print *,myid,fwdtool
 
      call MPI_barrier(MPI_COMM_WORLD,ierr_mpi)
 
@@ -666,8 +668,8 @@ program interpolate_3D_wavefield
      do itnew = 1, ntnew
 
         !*** Locate in buffer
-        ibuf = modulo(it-1,tbuff) +1    ! Indice in buffer
-        nbuf = ((it-1)/tbuff) +1        ! Current number of buffer
+        ibuf = modulo(itnew-1,tbuff) +1    ! Indice in buffer
+        nbuf = ((itnew-1)/tbuff) +1        ! Current number of buffer
 
         if (fwdtool == 'SEM') then
            vel_inc  = 0.
