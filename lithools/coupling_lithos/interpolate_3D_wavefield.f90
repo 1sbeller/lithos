@@ -671,13 +671,13 @@ program interpolate_3D_wavefield
         ibuf = modulo(itnew-1,tbuff) +1    ! Indice in buffer
         nbuf = ((itnew-1)/tbuff) +1        ! Current number of buffer
 
-        if (fwdtool == 'SEM') then
-           vel_inc  = 0.
-           trac_inc = 0.
-        else 
-           vel_inc2   = 0.
-           stress_inc = 0.
-        end if
+ !       if (fwdtool == 'SEM') then
+ !         vel_inc  = 0.
+ !         trac_inc = 0.
+ !       else 
+ !          vel_inc2   = 0.
+ !          stress_inc = 0.
+ !       end if
 
         !*** Compute sinc kernel
         call comp_tab_sinc(itnew,dtnew,feold,ntold,tab_sinc)
