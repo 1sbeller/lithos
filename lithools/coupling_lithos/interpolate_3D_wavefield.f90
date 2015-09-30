@@ -36,7 +36,7 @@ program interpolate_3D_wavefield
      end do
      close(155)
   end if
-  call MPI_bcast(MPI_IN_PLACE,part_info,6*npart,MPI_INTEGER,MPI_COMM_WORLD,ierr_mpi)
+  call MPI_bcast(part_info,6*npart,MPI_INTEGER,0,MPI_COMM_WORLD,ierr_mpi)
 
   do ipart = 1, npart
 
@@ -76,19 +76,19 @@ program interpolate_3D_wavefield
         if(.not.allocated(abs_bnd_normal))      allocate(abs_bnd_normal(3,ngllsquare,num_bnd_faces))
         
         !*** X-coord
-        open(unit=IIN,file=rep(1:len_trim(rep))//'coordinates'//myfileend//'.bin',status='old',form='unformatted')
+        open(unit=IIN,file=rep(1:len_trim(rep))//'/MESH/'//'coordinates'//myfileend//'.bin',status='old',form='unformatted')
         read(IIN) xcoord(:)
         read(IIN) ycoord(:)
         read(IIN) zcoord(:)
         close(IIN)
         
         !*** Global indexing
-        open(unit=IIN,file=rep(1:len_trim(rep))//'loc2glob'//myfileend//'.bin',status='old',form='unformatted')
+        open(unit=IIN,file=rep(1:len_trim(rep))//'/MESH/'//'loc2glob'//myfileend//'.bin',status='old',form='unformatted')
         read(IIN) loc2glob(:,:,:,:)
         close(IIN)
         
         !*** Boundary conditions
-        open(unit=IIN,file=rep(1:len_trim(rep))//'boundary'//myfileend//'.bin',status='old',form='unformatted')
+        open(unit=IIN,file=rep(1:len_trim(rep))//'/MESH/'//'boundary'//myfileend//'.bin',status='old',form='unformatted')
         read(IIN) num_bnd_faces
         read(IIN) abs_bnd_tag
         read(IIN) abs_bnd_ielem
@@ -133,8 +133,16 @@ program interpolate_3D_wavefield
      
      call scatter_data
      
-     print *,'DEBUG npts,nptsa,nrec_to_store : ',npts,nptsa,nrec_to_store
-     
+     !print *,'DEBUG npts,nptsa,nrec_to_store : ',npts,nptsa,nrec_to_store
+     if (allocated(vxold1)) deallocate(vxold1)
+     if (allocated(vyold1)) deallocate(vyold1)
+     if (allocated(vzold1)) deallocate(vzold1)
+     if (allocated(sxxold1)) deallocate(sxxold1)
+     if (allocated(syyold1)) deallocate(syyold1)
+     if (allocated(szzold1)) deallocate(szzold1)
+     if (allocated(sxyold1)) deallocate(sxyold1)
+     if (allocated(syzold1)) deallocate(syzold1)
+     if (allocated(sxzold1)) deallocate(sxzold1)
      if (.not.allocated(vxold1)) allocate(vxold1(nrec_to_store,ntold))
      if (.not.allocated(vyold1)) allocate(vyold1(nrec_to_store,ntold))
      if (.not.allocated(vzold1)) allocate(vzold1(nrec_to_store,ntold))
@@ -174,8 +182,9 @@ program interpolate_3D_wavefield
            sxzold2(:,:) = 0.
            sxyold2(:,:) = 0.
            
-           
-           write(6,*)'time ',100.*itime/ntime,'%'
+           if (modulo(itime,tbuff)==0) then
+               write(6,*)'time ',100.*itime/ntime,'%'
+           end if
            do isim=1,nsim
               
               read(ivx(isim))  data_tmp(:,1)
@@ -542,7 +551,7 @@ program interpolate_3D_wavefield
         taper = tuckeywin(ntold,alph1)
         
 
-        print *,myid,fmax,dtold,0.5/dtold 
+        if (myid == 0) print *,myid,fmax,dtold,0.5/dtold 
         do ipt = 1, nrec_to_store
            
            !*** Taper on residuals
@@ -777,7 +786,7 @@ program interpolate_3D_wavefield
            
         end if
 
-     end do
+     end do     
 
      call MPI_barrier(MPI_COMM_WORLD,ierr_mpi)
      if (myid==0) then
@@ -791,7 +800,6 @@ program interpolate_3D_wavefield
 
      if (myid==0) write(6,*)'End of incident field computation for ',ipart
      
-  end do
 
   if(allocated(vxold)) deallocate(vxold)
   if(allocated(vyold)) deallocate(vyold)
@@ -804,6 +812,7 @@ program interpolate_3D_wavefield
   if(allocated(syzold)) deallocate(syzold)
 
 
+  end do
 !  if (warning == 1) then      
 !  if (myid==0) write(*,*)'WARNING automatic picking has been used it may be wrong...' 
 !  if (myid==0) write(6,*)'WARNING please verify.'
