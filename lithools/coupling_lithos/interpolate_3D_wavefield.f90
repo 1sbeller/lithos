@@ -768,17 +768,19 @@ program interpolate_3D_wavefield
               call MPI_allreduce(MPI_IN_PLACE,trac_inc,3*ngllsquare*num_bnd_faces*tbuff,MPI_REAL,MPI_SUM,MPI_COMM_WORLD,ierr_mpi)   
               if (myid ==0) then 
                  
+                 write(6,*)'Progress : ',100.*itnew/ntnew,'%'   
+                 
                  !* Save buffer to disk
                  write(73000,rec=nbuf)vel_inc(:,:,:,:)
                  write(73001,rec=nbuf)trac_inc(:,:,:,:)
                  
-                 !* Reinit to zero
-                 vel_inc  = 0.
-                 trac_inc = 0.
-                 
-                 write(6,*)'Progress : ',100.*itnew/ntnew,'%'   
-                            
               end if
+
+             !* Reinit to zero
+             vel_inc  = 0.
+             trac_inc = 0.
+                 
+                            
 
            case('FD')        
               call MPI_allreduce(MPI_IN_PLACE,vel_inc2,3*npts*tbuff,MPI_REAL,MPI_SUM,MPI_COMM_WORLD,ierr_mpi)
