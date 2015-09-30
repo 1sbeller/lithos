@@ -36,11 +36,7 @@ program interpolate_3D_wavefield
      end do
      close(155)
   end if
-<<<<<<< HEAD
   call MPI_bcast(part_info,6*npart,MPI_INTEGER,0,MPI_COMM_WORLD,ierr_mpi)
-=======
-  call MPI_bcast(part_info,6*npart,MPI_INTEGER,MPI_COMM_WORLD,ierr_mpi)
->>>>>>> 994c0c22685b18c05ae15db835470a8cdb3550a3
 
   do ipart = 1, npart
 
