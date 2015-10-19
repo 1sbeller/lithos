@@ -22,19 +22,18 @@ program reconstruct_3D_wavefield
      call read_all_inputs(isim,nsim)  ! Rotations are defined here
   end if
   call MPI_bcast(npart,1,MPI_INTEGER,0,MPI_COMM_WORLD,ierr_mpi)
+  call MPI_bcast(tbuff,1,MPI_INTEGER,0,MPI_COMM_WORLD,ierr_mpi)
 
-  do ipart = 1, npart
+!  do ipart = 1, npart
 
-     if (myid ==0) write(6,*)'process subdom ',ipart,'over ',npart   
-
-     !*** Read input_box file
-     if (myid == 0) call read_input_box_file(isim,ipart)
+     !*** Read each input_box file
+     if (myid == 0) call read_input_box_file(isim) !,ipart)
      call MPI_bcast(nbrec,1,MPI_INTEGER,0,MPI_COMM_WORLD,ierr_mpi)
 
      !*** Avoid empty subdomains
-     if (nbrec < 1) then
-        cycle
-     end if   
+!     if (nbrec < 1) then
+!        cycle
+!     end if   
 
      !*** Find points for current subdomain
      if (myid == 0) call determine_connectivity
@@ -45,17 +44,22 @@ program reconstruct_3D_wavefield
      call distribute_mpi
      
      !*** Reconstruct wavefields
-     call reconstruct_velocity(ipart)  !(isim)
-     call reconstruct_stress(ipart)    !(isim)
+     call reconstruct_velocity() !ipart)  !(isim)
+     call reconstruct_stress()   !ipart)    !(isim)
 
-  end do
+!  end do
 
   
-  !*** Save energy for stalta
+  !*** Save energy for stalta and infos for subdomains
   if (myid == 0) then
      write(6,*)'Reconstruction done !'
      open(17,file='energy_for_stalta.bin',status='replace',access='direct',recl=cp*ntime)
      write(17,rec=1)energy
+     close(17)
+     open(17,file='infos_split2subdom',status='replace',action='write')
+     do ipart=1,npart
+        write(17,'(i8.8,i8.8,i8.8)')tab_box_rec(1:3,ipart)
+     end do
      close(17)
   end if
 

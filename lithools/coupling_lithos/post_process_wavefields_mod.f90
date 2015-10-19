@@ -9,7 +9,7 @@ contains
 
 !================================================================================
 ! Routine reconstructing the 3D velocity wavefield
-  subroutine reconstruct_velocity(ipart)  !(isim)
+  subroutine reconstruct_velocity() !ipart)  !(isim)
 
     use global_parameters_mod
     use rotation_matrix_mod
@@ -31,6 +31,8 @@ contains
 
     allocate(iunit(0:nbproc-1,3,nsim))
     
+    ipart = 1
+
     !*** Unit file
     i=150
     do isim = 1,nsim    
@@ -62,11 +64,11 @@ contains
        write(myfileend,'(a,i4.4)')'_',ipart
 
        write(fichier,'(a15)') output_veloc_name(1)
-       open(ivx,file= trim(working_axisem_dir)//trim(fichier)//myfileend, FORM="UNFORMATTED")
+       open(ivx,file= trim(working_axisem_dir)//trim(fichier), FORM="UNFORMATTED")
        write(fichier,'(a15)') output_veloc_name(2)
-       open(ivy,file= trim(working_axisem_dir)//trim(fichier)//myfileend, FORM="UNFORMATTED")
+       open(ivy,file= trim(working_axisem_dir)//trim(fichier), FORM="UNFORMATTED")
        write(fichier,'(a15)') output_veloc_name(3)
-       open(ivz,file= trim(working_axisem_dir)//trim(fichier)//myfileend, FORM="UNFORMATTED")
+       open(ivz,file= trim(working_axisem_dir)//trim(fichier), FORM="UNFORMATTED")
        
        write(*,*) 'nbrec to write', nbrec
        write(*,*) 'nbrec to read ',sum(nb_stored(:))
@@ -232,7 +234,7 @@ contains
 
 !================================================================================
 ! Routine reconstructing the 3D velocity wavefield
-  subroutine reconstruct_stress(ipart)   !(isim)
+  subroutine reconstruct_stress() !ipart)   !(isim)
   
     use mpi_mod
     use global_parameters_mod
@@ -253,6 +255,8 @@ contains
     character(len=5)   :: myfileend
     character(len=256) :: fichier
         
+    ipart = 1
+
     allocate(iunit(0:nbproc-1,6,nsim))
         
     !*** Unit file to read
@@ -292,17 +296,17 @@ contains
        !*** Outputs stress
        write(myfileend,'(a,i4.4)')'_',ipart
        write(fichier,'(a15)') output_stress_name(1)
-       open(isxx,file= trim(working_axisem_dir)//trim(fichier)//myfileend, FORM="UNFORMATTED")
+       open(isxx,file= trim(working_axisem_dir)//trim(fichier), FORM="UNFORMATTED")
        write(fichier,'(a15)') output_stress_name(2)
-       open(isyy,file= trim(working_axisem_dir)//trim(fichier)//myfileend, FORM="UNFORMATTED")
+       open(isyy,file= trim(working_axisem_dir)//trim(fichier), FORM="UNFORMATTED")
        write(fichier,'(a15)') output_stress_name(3)
-       open(iszz,file= trim(working_axisem_dir)//trim(fichier)//myfileend, FORM="UNFORMATTED")
+       open(iszz,file= trim(working_axisem_dir)//trim(fichier), FORM="UNFORMATTED")
        write(fichier,'(a15)') output_stress_name(4)
-       open(isxy,file= trim(working_axisem_dir)//trim(fichier)//myfileend, FORM="UNFORMATTED")
+       open(isxy,file= trim(working_axisem_dir)//trim(fichier), FORM="UNFORMATTED")
        write(fichier,'(a15)') output_stress_name(5)
-       open(isxz,file= trim(working_axisem_dir)//trim(fichier)//myfileend, FORM="UNFORMATTED")
+       open(isxz,file= trim(working_axisem_dir)//trim(fichier), FORM="UNFORMATTED")
        write(fichier,'(a15)') output_stress_name(6)
-       open(isyz,file= trim(working_axisem_dir)//trim(fichier)//myfileend, FORM="UNFORMATTED")
+       open(isyz,file= trim(working_axisem_dir)//trim(fichier), FORM="UNFORMATTED")
        
        write(isxx) nbrec,ntime
        write(isyy) nbrec,ntime

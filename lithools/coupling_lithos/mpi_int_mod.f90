@@ -55,8 +55,8 @@ contains
 ! Determine recmin recmax
   subroutine scatter_data
 
-    nb_rec_by_proc=nbrec/nb_proc
-    nb_remain_proc=mod(nbrec,nb_proc)
+    nb_rec_by_proc=npts/nb_proc
+    nb_remain_proc=mod(npts,nb_proc)
 !    write(*,*) ' decomposition ', nb_rec_by_proc,nb_remain_proc
     
     if (myid == 0) then !!! More data

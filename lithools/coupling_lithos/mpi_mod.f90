@@ -79,6 +79,10 @@ contains
    Mij_scale(:) = 0.
 
    if (myid >  0) then 
+
+      if (allocated(tab_box_rec)) deallocate(tab_box_rec)
+      allocate(tab_box_rec(1:3,1:npart))
+
       if (allocated(reciever_geogr)) deallocate(reciever_geogr)
       if (allocated(reciever_sph)) deallocate(reciever_sph)
       if (allocated(reciever_cyl)) deallocate(reciever_cyl)
@@ -166,6 +170,7 @@ contains
 
     ! integer
     call mpi_bcast(rec2elm,nbrec,MPI_INTEGER,0,MPI_COMM_WORLD,ierr_mpi)
+    call mpi_bcast(tab_box_rec,3*npart,MPI_INTEGER,0,MPI_COMM_WORLD,ierr_mpi)
 
     ! character 
      call mpi_bcast(src_type,10*2*nsim,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi)

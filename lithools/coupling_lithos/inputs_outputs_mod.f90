@@ -257,7 +257,10 @@ contains
        parameters_recon : select case(trim(keyword))
        case('modeling_tool')
           read(keyvalue, *) coup_tool
-          
+
+       case('simulation_nb_buffer')
+          read(keyvalue, *) tbuff       
+
        case('coupling_box_file')
           read(keyvalue, *) input_point_file
 
@@ -357,28 +360,51 @@ contains
 
 !================================================================================
 ! Read inputs_box files
-  subroutine  read_input_box_file(isim,ipart)
+  subroutine  read_input_box_file(isim) !,ipart)
 
     use global_parameters_mod
     use rotation_matrix_mod
 
-    integer(kind=si), intent(in) :: isim, ipart
+    integer(kind=si), intent(in) :: isim !, ipart
     
-    integer(kind=si) :: i
+    integer(kind=si) :: i, nbreclocc, ipart, istartrec, iendrec
     
     real(kind=dp) :: srclon,  srclat,  srccolat, az_mesh
     real(kind=dp) :: meshlon, meshlat, meshcolat, meshalpha
 
     character(len=5) :: myfileend
 
-    !*** Read input box files (containing coordinates of the mesh boundaries)
-    !*** Find the file
-    write(myfileend,'(a,i4.4)')'_',ipart
-    
-    !* Number of points to be read
-    open(10,file=trim(working_axisem_dir)//trim(simdir(isim))//'/'//trim(input_point_file(1:len(trim(input_point_file))-4))//myfileend//'.txt')
-    read(10,*) nbrec
-    
+    if (allocated(tab_box_rec)) deallocate(tab_box_rec)
+    allocate(tab_box_rec(1:3,1:npart))
+
+    nbrec     = 0
+    istartrec = 1
+
+    do ipart = 1, npart
+
+       write(6,*)'process subdom ',ipart,'over ',npart   
+
+       !*** Read input box files (containing coordinates of the mesh boundaries)
+       !*** Find the file
+       write(myfileend,'(a,i4.4)')'_',ipart
+
+       !* Number of points to be read
+       open(10,file=trim(working_axisem_dir)//trim(simdir(isim))//'/'//trim(input_point_file(1:len(trim(input_point_file))-4))//myfileend//'.txt')
+       read(10,*) nbreclocc
+       close(10)
+       
+       if (nbreclocc > 0) then
+          nbrec     = nbrec + nbreclocc
+          iendrec   = nbrec
+          istartrec = nbrec + 1
+       end if
+
+       tab_box_rec(1:3,ipart) = (/ nbreclocc, istartrec, iendrec /)
+   
+       write(6,*)'nbrecloc, istart, iend ',tab_box_rec(:,ipart)   
+
+    end do
+
     !* Allocate relevant arrays
     if (allocated(reciever_geogr)) deallocate(reciever_geogr)
     if (allocated(reciever_sph)) deallocate(reciever_sph)
@@ -393,13 +419,13 @@ contains
     allocate(data_rec(nbrec,3),stress_rec(nbrec,6),stress_to_write(nbrec,6),strain_rec(nbrec,6))
     stress_rec=0.
     data_rec=0.
-
+    
     if (allocated(data_rec_all)) deallocate(data_rec_all)
     if (allocated(stress_rec_all)) deallocate(stress_rec_all)
     allocate(data_rec_all(nbrec,3),stress_rec_all(nbrec,6))
     stress_rec_all = 0.
     data_rec_all   = 0.   
-
+    
     if (allocated(f1)) deallocate(f1)
     if (allocated(f2)) deallocate(f2)
     if (allocated(phi)) deallocate(phi)
@@ -407,25 +433,48 @@ contains
     f1 = 0.
     f2 = 0.
 
-    !* Read and computes coordinates for each point
-    do i=1,nbrec !! radius, latitude, longitude
-       read(10,*) reciever_geogr(1,i),reciever_geogr(2,i),reciever_geogr(3,i)
+    nbrec     = 0
+    istartrec = 1
+    do ipart = 1, npart
+       write(6,*)'process subdom ',ipart,'over ',npart   
 
-       reciever_sph(1,i) = reciever_geogr(1,i)*1000._dp
-       reciever_sph(2,i) = (90._dp - reciever_geogr(2,i)) * pi / 180._dp  
-       reciever_sph(3,i) = reciever_geogr(3,i)  * pi / 180._dp
+       if (tab_box_rec(1,ipart) < 1) then
+          cycle
+       end if
+       
+       write(myfileend,'(a,i4.4)')'_',ipart
 
-       call rotate_box(reciever_sph(1,i), reciever_sph(2,i), reciever_sph(3,i),trans_rot_mat)
+       !* Number of points to be read
+       open(10,file=trim(working_axisem_dir)//trim(simdir(isim))//'/'//trim(input_point_file(1:len(trim(input_point_file))-4))//myfileend//'.txt')
+       read(10,*) nbreclocc
 
-       reciever_cyl(1,i) = reciever_sph(1,i)  * sin( reciever_sph(2,i))
-       reciever_cyl(2,i) = reciever_sph(3,i)
-       reciever_cyl(3,i) = reciever_sph(1,i)  * cos( reciever_sph(2,i))
+       if (nbreclocc > 0) then
+          nbrec     = nbrec + nbreclocc
+          iendrec   = nbrec
+          istartrec = nbrec + 1
+       end if
 
-       phi(i) = reciever_cyl(2,i) 
+       !* Read and computes coordinates for each point
+       do i=istartrec,iendrec !! radius, latitude, longitude
+          read(10,*) reciever_geogr(1,i),reciever_geogr(2,i),reciever_geogr(3,i)
 
+          reciever_sph(1,i) = reciever_geogr(1,i)*1000._dp
+          reciever_sph(2,i) = (90._dp - reciever_geogr(2,i)) * pi / 180._dp  
+          reciever_sph(3,i) = reciever_geogr(3,i)  * pi / 180._dp
+
+          call rotate_box(reciever_sph(1,i), reciever_sph(2,i), reciever_sph(3,i),trans_rot_mat)
+
+          reciever_cyl(1,i) = reciever_sph(1,i)  * sin( reciever_sph(2,i))
+          reciever_cyl(2,i) = reciever_sph(3,i)
+          reciever_cyl(3,i) = reciever_sph(1,i)  * cos( reciever_sph(2,i))
+
+          phi(i) = reciever_cyl(2,i) 
+
+       end do
+       close(10)
     end do
-    close(10)
-      
+    
+
   end subroutine read_input_box_file
 !--------------------------------------------------------------------------------
 

@@ -28,6 +28,7 @@ program interpolate_3D_wavefield
   call mpi_bcast(npart,1,MPI_INTEGER,0,MPI_COMM_WORLD,ierr_mpi)
 
   !*** Read infos on partitionning
+  if(.not.allocated(tab_box_rec)) allocate(tab_box_rec(3,npart))
   if (.not.allocated(part_info)) allocate(part_info(npart,6))
   if (myid == 0) then
      open(155,file='partition_info.txt',status='old',action='read')
@@ -35,8 +36,14 @@ program interpolate_3D_wavefield
         read(155,'(6i9.8)')part_info(ipart,1:6)  !npart, ipart, myne, myndof, myntag, myntag*25
      end do
      close(155)
+     open(155,file='infos_split2subdom',status='old',action='read')
+     do ipart = 1,npart
+        read(155,'(3i8.8)')tab_box_rec(1:3,ipart)  !nbrecloc,istart,iend
+     end do
+     close(155)
   end if
   call MPI_bcast(part_info,6*npart,MPI_INTEGER,0,MPI_COMM_WORLD,ierr_mpi)
+  call MPI_bcast(tab_box_rec,3*npart,MPI_INTEGER,0,MPI_COMM_WORLD,ierr_mpi)
 
   do ipart = 1, npart
 
@@ -99,7 +106,7 @@ program interpolate_3D_wavefield
      end if
 
      !*** Inputs files
-     if(myid == 0)  call define_axisem_dir(ipart)
+     if(myid == 0)  call define_axisem_dir !(ipart)
 
      call broadcast_all_data
 
@@ -107,7 +114,8 @@ program interpolate_3D_wavefield
      ntold = ntime   
      if (myid==0) write(6,*)'Must read ',nbrec,' points for ',ntime,' time steps.'
      if (myid==0) write(6,*)'Check ntold and ntime : ',ntold,ntime
-     npts = nbrec
+     nbrec = maxval(tab_box_rec(3,:))
+     npts = tab_box_rec(1,ipart)
      
      if (myid == 0) then
         if(.not.allocated(data_tmp)) allocate(data_tmp(nbrec,9))
@@ -199,15 +207,15 @@ program interpolate_3D_wavefield
               read(isxz(isim)) data_tmp(:,8)
               read(isyz(isim)) data_tmp(:,9)
               
-              vxold2(:,1)  = vxold2(:,1) + real(data_tmp(:,1))
-              vyold2(:,1)  = vyold2(:,1) + real(data_tmp(:,2))
-              vzold2(:,1)  = vzold2(:,1) + real(data_tmp(:,3))
-              sxxold2(:,1) = sxxold2(:,1) + real(data_tmp(:,4))
-              syyold2(:,1) = syyold2(:,1) + real(data_tmp(:,5))
-              szzold2(:,1) = szzold2(:,1) + real(data_tmp(:,6))
-              sxyold2(:,1) = sxyold2(:,1) + real(data_tmp(:,7))
-              sxzold2(:,1) = sxzold2(:,1) + real(data_tmp(:,8))
-              syzold2(:,1) = syzold2(:,1) + real(data_tmp(:,9))
+              vxold2(:,1)  = vxold2(:,1) + real(data_tmp(tab_box_rec(2,ipart):tab_box_rec(3,ipart),1))
+              vyold2(:,1)  = vyold2(:,1) + real(data_tmp(tab_box_rec(2,ipart):tab_box_rec(3,ipart),2))
+              vzold2(:,1)  = vzold2(:,1) + real(data_tmp(tab_box_rec(2,ipart):tab_box_rec(3,ipart),3))
+              sxxold2(:,1) = sxxold2(:,1) + real(data_tmp(tab_box_rec(2,ipart):tab_box_rec(3,ipart),4))
+              syyold2(:,1) = syyold2(:,1) + real(data_tmp(tab_box_rec(2,ipart):tab_box_rec(3,ipart),5))
+              szzold2(:,1) = szzold2(:,1) + real(data_tmp(tab_box_rec(2,ipart):tab_box_rec(3,ipart),6))
+              sxyold2(:,1) = sxyold2(:,1) + real(data_tmp(tab_box_rec(2,ipart):tab_box_rec(3,ipart),7))
+              sxzold2(:,1) = sxzold2(:,1) + real(data_tmp(tab_box_rec(2,ipart):tab_box_rec(3,ipart),8))
+              syzold2(:,1) = syzold2(:,1) + real(data_tmp(tab_box_rec(2,ipart):tab_box_rec(3,ipart),9))
 
            end do
         end if

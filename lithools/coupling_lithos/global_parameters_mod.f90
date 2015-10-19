@@ -48,7 +48,7 @@ module global_parameters_mod
   real(kind=dp), dimension(3,3) :: mat, tmat
 
   !*** Info about simulation
-  integer(kind=si) :: nsim
+  integer(kind=si) :: nsim, tbuff
   character(len=100), allocatable, dimension(:)   :: simdir
   character(len=10),  allocatable, dimension(:,:) :: src_type
 
@@ -66,5 +66,6 @@ module global_parameters_mod
   !*** STA/LTA
   real(kind=cp), dimension(:), allocatable :: energy
   integer(kind=si) :: npart
+  integer(kind=si), dimension(:,:), allocatable :: tab_box_rec
 
 end module global_parameters_mod

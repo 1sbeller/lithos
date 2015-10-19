@@ -110,12 +110,12 @@ contains
   end subroutine read_reconstruction_param
 
 
-  subroutine define_axisem_dir(ipart)
+  subroutine define_axisem_dir !(ipart)
 
-    integer(kind=si), intent(in) :: ipart
-    character(len=5)   :: myfileend
+!    integer(kind=si), intent(in) :: ipart
+ !   character(len=5)   :: myfileend
 
-    write(myfileend,'(a,i4.4)')'_',ipart
+ !   write(myfileend,'(a,i4.4)')'_',ipart
 
     output_veloc_name(1)  = 'velocityoutp_u1'
     output_veloc_name(2)  = 'velocityoutp_u2'
@@ -158,23 +158,23 @@ contains
        isyz(isim)=next_iunit(iunit)
        
        write(fichier,'(a15)') output_veloc_name(1)
-       open(ivx(isim),file= trim(working_axisem_dir(isim))//trim(fichier)//myfileend, FORM="UNFORMATTED")
+       open(ivx(isim),file= trim(working_axisem_dir(isim))//trim(fichier), FORM="UNFORMATTED")
        write(fichier,'(a15)') output_veloc_name(2)
-       open(ivy(isim),file= trim(working_axisem_dir(isim))//trim(fichier)//myfileend, FORM="UNFORMATTED")
+       open(ivy(isim),file= trim(working_axisem_dir(isim))//trim(fichier), FORM="UNFORMATTED")
        write(fichier,'(a15)') output_veloc_name(3)
-       open(ivz(isim),file= trim(working_axisem_dir(isim))//trim(fichier)//myfileend, FORM="UNFORMATTED")
+       open(ivz(isim),file= trim(working_axisem_dir(isim))//trim(fichier), FORM="UNFORMATTED")
        write(fichier,'(a15)') output_stress_name(1)
-       open(isxx(isim),file= trim(working_axisem_dir(isim))//trim(fichier)//myfileend, FORM="UNFORMATTED")
+       open(isxx(isim),file= trim(working_axisem_dir(isim))//trim(fichier), FORM="UNFORMATTED")
        write(fichier,'(a15)') output_stress_name(2)
-       open(isyy(isim),file= trim(working_axisem_dir(isim))//trim(fichier)//myfileend, FORM="UNFORMATTED")
+       open(isyy(isim),file= trim(working_axisem_dir(isim))//trim(fichier), FORM="UNFORMATTED")
        write(fichier,'(a15)') output_stress_name(3)
-       open(iszz(isim),file= trim(working_axisem_dir(isim))//trim(fichier)//myfileend, FORM="UNFORMATTED")
+       open(iszz(isim),file= trim(working_axisem_dir(isim))//trim(fichier), FORM="UNFORMATTED")
        write(fichier,'(a15)') output_stress_name(4)
-       open(isxy(isim),file= trim(working_axisem_dir(isim))//trim(fichier)//myfileend, FORM="UNFORMATTED")
+       open(isxy(isim),file= trim(working_axisem_dir(isim))//trim(fichier), FORM="UNFORMATTED")
        write(fichier,'(a15)') output_stress_name(5)
-       open(isxz(isim),file= trim(working_axisem_dir(isim))//trim(fichier)//myfileend, FORM="UNFORMATTED")
+       open(isxz(isim),file= trim(working_axisem_dir(isim))//trim(fichier), FORM="UNFORMATTED")
        write(fichier,'(a15)') output_stress_name(6)
-       open(isyz(isim),file= trim(working_axisem_dir(isim))//trim(fichier)//myfileend, FORM="UNFORMATTED")
+       open(isyz(isim),file= trim(working_axisem_dir(isim))//trim(fichier), FORM="UNFORMATTED")
     end do
     
     do isim=1,nsim
