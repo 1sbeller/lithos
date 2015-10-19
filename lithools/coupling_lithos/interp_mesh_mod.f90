@@ -388,6 +388,8 @@ contains
     rec2elm=-1
     rec2elm2=-1
 
+    PRINT *,'THERIS IS :',NBREC
+    
     !*** CONNECTION POINT <-> MESH------------
     do irec=1,nbrec
        scur=reciever_cyl(1,irec)
@@ -436,6 +438,7 @@ contains
       integer :: irec,forgot_point,forgot_point2
       
       forgot_point=0
+      FORGOT_POINT2=0
       do irec=1,nbrec
          if(rec2elm(irec)==-1) then
             forgot_point= forgot_point+1

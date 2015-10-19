@@ -379,7 +379,7 @@ contains
 
     nbrec     = 0
     istartrec = 1
-
+    iendrec   = 0
     do ipart = 1, npart
 
        write(6,*)'process subdom ',ipart,'over ',npart   
@@ -396,11 +396,12 @@ contains
        if (nbreclocc > 0) then
           nbrec     = nbrec + nbreclocc
           iendrec   = nbrec
-          istartrec = nbrec + 1
        end if
 
        tab_box_rec(1:3,ipart) = (/ nbreclocc, istartrec, iendrec /)
-   
+       if (nbreclocc > 0) then
+          istartrec = nbrec + 1
+       end if
        write(6,*)'nbrecloc, istart, iend ',tab_box_rec(:,ipart)   
 
     end do
@@ -433,8 +434,8 @@ contains
     f1 = 0.
     f2 = 0.
 
-    nbrec     = 0
-    istartrec = 1
+!    nbrec     = 0
+!    istartrec = 1
     do ipart = 1, npart
        write(6,*)'process subdom ',ipart,'over ',npart   
 
@@ -448,16 +449,17 @@ contains
        open(10,file=trim(working_axisem_dir)//trim(simdir(isim))//'/'//trim(input_point_file(1:len(trim(input_point_file))-4))//myfileend//'.txt')
        read(10,*) nbreclocc
 
-       if (nbreclocc > 0) then
-          nbrec     = nbrec + nbreclocc
-          iendrec   = nbrec
-          istartrec = nbrec + 1
-       end if
+!       if (nbreclocc > 0) then
+!          nbrec     = nbrec + nbreclocc
+!          iendrec   = nbrec
+!       end if
 
        !* Read and computes coordinates for each point
-       do i=istartrec,iendrec !! radius, latitude, longitude
+       do i=tab_box_rec(2,ipart),tab_box_rec(3,ipart) !! radius, latitude, longitude
           read(10,*) reciever_geogr(1,i),reciever_geogr(2,i),reciever_geogr(3,i)
-
+          if (reciever_geogr(1,i) > 6371.00000000_dp) then
+             reciever_geogr(1,i) = 6371.00000000
+          end if
           reciever_sph(1,i) = reciever_geogr(1,i)*1000._dp
           reciever_sph(2,i) = (90._dp - reciever_geogr(2,i)) * pi / 180._dp  
           reciever_sph(3,i) = reciever_geogr(3,i)  * pi / 180._dp
@@ -471,6 +473,9 @@ contains
           phi(i) = reciever_cyl(2,i) 
 
        end do
+!       if (nbreclocc > 0) then
+!          istartrec = nbrec + 1
+!       end if
        close(10)
     end do
     
