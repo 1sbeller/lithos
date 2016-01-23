@@ -9,7 +9,7 @@ program interpolate_3D_wavefield
 
   implicit none
 
-  integer(kind=si) :: warning=0, ipart
+  integer(kind=si) :: warning=0, ipart, ind2
   character(len=80) :: ficii
   integer(kind=si), parameter :: IIN=11
   character(len=5) :: myfileend 
@@ -42,9 +42,10 @@ program interpolate_3D_wavefield
      end do
      close(155)
   end if
+  print *,'done 1'
+
   call MPI_bcast(part_info,6*npart,MPI_INTEGER,0,MPI_COMM_WORLD,ierr_mpi)
   call MPI_bcast(tab_box_rec,3*npart,MPI_INTEGER,0,MPI_COMM_WORLD,ierr_mpi)
-
   do ipart = 1, npart
 
      !*** Get infos
@@ -387,8 +388,154 @@ program interpolate_3D_wavefield
      !================================================================================
      ! Cut signal and convolve with stf
      !--------------------------------------------------
+     !*** Convolve with stf (could also be a filter)
+     if (isconv == 1) then  
+        !* Oldlen
+        oldlen = ntime 
+        if(.not.allocated(taper)) allocate(taper(ntold))
+        alph1 = 10/(dtold*oldlen)          ! Warning 2s taper
+        taper = tuckeywin(oldlen,alph1)
+
+        !* Allocate convtmp
+        if (.not.allocated(convtmpvx))  allocate(convtmpvx(nrec_to_store,oldlen+ntstf-1))
+        if (.not.allocated(convtmpvy))  allocate(convtmpvy(nrec_to_store,oldlen+ntstf-1))
+        if (.not.allocated(convtmpvz))  allocate(convtmpvz(nrec_to_store,oldlen+ntstf-1))
+        if (.not.allocated(convtmpsxx)) allocate(convtmpsxx(nrec_to_store,oldlen+ntstf-1))
+        if (.not.allocated(convtmpsyy)) allocate(convtmpsyy(nrec_to_store,oldlen+ntstf-1))
+        if (.not.allocated(convtmpszz)) allocate(convtmpszz(nrec_to_store,oldlen+ntstf-1))
+        if (.not.allocated(convtmpsyz)) allocate(convtmpsyz(nrec_to_store,oldlen+ntstf-1))
+        if (.not.allocated(convtmpsxz)) allocate(convtmpsxz(nrec_to_store,oldlen+ntstf-1))
+        if (.not.allocated(convtmpsxy)) allocate(convtmpsxy(nrec_to_store,oldlen+ntstf-1))
+        convtmpvx = 0.
+        convtmpvy = 0.
+        convtmpvz = 0.
+        convtmpsxx = 0.
+        convtmpsyy = 0.
+        convtmpszz = 0.
+        convtmpsyz = 0.
+        convtmpsxz = 0.
+        convtmpsxy = 0.
+
+        !* convolve
+        do it = 1, ntold
+           do itstf = 1, ntstf
+              do ipt = 1, nrec_to_store
+                 convtmpvx( ipt,it+itstf-1) = convtmpvx( ipt,it+itstf-1) + vxold1(ipt,it)  * stf(itstf) * taper(it)
+                 convtmpvy( ipt,it+itstf-1) = convtmpvy( ipt,it+itstf-1) + vyold1(ipt,it)  * stf(itstf) * taper(it)
+                 convtmpvz( ipt,it+itstf-1) = convtmpvz( ipt,it+itstf-1) + vzold1(ipt,it)  * stf(itstf) * taper(it)
+                 convtmpsxx(ipt,it+itstf-1) = convtmpsxx(ipt,it+itstf-1) + sxxold1(ipt,it) * stf(itstf) * taper(it)
+                 convtmpsyy(ipt,it+itstf-1) = convtmpsyy(ipt,it+itstf-1) + syyold1(ipt,it) * stf(itstf) * taper(it)
+                 convtmpszz(ipt,it+itstf-1) = convtmpszz(ipt,it+itstf-1) + szzold1(ipt,it) * stf(itstf) * taper(it)
+                 convtmpsyz(ipt,it+itstf-1) = convtmpsyz(ipt,it+itstf-1) + syzold1(ipt,it) * stf(itstf) * taper(it)
+                 convtmpsxz(ipt,it+itstf-1) = convtmpsxz(ipt,it+itstf-1) + sxzold1(ipt,it) * stf(itstf) * taper(it)
+                 convtmpsxy(ipt,it+itstf-1) = convtmpsxy(ipt,it+itstf-1) + sxyold1(ipt,it) * stf(itstf) * taper(it)
+              end do
+           end do
+           if(myid==0) write(6,*)'conv ',it,ntold
+        end do
+
+        !* take good part (wrong)
+        if (modulo(ntstf,2) == 0) then
+           ind2 = ntstf/2 + 1
+        else
+           ind2 = ceiling(real(ntstf/2,kind=cp))
+        end if
+        !   ind2 = 1
+
+        vxold1(:,:)  = convtmpvx(:,ind2:ind2+ntold-1)
+        vyold1(:,:)  = convtmpvy(:,ind2:ind2+ntold-1)
+        vzold1(:,:)  = convtmpvz(:,ind2:ind2+ntold-1)
+        sxxold1(:,:) = convtmpsxx(:,ind2:ind2+ntold-1)
+        syyold1(:,:) = convtmpsyy(:,ind2:ind2+ntold-1)
+        szzold1(:,:) = convtmpszz(:,ind2:ind2+ntold-1)
+        syzold1(:,:) = convtmpsyz(:,ind2:ind2+ntold-1)
+        sxzold1(:,:) = convtmpsxz(:,ind2:ind2+ntold-1)
+        sxyold1(:,:) = convtmpsxy(:,ind2:ind2+ntold-1)
+
+        !* Deallocate
+        deallocate(convtmpvx)
+        deallocate(convtmpvy)
+        deallocate(convtmpvz)
+        deallocate(convtmpsxx)
+        deallocate(convtmpsyy)
+        deallocate(convtmpszz)
+        deallocate(convtmpsyz)
+        deallocate(convtmpsxz)
+        deallocate(convtmpsxy)
+
+        if(allocated(taper)) deallocate(taper)
+
+     end if
+
+
+     call MPI_barrier(MPI_COMM_WORLD,ierr_mpi)
+
+     if (myid==0) write(6,*)'Done.'
+
+
+
+     !================================================================================
+     !*** Filter seismograms
+     if (istap == 1) then
+        if(myid==0) write(6,*)'Filtering...'       
+        if(.not.allocated(taper)) allocate(taper(ntime))
+        if(.not.allocated(convfilt)) allocate(convfilt(ntime))
+        convfilt = 0._cp
+        alph1 = 10/(dtold*ntime)          ! Warning 2s taper
+        taper = tuckeywin(ntime,alph1)
+        
+
+        if (myid == 0) print *,myid,fmax,dtold,0.5/dtold 
+        do ipt = 1, nrec_to_store
+           
+           !*** Taper on residuals
+           vxold1(ipt,:) = vxold1(ipt,:) * taper(:)
+           call bwfilt(vxold1(ipt,:),convfilt,dtold,ntime,1,4,1e-3_cp,fmax)
+           vxold1(ipt,:) = convfilt(:)
+           convfilt = 0._cp   
+           vyold1(ipt,:) = vyold1(ipt,:) * taper(:)
+           call bwfilt(vyold1(ipt,:),convfilt,dtold,ntime,1,4,1e-3_cp,fmax)
+           vyold1(ipt,:) = convfilt(:)
+           convfilt = 0._cp   
+           vzold1(ipt,:) = vzold1(ipt,:) * taper(:)
+           call bwfilt(vzold1(ipt,:),convfilt,dtold,ntime,1,4,1e-3_cp,fmax)
+           vzold1(ipt,:) = convfilt(:)
+           convfilt = 0._cp   
+           sxxold1(ipt,:) = sxxold1(ipt,:) * taper(:)
+           call bwfilt(sxxold1(ipt,:),convfilt,dtold,ntime,1,4,1e-3_cp,fmax)
+           sxxold1(ipt,:) = convfilt(:)
+           convfilt = 0._cp   
+           syyold1(ipt,:) = syyold1(ipt,:) * taper(:)
+           call bwfilt(syyold1(ipt,:),convfilt,dtold,ntime,1,4,1e-3_cp,fmax)
+           syyold1(ipt,:) = convfilt(:)
+           convfilt = 0._cp   
+           szzold1(ipt,:) = szzold1(ipt,:) * taper(:)
+           call bwfilt(szzold1(ipt,:),convfilt,dtold,ntime,1,4,1e-3_cp,fmax)
+           szzold1(ipt,:) = convfilt(:)
+           convfilt = 0._cp   
+           syzold1(ipt,:) = syzold1(ipt,:) * taper(:)
+           call bwfilt(syzold1(ipt,:),convfilt,dtold,ntime,1,4,1e-3_cp,fmax)
+           syzold1(ipt,:) = convfilt(:)
+           convfilt = 0._cp   
+           sxzold1(ipt,:) = sxzold1(ipt,:) * taper(:)
+           call bwfilt(sxzold1(ipt,:),convfilt,dtold,ntime,1,4,1e-3_cp,fmax)
+           sxzold1(ipt,:) = convfilt(:)
+           convfilt = 0._cp   
+           sxyold1(ipt,:) = sxyold1(ipt,:) * taper(:)
+           call bwfilt(sxyold1(ipt,:),convfilt,dtold,ntime,1,4,1e-3_cp,fmax)
+           sxyold1(ipt,:) = convfilt(:)
+           convfilt = 0._cp   
+           
+        end do
+
+        if (allocated(convfilt)) deallocate(convfilt)
+        if (allocated(taper)) deallocate(taper)
+        if(myid==0) write(6,*)'Done!'
+     end if
+
+
      !*** Cut old signal
-     itbeg  = ind-ceiling(2.5/fmax)
+     itbeg  = ind !-ceiling(2.5/fmax)
      itend  = itbeg + ceiling(ntnew * dtnew / dtold)
      tbeg = itbeg * dtold      !*** Starting time of cut signal
      tend = itend * dtold
@@ -399,23 +546,24 @@ program interpolate_3D_wavefield
      if (myid==0) write(6,*)itbeg, itend, tbeg, tend, oldlen, ntold, dtold
 
 !!$!!!!!!!! Interpolate stf again
-!!$    write(6,*)'Interpolate source time function...'
-!!$    if(.not.allocated(stfn)) allocate(stfn(oldlen))
-!!$    stf(:) = 0._cp
-!!$    festf = 1. / dtold
-!!$ 
-!!$    do itnew = 1, oldlen
-!!$       do itold = 1, ntstf
-!!$          stfn(itnew) = stfn(itnew) + stf(itold) * mysinc(real(festf * itnew * dtold - itold))
-!!$       end do
-!!$    end do
-!!$    if(allocated(tmpstf)) deallocate(tmpstf)
-!!$
-!!$    ntstf = ntold
-!!$
-!!$    write(6,*)'Done !'
-!!$    
-!!$     !*** Interpolate to axisem 
+!    if (isconv==1) then
+!    write(6,*)'Interpolate source time function...'
+!    if(.not.allocated(stfn)) allocate(stfn(oldlen))
+!    stf(:) = 0._cp
+!    festf = 1. / dtold
+! 
+!    do itnew = 1, oldlen
+!       do itold = 1, ntstf
+!          stfn(itnew) = stfn(itnew) + stf(itold) * mysinc(real(festf * itnew * dtold - itold))
+!       end do
+!    end do
+!    if(allocated(tmpstf)) deallocate(tmpstf)
+!
+!    ntstf = ntold
+!
+!    write(6,*)'Done !'
+!   end if
+!$     !*** Interpolate to axisem 
 !!$!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
      call MPI_barrier(MPI_COMM_WORLD,ierr_mpi)
@@ -468,81 +616,6 @@ program interpolate_3D_wavefield
 
      call MPI_barrier(MPI_COMM_WORLD,ierr_mpi)
 
-     !*** Convolve with stf (could also be a filter)
-     if (isconv == 1) then  
-        !* Allocate convtmp
-        if (.not.allocated(convtmpvx))  allocate(convtmpvx(nrec_to_store,oldlen+ntstf-1))
-        if (.not.allocated(convtmpvy))  allocate(convtmpvy(nrec_to_store,oldlen+ntstf-1))
-        if (.not.allocated(convtmpvz))  allocate(convtmpvz(nrec_to_store,oldlen+ntstf-1))
-        if (.not.allocated(convtmpsxx)) allocate(convtmpsxx(nrec_to_store,oldlen+ntstf-1))
-        if (.not.allocated(convtmpsyy)) allocate(convtmpsyy(nrec_to_store,oldlen+ntstf-1))
-        if (.not.allocated(convtmpszz)) allocate(convtmpszz(nrec_to_store,oldlen+ntstf-1))
-        if (.not.allocated(convtmpsyz)) allocate(convtmpsyz(nrec_to_store,oldlen+ntstf-1))
-        if (.not.allocated(convtmpsxz)) allocate(convtmpsxz(nrec_to_store,oldlen+ntstf-1))
-        if (.not.allocated(convtmpsxy)) allocate(convtmpsxy(nrec_to_store,oldlen+ntstf-1))
-        convtmpvx = 0.
-        convtmpvy = 0.
-        convtmpvz = 0.
-        convtmpsxx = 0.
-        convtmpsyy = 0.
-        convtmpszz = 0.
-        convtmpsyz = 0.
-        convtmpsxz = 0.
-        convtmpsxy = 0.
-
-        !* convolve
-        do it = 1, ntold
-           do itstf = 1, ntstf
-              do ipt = 1, nrec_to_store
-                 convtmpvx( ipt,it+itstf-1) = convtmpvx( ipt,it+itstf-1) + vxold(ipt,it)  * stf(itstf)
-                 convtmpvy( ipt,it+itstf-1) = convtmpvy( ipt,it+itstf-1) + vyold(ipt,it)  * stf(itstf)
-                 convtmpvz( ipt,it+itstf-1) = convtmpvz( ipt,it+itstf-1) + vzold(ipt,it)  * stf(itstf)
-                 convtmpsxx(ipt,it+itstf-1) = convtmpsxx(ipt,it+itstf-1) + sxxold(ipt,it) * stf(itstf)
-                 convtmpsyy(ipt,it+itstf-1) = convtmpsyy(ipt,it+itstf-1) + syyold(ipt,it) * stf(itstf)
-                 convtmpszz(ipt,it+itstf-1) = convtmpszz(ipt,it+itstf-1) + szzold(ipt,it) * stf(itstf)
-                 convtmpsyz(ipt,it+itstf-1) = convtmpsyz(ipt,it+itstf-1) + syzold(ipt,it) * stf(itstf)
-                 convtmpsxz(ipt,it+itstf-1) = convtmpsxz(ipt,it+itstf-1) + sxzold(ipt,it) * stf(itstf)
-                 convtmpsxy(ipt,it+itstf-1) = convtmpsxy(ipt,it+itstf-1) + sxyold(ipt,it) * stf(itstf)
-              end do
-           end do
-           if(myid==0) write(6,*)'conv ',it,ntold
-        end do
-
-        !* take good part (wrong)
-        if (modulo(ntstf,2) == 0) then
-           ind = ntstf/2 + 1
-        else
-           ind = ceiling(real(ntstf/2,kind=cp))
-        end if
-        !   ind = 1
-
-        vxold(:,:)  = convtmpvx(:,ind:ind+ntold-1)
-        vyold(:,:)  = convtmpvy(:,ind:ind+ntold-1)
-        vzold(:,:)  = convtmpvz(:,ind:ind+ntold-1)
-        sxxold(:,:) = convtmpsxx(:,ind:ind+ntold-1)
-        syyold(:,:) = convtmpsyy(:,ind:ind+ntold-1)
-        szzold(:,:) = convtmpszz(:,ind:ind+ntold-1)
-        syzold(:,:) = convtmpsyz(:,ind:ind+ntold-1)
-        sxzold(:,:) = convtmpsxz(:,ind:ind+ntold-1)
-        sxyold(:,:) = convtmpsxy(:,ind:ind+ntold-1)
-
-        !* Deallocate
-        deallocate(convtmpvx)
-        deallocate(convtmpvy)
-        deallocate(convtmpvz)
-        deallocate(convtmpsxx)
-        deallocate(convtmpsyy)
-        deallocate(convtmpszz)
-        deallocate(convtmpsyz)
-        deallocate(convtmpsxz)
-        deallocate(convtmpsxy)
-
-     end if
-
-
-     call MPI_barrier(MPI_COMM_WORLD,ierr_mpi)
-
-     if (myid==0) write(6,*)'Done.'
 
 
 !     write(ficii,'(a,i4.4,a)')'convstf_',myid,'.dat' 
@@ -550,64 +623,6 @@ program interpolate_3D_wavefield
 !     write(20000+myid,*)vzold(1,:)
 !     close(20000+myid)
 
-     !================================================================================
-     !*** Filter seismograms
-     if (istap == 1) then
-        if(myid==0) write(6,*)'Filtering...'       
-        if(.not.allocated(taper)) allocate(taper(ntold))
-        if(.not.allocated(convfilt)) allocate(convfilt(ntold))
-        convfilt = 0._cp
-        alph1 = 2/(dtold*ntold)          ! Warning 2s taper
-        taper = tuckeywin(ntold,alph1)
-        
-
-        if (myid == 0) print *,myid,fmax,dtold,0.5/dtold 
-        do ipt = 1, nrec_to_store
-           
-           !*** Taper on residuals
-           vxold(ipt,:) = vxold(ipt,:) * taper(:)
-           call bwfilt(vxold(ipt,:),convfilt,dtold,ntold,1,4,1e-3_cp,fmax)
-           vxold(ipt,:) = convfilt(:)
-           convfilt = 0._cp   
-           vyold(ipt,:) = vyold(ipt,:) * taper(:)
-           call bwfilt(vyold(ipt,:),convfilt,dtold,ntold,1,4,1e-3_cp,fmax)
-           vyold(ipt,:) = convfilt(:)
-           convfilt = 0._cp   
-           vzold(ipt,:) = vzold(ipt,:) * taper(:)
-           call bwfilt(vzold(ipt,:),convfilt,dtold,ntold,1,4,1e-3_cp,fmax)
-           vzold(ipt,:) = convfilt(:)
-           convfilt = 0._cp   
-           sxxold(ipt,:) = sxxold(ipt,:) * taper(:)
-           call bwfilt(sxxold(ipt,:),convfilt,dtold,ntold,1,4,1e-3_cp,fmax)
-           sxxold(ipt,:) = convfilt(:)
-           convfilt = 0._cp   
-           syyold(ipt,:) = syyold(ipt,:) * taper(:)
-           call bwfilt(syyold(ipt,:),convfilt,dtold,ntold,1,4,1e-3_cp,fmax)
-           syyold(ipt,:) = convfilt(:)
-           convfilt = 0._cp   
-           szzold(ipt,:) = szzold(ipt,:) * taper(:)
-           call bwfilt(szzold(ipt,:),convfilt,dtold,ntold,1,4,1e-3_cp,fmax)
-           szzold(ipt,:) = convfilt(:)
-           convfilt = 0._cp   
-           syzold(ipt,:) = syzold(ipt,:) * taper(:)
-           call bwfilt(syzold(ipt,:),convfilt,dtold,ntold,1,4,1e-3_cp,fmax)
-           syzold(ipt,:) = convfilt(:)
-           convfilt = 0._cp   
-           sxzold(ipt,:) = sxzold(ipt,:) * taper(:)
-           call bwfilt(sxzold(ipt,:),convfilt,dtold,ntold,1,4,1e-3_cp,fmax)
-           sxzold(ipt,:) = convfilt(:)
-           convfilt = 0._cp   
-           sxyold(ipt,:) = sxyold(ipt,:) * taper(:)
-           call bwfilt(sxyold(ipt,:),convfilt,dtold,ntold,1,4,1e-3_cp,fmax)
-           sxyold(ipt,:) = convfilt(:)
-           convfilt = 0._cp   
-           
-        end do
-
-        if (allocated(convfilt)) deallocate(convfilt)
-        if (allocated(taper)) deallocate(taper)
-        if(myid==0) write(6,*)'Done!'
-     end if
 !     write(ficii,'(a,i4.4,a)')'filtconvstf_',myid,'.dat' 
 !     open(20000+myid,file=trim(ficii),action='write')
 !     write(20000+myid,*)vzold(1,:)
