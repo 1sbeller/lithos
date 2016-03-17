@@ -13,7 +13,7 @@ module load bullxmpi/1.2.8.4-mxm
  
 ./clean.sh
 
-F90='mpif90 -O3 -xHost -assume byterecl -traceback' #  -check all -g -warn all'
+F90='mpif90 -O3 -xHost -assume byterecl ' #-traceback -check all -g -warn all'
 
 $F90 -c ../../common/precision_mod.f90
 $F90 -c ../../common/constants_mod.f90

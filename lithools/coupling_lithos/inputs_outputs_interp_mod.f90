@@ -84,6 +84,8 @@ contains
 
     if (allocated(working_axisem_dir)) deallocate(working_axisem_dir)
     if(.not.allocated(working_axisem_dir)) allocate(working_axisem_dir(nsim))
+
+    nsim = 1
     
     if (nsim == 1) then
        working_axisem_dir(1)="./"

@@ -9,7 +9,7 @@ program interpolate_3D_wavefield
 
   implicit none
 
-  integer(kind=si) :: warning=0, ipart, ind2
+  integer(kind=si) :: warning=0, ipart, ind2, lit
   character(len=80) :: ficii
   integer(kind=si), parameter :: IIN=11
   character(len=5) :: myfileend 
@@ -107,41 +107,74 @@ program interpolate_3D_wavefield
      end if
 
      !*** Inputs files
-     if(myid == 0)  call define_axisem_dir !(ipart)
+     if (ipart ==1) then
+        if(myid == 0)  call define_axisem_dir !(ipart)
+     end if
 
+     nbrec = maxval(tab_box_rec(3,:))
+     npts = tab_box_rec(1,ipart)
      call broadcast_all_data
 
      !*** Prepare reading of reconstructed AxiSEM outputs
-     ntold = ntime   
-     if (myid==0) write(6,*)'Must read ',nbrec,' points for ',ntime,' time steps.'
-     if (myid==0) write(6,*)'Check ntold and ntime : ',ntold,ntime
-     nbrec = maxval(tab_box_rec(3,:))
-     npts = tab_box_rec(1,ipart)
-     
-     if (myid == 0) then
-        if(.not.allocated(data_tmp)) allocate(data_tmp(nbrec,9))
-        if (.not.allocated(vxold2)) allocate(vxold2(npts,1))
-        if (.not.allocated(vyold2)) allocate(vyold2(npts,1))
-        if (.not.allocated(vzold2)) allocate(vzold2(npts,1))
-        if (.not.allocated(sxxold2)) allocate(sxxold2(npts,1))
-        if (.not.allocated(syyold2)) allocate(syyold2(npts,1))
-        if (.not.allocated(szzold2)) allocate(szzold2(npts,1))
-        if (.not.allocated(syzold2)) allocate(syzold2(npts,1))
-        if (.not.allocated(sxzold2)) allocate(sxzold2(npts,1))
-        if (.not.allocated(sxyold2)) allocate(sxyold2(npts,1))
-        
-        vxold2(:,:) = 0.
-        vyold2(:,:) = 0.
-        vzold2(:,:) = 0.
-        sxxold2(:,:) = 0.
-        syyold2(:,:) = 0.
-        szzold2(:,:) = 0.
-        syzold2(:,:) = 0.
-        sxzold2(:,:) = 0.
-        sxyold2(:,:) = 0.
+     if (ipart == 1) then
+        ntold = ntime   
+        if (myid==0) write(6,*)'Must read ',nbrec,' points for ',ntime,' time steps.'
+        if (myid==0) write(6,*)'Check ntold and ntime : ',ntold,ntime
+        if (itend > ntold) then
+           write(6,*)'WARNING itend > olden will STOP'
+           stop 'itend > ntold'
+        end if
      end if
+     call MPI_barrier(MPI_COMM_WORLD,ierr_mpi)
      
+!!$     if (myid == 0) then
+!!$        if(.not.allocated(data_tmp)) allocate(data_tmp(nbrec,9))
+!!$        if (.not.allocated(vxold2)) allocate(vxold2(nbrec,oldlen))
+!!$        if (.not.allocated(vyold2)) allocate(vyold2(nbrec,oldlen))
+!!$        if (.not.allocated(vzold2)) allocate(vzold2(nbrec,oldlen))
+!!$        if (.not.allocated(sxxold2)) allocate(sxxold2(nbrec,oldlen))
+!!$        if (.not.allocated(syyold2)) allocate(syyold2(nbrec,oldlen))
+!!$        if (.not.allocated(szzold2)) allocate(szzold2(nbrec,oldlen))
+!!$        if (.not.allocated(syzold2)) allocate(syzold2(nbrec,oldlen))
+!!$        if (.not.allocated(sxzold2)) allocate(sxzold2(nbrec,oldlen))
+!!$        if (.not.allocated(sxyold2)) allocate(sxyold2(nbrec,oldlen))
+!!$        if (.not.allocated(vxold2)) allocate(vxold2(npts,1))
+!!$        if (.not.allocated(vyold2)) allocate(vyold2(npts,1))
+!!$        if (.not.allocated(vzold2)) allocate(vzold2(npts,1))
+!!$        if (.not.allocated(sxxold2)) allocate(sxxold2(npts,1))
+!!$        if (.not.allocated(syyold2)) allocate(syyold2(npts,1))
+!!$        if (.not.allocated(szzold2)) allocate(szzold2(npts,1))
+!!$        if (.not.allocated(syzold2)) allocate(syzold2(npts,1))
+!!$        if (.not.allocated(sxzold2)) allocate(sxzold2(npts,1))
+!!$        if (.not.allocated(sxyold2)) allocate(sxyold2(npts,1))
+!!$        
+!!$        vxold2(:,:) = 0.
+!!$        vyold2(:,:) = 0.
+!!$        vzold2(:,:) = 0.
+!!$        sxxold2(:,:) = 0.
+!!$        syyold2(:,:) = 0.
+!!$        szzold2(:,:) = 0.
+!!$        syzold2(:,:) = 0.
+!!$        sxzold2(:,:) = 0.
+!!$        sxyold2(:,:) = 0.
+!!$     end if
+     
+     
+     write(6,*)'veriflala',nbrec,npts
+
      call scatter_data
+
+
+     itbeg  = ind !-ceiling(2.5/fmax)
+     itend  = itbeg + ceiling(ntnew * dtnew / dtold)
+     tbeg = itbeg * dtold      !*** Starting time of cut signal
+     tend = itend * dtold
+     oldlen = itend-itbeg+1
+
+     
+     if (myid==0) write(6,*)'Infos : itbeg, itend, tbeg, tend, oldlen, ntold, dtold'
+     if (myid==0) write(6,*)itbeg, itend, tbeg, tend, oldlen, ntold, dtold
+
      
      !print *,'DEBUG npts,nptsa,nrec_to_store : ',npts,nptsa,nrec_to_store
      if (allocated(vxold1)) deallocate(vxold1)
@@ -153,15 +186,15 @@ program interpolate_3D_wavefield
      if (allocated(sxyold1)) deallocate(sxyold1)
      if (allocated(syzold1)) deallocate(syzold1)
      if (allocated(sxzold1)) deallocate(sxzold1)
-     if (.not.allocated(vxold1)) allocate(vxold1(nrec_to_store,ntold))
-     if (.not.allocated(vyold1)) allocate(vyold1(nrec_to_store,ntold))
-     if (.not.allocated(vzold1)) allocate(vzold1(nrec_to_store,ntold))
-     if (.not.allocated(sxxold1)) allocate(sxxold1(nrec_to_store,ntold))
-     if (.not.allocated(syyold1)) allocate(syyold1(nrec_to_store,ntold))
-     if (.not.allocated(szzold1)) allocate(szzold1(nrec_to_store,ntold))
-     if (.not.allocated(syzold1)) allocate(syzold1(nrec_to_store,ntold))
-     if (.not.allocated(sxzold1)) allocate(sxzold1(nrec_to_store,ntold))
-     if (.not.allocated(sxyold1)) allocate(sxyold1(nrec_to_store,ntold))
+     if (.not.allocated(vxold1)) allocate(vxold1(nrec_to_store,oldlen)) !ntold))
+     if (.not.allocated(vyold1)) allocate(vyold1(nrec_to_store,oldlen)) !ntold))
+     if (.not.allocated(vzold1)) allocate(vzold1(nrec_to_store,oldlen)) !ntold))
+     if (.not.allocated(sxxold1)) allocate(sxxold1(nrec_to_store,oldlen)) !ntold))
+     if (.not.allocated(syyold1)) allocate(syyold1(nrec_to_store,oldlen)) !ntold))
+     if (.not.allocated(szzold1)) allocate(szzold1(nrec_to_store,oldlen)) !ntold))
+     if (.not.allocated(syzold1)) allocate(syzold1(nrec_to_store,oldlen)) !ntold))
+     if (.not.allocated(sxzold1)) allocate(sxzold1(nrec_to_store,oldlen)) !ntold))
+     if (.not.allocated(sxyold1)) allocate(sxyold1(nrec_to_store,oldlen)) !ntold))
      
      vxold1(:,:) = 0.
      vyold1(:,:) = 0.
@@ -178,11 +211,29 @@ program interpolate_3D_wavefield
      ! Read AxiSEM reconstructed files
      !--------------------------------------------------
      call MPI_barrier(MPI_COMM_WORLD,ierr_mpi)
-     if (myid==0) write(6,*)'Read AxisEM files...'
-     do itime=1,ntime
+
+     if (ipart == 1) then  ! Read only some timestep of all points by master procs
+        if (myid == 0) then
+           if(.not.allocated(data_tmp)) allocate(data_tmp(nbrec,9))
+           if (.not.allocated(vxold2)) allocate(vxold2(nbrec,oldlen))
+           if (.not.allocated(vyold2)) allocate(vyold2(nbrec,oldlen))
+           if (.not.allocated(vzold2)) allocate(vzold2(nbrec,oldlen))
+           if (.not.allocated(sxxold2)) allocate(sxxold2(nbrec,oldlen))
+           if (.not.allocated(syyold2)) allocate(syyold2(nbrec,oldlen))
+           if (.not.allocated(szzold2)) allocate(szzold2(nbrec,oldlen))
+           if (.not.allocated(syzold2)) allocate(syzold2(nbrec,oldlen))
+           if (.not.allocated(sxzold2)) allocate(sxzold2(nbrec,oldlen))
+           if (.not.allocated(sxyold2)) allocate(sxyold2(nbrec,oldlen))
+!!$        if (.not.allocated(vxold2)) allocate(vxold2(npts,1))
+!!$        if (.not.allocated(vyold2)) allocate(vyold2(npts,1))
+!!$        if (.not.allocated(vzold2)) allocate(vzold2(npts,1))
+!!$        if (.not.allocated(sxxold2)) allocate(sxxold2(npts,1))
+!!$        if (.not.allocated(syyold2)) allocate(syyold2(npts,1))
+!!$        if (.not.allocated(szzold2)) allocate(szzold2(npts,1))
+!!$        if (.not.allocated(syzold2)) allocate(syzold2(npts,1))
+!!$        if (.not.allocated(sxzold2)) allocate(sxzold2(npts,1))
+!!$        if (.not.allocated(sxyold2)) allocate(sxyold2(npts,1))
         
-        if (myid == 0) then ! Read on master proc
-           
            vxold2(:,:) = 0.
            vyold2(:,:) = 0.
            vzold2(:,:) = 0.
@@ -192,104 +243,155 @@ program interpolate_3D_wavefield
            syzold2(:,:) = 0.
            sxzold2(:,:) = 0.
            sxyold2(:,:) = 0.
+        end if
+        
+        if (myid==0) write(6,*)'Read AxisEM files...'
+        lit = 0
+        
+        do itime=1,ntime
            
-           if (modulo(itime,tbuff)==0) then
-               write(6,*)'time ',100.*itime/ntime,'%'
+           if (myid == 0) then ! Read on master proc
+                      
+              if (modulo(itime,tbuff)==0) then
+                 write(6,*)'time ',100.*itime/ntime,'%'
+              end if
+              
+              do isim=1,nsim
+                 
+                 read(ivx(isim))  data_tmp(:,1)
+                 read(ivy(isim))  data_tmp(:,2)
+                 read(ivz(isim))  data_tmp(:,3)
+                 read(isxx(isim)) data_tmp(:,4)
+                 read(isyy(isim)) data_tmp(:,5)
+                 read(iszz(isim)) data_tmp(:,6)
+                 read(isxy(isim)) data_tmp(:,7)
+                 read(isxz(isim)) data_tmp(:,8)
+                 read(isyz(isim)) data_tmp(:,9)
+                 
+                 !              vxold2(:,1)  = data_tmp(:,1) ! vxold2(:,1) + real(data_tmp(tab_box_rec(2,ipart):tab_box_rec(3,ipart),1))
+                 !              vyold2(:,1)  = data_tmp(:,2) !vyold2(:,1) + real(data_tmp(tab_box_rec(2,ipart):tab_box_rec(3,ipart),2))
+                 !              vzold2(:,1)  = data_tmp(:,3) !vzold2(:,1) + real(data_tmp(tab_box_rec(2,ipart):tab_box_rec(3,ipart),3))
+                 !              sxxold2(:,1) = data_tmp(:,4) !sxxold2(:,1) + real(data_tmp(tab_box_rec(2,ipart):tab_box_rec(3,ipart),4))
+                 !              syyold2(:,1) = data_tmp(:,5) !syyold2(:,1) + real(data_tmp(tab_box_rec(2,ipart):tab_box_rec(3,ipart),5))
+                 !              szzold2(:,1) = data_tmp(:,6) !szzold2(:,1) + real(data_tmp(tab_box_rec(2,ipart):tab_box_rec(3,ipart),6))
+                 !              sxyold2(:,1) = data_tmp(:,7) !sxyold2(:,1) + real(data_tmp(tab_box_rec(2,ipart):tab_box_rec(3,ipart),7))
+                 !              sxzold2(:,1) = data_tmp(:,8) !sxzold2(:,1) + real(data_tmp(tab_box_rec(2,ipart):tab_box_rec(3,ipart),8))
+                 !              syzold2(:,1) = data_tmp(:,9) !syzold2(:,1) + real(data_tmp(tab_box_rec(2,ipart):tab_box_rec(3,ipart),9))
+                 
+              end do
+              
+              if (itime >= itbeg .and. itime <= itend) then
+                 
+                 lit = lit + 1
+                 
+                 vxold2(:,lit)  =  data_tmp(:,1) ! vxold2(i_inf(1):i_sup(1),1)
+                 vyold2(:,lit)  =  data_tmp(:,2) !vyold2(i_inf(1):i_sup(1),1)
+                 vzold2(:,lit)  =  data_tmp(:,3) !vzold2(i_inf(1):i_sup(1),1)
+                 sxxold2(:,lit) =  data_tmp(:,4) !sxxold2(i_inf(1):i_sup(1),1)
+                 syyold2(:,lit) =  data_tmp(:,5) !syyold2(i_inf(1):i_sup(1),1)
+                 szzold2(:,lit) =  data_tmp(:,6) !szzold2(i_inf(1):i_sup(1),1)
+                 sxyold2(:,lit) =  data_tmp(:,7) !sxyold2(i_inf(1):i_sup(1),1)
+                 sxzold2(:,lit) =  data_tmp(:,8) !sxzold2(i_inf(1):i_sup(1),1)
+                 syzold2(:,lit) =  data_tmp(:,9) !syzold2(i_inf(1):i_sup(1),1)
+                 
+              end if
+              
            end if
-           do isim=1,nsim
-              
-              read(ivx(isim))  data_tmp(:,1)
-              read(ivy(isim))  data_tmp(:,2)
-              read(ivz(isim))  data_tmp(:,3)
-              read(isxx(isim)) data_tmp(:,4)
-              read(isyy(isim)) data_tmp(:,5)
-              read(iszz(isim)) data_tmp(:,6)
-              read(isxy(isim)) data_tmp(:,7)
-              read(isxz(isim)) data_tmp(:,8)
-              read(isyz(isim)) data_tmp(:,9)
-              
-              vxold2(:,1)  = vxold2(:,1) + real(data_tmp(tab_box_rec(2,ipart):tab_box_rec(3,ipart),1))
-              vyold2(:,1)  = vyold2(:,1) + real(data_tmp(tab_box_rec(2,ipart):tab_box_rec(3,ipart),2))
-              vzold2(:,1)  = vzold2(:,1) + real(data_tmp(tab_box_rec(2,ipart):tab_box_rec(3,ipart),3))
-              sxxold2(:,1) = sxxold2(:,1) + real(data_tmp(tab_box_rec(2,ipart):tab_box_rec(3,ipart),4))
-              syyold2(:,1) = syyold2(:,1) + real(data_tmp(tab_box_rec(2,ipart):tab_box_rec(3,ipart),5))
-              szzold2(:,1) = szzold2(:,1) + real(data_tmp(tab_box_rec(2,ipart):tab_box_rec(3,ipart),6))
-              sxyold2(:,1) = sxyold2(:,1) + real(data_tmp(tab_box_rec(2,ipart):tab_box_rec(3,ipart),7))
-              sxzold2(:,1) = sxzold2(:,1) + real(data_tmp(tab_box_rec(2,ipart):tab_box_rec(3,ipart),8))
-              syzold2(:,1) = syzold2(:,1) + real(data_tmp(tab_box_rec(2,ipart):tab_box_rec(3,ipart),9))
-
-           end do
-        end if
-
-        !*** Send-receive to scatter data
-        if (myid ==0) then ! SEND
-
-           vxold1(:,itime)  =  vxold2(i_inf(1):i_sup(1),1)
-           vyold1(:,itime)  =  vyold2(i_inf(1):i_sup(1),1)
-           vzold1(:,itime)  =  vzold2(i_inf(1):i_sup(1),1)
-           sxxold1(:,itime) = sxxold2(i_inf(1):i_sup(1),1)
-           syyold1(:,itime) = syyold2(i_inf(1):i_sup(1),1)
-           szzold1(:,itime) = szzold2(i_inf(1):i_sup(1),1)
-           sxyold1(:,itime) = sxyold2(i_inf(1):i_sup(1),1)
-           sxzold1(:,itime) = sxzold2(i_inf(1):i_sup(1),1)
-           syzold1(:,itime) = syzold2(i_inf(1):i_sup(1),1)
-
-           do iproc=1,nb_proc-1
-
-              call mpi_send( vxold2(i_inf(iproc+1):i_sup(iproc+1),1),nb_received_sv(iproc+1),MPI_REAL,iproc,etq1,MPI_COMM_WORLD,ierr_mpi)
-              call mpi_send( vyold2(i_inf(iproc+1):i_sup(iproc+1),1),nb_received_sv(iproc+1),MPI_REAL,iproc,etq2,MPI_COMM_WORLD,ierr_mpi)
-              call mpi_send( vzold2(i_inf(iproc+1):i_sup(iproc+1),1),nb_received_sv(iproc+1),MPI_REAL,iproc,etq3,MPI_COMM_WORLD,ierr_mpi)
-              call mpi_send(sxxold2(i_inf(iproc+1):i_sup(iproc+1),1),nb_received_sv(iproc+1),MPI_REAL,iproc,etq4,MPI_COMM_WORLD,ierr_mpi)
-              call mpi_send(syyold2(i_inf(iproc+1):i_sup(iproc+1),1),nb_received_sv(iproc+1),MPI_REAL,iproc,etq5,MPI_COMM_WORLD,ierr_mpi)
-              call mpi_send(szzold2(i_inf(iproc+1):i_sup(iproc+1),1),nb_received_sv(iproc+1),MPI_REAL,iproc,etq6,MPI_COMM_WORLD,ierr_mpi)
-              call mpi_send(sxyold2(i_inf(iproc+1):i_sup(iproc+1),1),nb_received_sv(iproc+1),MPI_REAL,iproc,etq7,MPI_COMM_WORLD,ierr_mpi)
-              call mpi_send(sxzold2(i_inf(iproc+1):i_sup(iproc+1),1),nb_received_sv(iproc+1),MPI_REAL,iproc,etq8,MPI_COMM_WORLD,ierr_mpi)
-              call mpi_send(syzold2(i_inf(iproc+1):i_sup(iproc+1),1),nb_received_sv(iproc+1),MPI_REAL,iproc,etq9,MPI_COMM_WORLD,ierr_mpi)
-
-           end do
-
-        else ! RECEIVE
-
-           call mpi_recv( vxold1(:,itime),nb_received_sv(myid+1),MPI_REAL,0,etq1,MPI_COMM_WORLD,statut,ierr_mpi)
-           call mpi_recv( vyold1(:,itime),nb_received_sv(myid+1),MPI_REAL,0,etq2,MPI_COMM_WORLD,statut,ierr_mpi)
-           call mpi_recv( vzold1(:,itime),nb_received_sv(myid+1),MPI_REAL,0,etq3,MPI_COMM_WORLD,statut,ierr_mpi)
-           call mpi_recv(sxxold1(:,itime),nb_received_sv(myid+1),MPI_REAL,0,etq4,MPI_COMM_WORLD,statut,ierr_mpi)
-           call mpi_recv(syyold1(:,itime),nb_received_sv(myid+1),MPI_REAL,0,etq5,MPI_COMM_WORLD,statut,ierr_mpi)
-           call mpi_recv(szzold1(:,itime),nb_received_sv(myid+1),MPI_REAL,0,etq6,MPI_COMM_WORLD,statut,ierr_mpi)
-           call mpi_recv(sxyold1(:,itime),nb_received_sv(myid+1),MPI_REAL,0,etq7,MPI_COMM_WORLD,statut,ierr_mpi)
-           call mpi_recv(sxzold1(:,itime),nb_received_sv(myid+1),MPI_REAL,0,etq8,MPI_COMM_WORLD,statut,ierr_mpi)
-           call mpi_recv(syzold1(:,itime),nb_received_sv(myid+1),MPI_REAL,0,etq9,MPI_COMM_WORLD,statut,ierr_mpi)
-
-        end if
-
-     end do
-     if (myid==0) then
-        do isim=1,nsim
-           close(ivx(isim))
-           close(ivy(isim))
-           close(ivz(isim))
-           close(isxx(isim))
-           close(isyy(isim))
-           close(iszz(isim))
-           close(isxy(isim))
-           close(isxz(isim))
-           close(isyz(isim))
         end do
-        deallocate(data_tmp)
-        write(6,*)'Done'
-     end if
 
-     if (myid ==0) then
-        deallocate(vxold2)
-        deallocate(vyold2)
-        deallocate(vzold2)
-        deallocate(sxxold2)
-        deallocate(syyold2)
-        deallocate(szzold2)
-        deallocate(syzold2)
-        deallocate(sxzold2)
-        deallocate(sxyold2)
      end if
+     
+     i_inf = i_inf + tab_box_rec(2,ipart) -1
+     i_sup = i_sup + tab_box_rec(2,ipart) -1
+
+     !*** Then send/receiv
+     !*** Send-receive to scatter data
+!     do itime = 1,oldlen
+        if (myid ==0) then ! SEND
+           
+           vxold1(:,:)  =  vxold2(i_inf(1):i_sup(1),:)
+           vyold1(:,:)  =  vyold2(i_inf(1):i_sup(1),:)
+           vzold1(:,:)  =  vzold2(i_inf(1):i_sup(1),:)
+           sxxold1(:,:) =  sxxold2(i_inf(1):i_sup(1),:)
+           syyold1(:,:) =  syyold2(i_inf(1):i_sup(1),:)
+           szzold1(:,:) =  szzold2(i_inf(1):i_sup(1),:)
+           sxyold1(:,:) =  sxyold2(i_inf(1):i_sup(1),:)
+           sxzold1(:,:) =  sxzold2(i_inf(1):i_sup(1),:)
+           syzold1(:,:) =  syzold2(i_inf(1):i_sup(1),:)
+           
+           do iproc=1,nb_proc-1
+              
+              call mpi_send( vxold2(i_inf(iproc+1):i_sup(iproc+1),:),nb_received_sv(iproc+1)*oldlen,MPI_REAL,iproc,etq1,MPI_COMM_WORLD,ierr_mpi)
+              call mpi_send( vyold2(i_inf(iproc+1):i_sup(iproc+1),:),nb_received_sv(iproc+1)*oldlen,MPI_REAL,iproc,etq2,MPI_COMM_WORLD,ierr_mpi)
+              call mpi_send( vzold2(i_inf(iproc+1):i_sup(iproc+1),:),nb_received_sv(iproc+1)*oldlen,MPI_REAL,iproc,etq3,MPI_COMM_WORLD,ierr_mpi)
+              call mpi_send(sxxold2(i_inf(iproc+1):i_sup(iproc+1),:),nb_received_sv(iproc+1)*oldlen,MPI_REAL,iproc,etq4,MPI_COMM_WORLD,ierr_mpi)
+              call mpi_send(syyold2(i_inf(iproc+1):i_sup(iproc+1),:),nb_received_sv(iproc+1)*oldlen,MPI_REAL,iproc,etq5,MPI_COMM_WORLD,ierr_mpi)
+              call mpi_send(szzold2(i_inf(iproc+1):i_sup(iproc+1),:),nb_received_sv(iproc+1)*oldlen,MPI_REAL,iproc,etq6,MPI_COMM_WORLD,ierr_mpi)
+              call mpi_send(sxyold2(i_inf(iproc+1):i_sup(iproc+1),:),nb_received_sv(iproc+1)*oldlen,MPI_REAL,iproc,etq7,MPI_COMM_WORLD,ierr_mpi)
+              call mpi_send(sxzold2(i_inf(iproc+1):i_sup(iproc+1),:),nb_received_sv(iproc+1)*oldlen,MPI_REAL,iproc,etq8,MPI_COMM_WORLD,ierr_mpi)
+              call mpi_send(syzold2(i_inf(iproc+1):i_sup(iproc+1),:),nb_received_sv(iproc+1)*oldlen,MPI_REAL,iproc,etq9,MPI_COMM_WORLD,ierr_mpi)
+              
+           
+!!$                 
+!!$                 call mpi_send( vxold2(i_inf(iproc+1):i_sup(iproc+1),1),nb_received_sv(iproc+1),MPI_REAL,iproc,etq1,MPI_COMM_WORLD,ierr_mpi)
+!!$                 call mpi_send( vyold2(i_inf(iproc+1):i_sup(iproc+1),1),nb_received_sv(iproc+1),MPI_REAL,iproc,etq2,MPI_COMM_WORLD,ierr_mpi)
+!!$                 call mpi_send( vzold2(i_inf(iproc+1):i_sup(iproc+1),1),nb_received_sv(iproc+1),MPI_REAL,iproc,etq3,MPI_COMM_WORLD,ierr_mpi)
+!!$                 call mpi_send(sxxold2(i_inf(iproc+1):i_sup(iproc+1),1),nb_received_sv(iproc+1),MPI_REAL,iproc,etq4,MPI_COMM_WORLD,ierr_mpi)
+!!$                 call mpi_send(syyold2(i_inf(iproc+1):i_sup(iproc+1),1),nb_received_sv(iproc+1),MPI_REAL,iproc,etq5,MPI_COMM_WORLD,ierr_mpi)
+!!$                 call mpi_send(szzold2(i_inf(iproc+1):i_sup(iproc+1),1),nb_received_sv(iproc+1),MPI_REAL,iproc,etq6,MPI_COMM_WORLD,ierr_mpi)
+!!$                 call mpi_send(sxyold2(i_inf(iproc+1):i_sup(iproc+1),1),nb_received_sv(iproc+1),MPI_REAL,iproc,etq7,MPI_COMM_WORLD,ierr_mpi)
+!!$                 call mpi_send(sxzold2(i_inf(iproc+1):i_sup(iproc+1),1),nb_received_sv(iproc+1),MPI_REAL,iproc,etq8,MPI_COMM_WORLD,ierr_mpi)
+!!$                 call mpi_send(syzold2(i_inf(iproc+1):i_sup(iproc+1),1),nb_received_sv(iproc+1),MPI_REAL,iproc,etq9,MPI_COMM_WORLD,ierr_mpi)
+                 
+           end do
+           
+        else ! RECEIVE
+           
+           call mpi_recv( vxold1(:,:),nb_received_sv(myid+1)*oldlen,MPI_REAL,0,etq1,MPI_COMM_WORLD,statut,ierr_mpi)
+           call mpi_recv( vyold1(:,:),nb_received_sv(myid+1)*oldlen,MPI_REAL,0,etq2,MPI_COMM_WORLD,statut,ierr_mpi)
+           call mpi_recv( vzold1(:,:),nb_received_sv(myid+1)*oldlen,MPI_REAL,0,etq3,MPI_COMM_WORLD,statut,ierr_mpi)
+           call mpi_recv(sxxold1(:,:),nb_received_sv(myid+1)*oldlen,MPI_REAL,0,etq4,MPI_COMM_WORLD,statut,ierr_mpi)
+           call mpi_recv(syyold1(:,:),nb_received_sv(myid+1)*oldlen,MPI_REAL,0,etq5,MPI_COMM_WORLD,statut,ierr_mpi)
+           call mpi_recv(szzold1(:,:),nb_received_sv(myid+1)*oldlen,MPI_REAL,0,etq6,MPI_COMM_WORLD,statut,ierr_mpi)
+           call mpi_recv(sxyold1(:,:),nb_received_sv(myid+1)*oldlen,MPI_REAL,0,etq7,MPI_COMM_WORLD,statut,ierr_mpi)
+           call mpi_recv(sxzold1(:,:),nb_received_sv(myid+1)*oldlen,MPI_REAL,0,etq8,MPI_COMM_WORLD,statut,ierr_mpi)
+           call mpi_recv(syzold1(:,:),nb_received_sv(myid+1)*oldlen,MPI_REAL,0,etq9,MPI_COMM_WORLD,statut,ierr_mpi)
+           
+        end if
+
+ !    end do
+     
+     if (ipart == 1) then
+        if (myid==0) then
+           do isim=1,nsim
+              close(ivx(isim))
+              close(ivy(isim))
+              close(ivz(isim))
+              close(isxx(isim))
+              close(isyy(isim))
+              close(iszz(isim))
+              close(isxy(isim))
+              close(isxz(isim))
+              close(isyz(isim))
+           end do
+           deallocate(data_tmp)
+           write(6,*)'Done'
+        end if
+     end if
+!!$     if (myid ==0) then
+!!$        deallocate(vxold2)
+!!$        deallocate(vyold2)
+!!$        deallocate(vzold2)
+!!$        deallocate(sxxold2)
+!!$        deallocate(syyold2)
+!!$        deallocate(szzold2)
+!!$        deallocate(syzold2)
+!!$        deallocate(sxzold2)
+!!$        deallocate(sxyold2)
+!!$     end if
+
+     ntime = oldlen
+     ntold = oldlen
 
 !     write(ficii,'(a,i4.4,a)')'sig_',myid,'.dat' 
 !     open(20000+myid,file=trim(ficii),action='write')
@@ -535,80 +637,73 @@ program interpolate_3D_wavefield
 
 
      !*** Cut old signal
-     itbeg  = ind !-ceiling(2.5/fmax)
-     itend  = itbeg + ceiling(ntnew * dtnew / dtold)
-     tbeg = itbeg * dtold      !*** Starting time of cut signal
-     tend = itend * dtold
-     oldlen = itend-itbeg+1
-
-
-     if (myid==0) write(6,*)'Infos : itbeg, itend, tbeg, tend, oldlen, ntold, dtold'
-     if (myid==0) write(6,*)itbeg, itend, tbeg, tend, oldlen, ntold, dtold
-
+!!$     itbeg  = ind !-ceiling(2.5/fmax)
+!!$     itend  = itbeg + ceiling(ntnew * dtnew / dtold)
+!!$     tbeg = itbeg * dtold      !*** Starting time of cut signal
+!!$     tend = itend * dtold
+!!$     oldlen = itend-itbeg+1
+!!$
+!!$
+!!$     if (myid==0) write(6,*)'Infos : itbeg, itend, tbeg, tend, oldlen, ntold, dtold'
+!!$     if (myid==0) write(6,*)itbeg, itend, tbeg, tend, oldlen, ntold, dtold
+!!$
 !!$!!!!!!!! Interpolate stf again
-!    if (isconv==1) then
-!    write(6,*)'Interpolate source time function...'
-!    if(.not.allocated(stfn)) allocate(stfn(oldlen))
-!    stf(:) = 0._cp
-!    festf = 1. / dtold
-! 
-!    do itnew = 1, oldlen
-!       do itold = 1, ntstf
-!          stfn(itnew) = stfn(itnew) + stf(itold) * mysinc(real(festf * itnew * dtold - itold))
-!       end do
-!    end do
-!    if(allocated(tmpstf)) deallocate(tmpstf)
-!
-!    ntstf = ntold
-!
-!    write(6,*)'Done !'
-!   end if
-!$     !*** Interpolate to axisem 
-!!$!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
+!!$!    if (isconv==1) then
+!!$!    write(6,*)'Interpolate source time function...'
+!!$!    if(.not.allocated(stfn)) allocate(stfn(oldlen))
+!!$!    stf(:) = 0._cp
+!!$!    festf = 1. / dtold
+!!$! 
+!!$!    do itnew = 1, oldlen
+!!$!       do itold = 1, ntstf
+!!$!          stfn(itnew) = stfn(itnew) + stf(itold) * mysinc(real(festf * itnew * dtold - itold))
+!!$!       end do
+!!$!    end do
+!!$!    if(allocated(tmpstf)) deallocate(tmpstf)
+!!$!
+!!$!    ntstf = ntold
+!!$!
+!!$!    write(6,*)'Done !'
+!!$!   end if
+!!$!$     !*** Interpolate to axisem 
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!$
      call MPI_barrier(MPI_COMM_WORLD,ierr_mpi)
-
-     if (itend > ntold) then
-	write(6,*)'WARNING itend > olden will STOP'
-        stop 'itend > ntold'
-     end if
-     call MPI_barrier(MPI_COMM_WORLD,ierr_mpi)
-
      if (.not.allocated(vxold)) allocate(vxold(nrec_to_store,oldlen))
-     vxold(:,:) = vxold1(:,itbeg:itend)
+     vxold(:,:) = vxold1(:,:)
      deallocate(vxold1)
      call MPI_barrier(MPI_COMM_WORLD,ierr_mpi)
      if (.not.allocated(vyold)) allocate(vyold(nrec_to_store,oldlen))
      call MPI_barrier(MPI_COMM_WORLD,ierr_mpi)
-     vyold(:,:) = vyold1(:,itbeg:itend)
+     vyold(:,:) = vyold1(:,:)
      deallocate(vyold1)
      call MPI_barrier(MPI_COMM_WORLD,ierr_mpi)
      if (.not.allocated(vzold)) allocate(vzold(nrec_to_store,oldlen))
-     vzold(:,:) = vzold1(:,itbeg:itend)
+     vzold(:,:) = vzold1(:,:)
      deallocate(vzold1)
      call MPI_barrier(MPI_COMM_WORLD,ierr_mpi)
      if (.not.allocated(sxxold)) allocate(sxxold(nrec_to_store,oldlen))
-     sxxold(:,:) = sxxold1(:,itbeg:itend)
+     sxxold(:,:) = sxxold1(:,:)
      deallocate(sxxold1)
      call MPI_barrier(MPI_COMM_WORLD,ierr_mpi)
      if (.not.allocated(syyold)) allocate(syyold(nrec_to_store,oldlen))
-     syyold(:,:) = syyold1(:,itbeg:itend)
+     syyold(:,:) = syyold1(:,:)
      deallocate(syyold1)
      call MPI_barrier(MPI_COMM_WORLD,ierr_mpi)
      if (.not.allocated(szzold)) allocate(szzold(nrec_to_store,oldlen))
-     szzold(:,:) = szzold1(:,itbeg:itend)
+     szzold(:,:) = szzold1(:,:)
      deallocate(szzold1)
      call MPI_barrier(MPI_COMM_WORLD,ierr_mpi)
      if (.not.allocated(syzold)) allocate(syzold(nrec_to_store,oldlen))
-     syzold(:,:) = syzold1(:,itbeg:itend)
+     syzold(:,:) = syzold1(:,:)
      deallocate(syzold1)
      call MPI_barrier(MPI_COMM_WORLD,ierr_mpi)
      if (.not.allocated(sxzold)) allocate(sxzold(nrec_to_store,oldlen))
-     sxzold(:,:) = sxzold1(:,itbeg:itend)
+     sxzold(:,:) = sxzold1(:,:)
      deallocate(sxzold1)
      call MPI_barrier(MPI_COMM_WORLD,ierr_mpi)
      if (.not.allocated(sxyold)) allocate(sxyold(nrec_to_store,oldlen))
-     sxyold(:,:) = sxyold1(:,itbeg:itend)
+     sxyold(:,:) = sxyold1(:,:)
      deallocate(sxyold1)
      call MPI_barrier(MPI_COMM_WORLD,ierr_mpi)
 
@@ -684,7 +779,7 @@ program interpolate_3D_wavefield
      if (myid==0) write(6,*)feold,ntold,itbeg,itend,tbeg,tend,dtnew,dtold,ntnew
 
 !     print *,myid,fwdtool
-
+     
      call MPI_barrier(MPI_COMM_WORLD,ierr_mpi)
 
      !*** Loop over new time steps
@@ -704,7 +799,7 @@ program interpolate_3D_wavefield
 
         !*** Compute sinc kernel
         call comp_tab_sinc(itnew,dtnew,feold,ntold,tab_sinc)
-
+        
         do ipt = 1, nrec_to_store
 
            !*** Loop over old time steps
@@ -723,7 +818,7 @@ program interpolate_3D_wavefield
            case ('SEM') 
 
               !* 1. Indices
-              iptglob = ipt + i_inf(myid+1) - 1  !irecmin + ipt - 1 
+              iptglob = ipt + i_inf(myid+1) - tab_box_rec(2,ipart)  !ipt + i_inf(myid+1) - 1 !irecmin + ipt - 1 
               igll    = mapipt(1,iptglob)
               iface   = mapipt(2,iptglob)
 
@@ -781,9 +876,9 @@ program interpolate_3D_wavefield
 
         end do
 
-   
+        
         if (ibuf == tbuff) then
-
+           
            !*** Write everything (check engine)
            select case (fwdtool)
            case('SEM')
@@ -813,7 +908,7 @@ program interpolate_3D_wavefield
            
         end if
 
-     end do     
+     end do
 
      call MPI_barrier(MPI_COMM_WORLD,ierr_mpi)
      if (myid==0) then
@@ -824,23 +919,23 @@ program interpolate_3D_wavefield
      else
         close(20)
      end if
-
+     
      if (myid==0) write(6,*)'End of incident field computation for ',ipart
      
 
-  if(allocated(vxold)) deallocate(vxold)
-  if(allocated(vyold)) deallocate(vyold)
-  if(allocated(vzold)) deallocate(vzold)
-  if(allocated(sxxold)) deallocate(sxxold)
-  if(allocated(syyold)) deallocate(syyold)
-  if(allocated(szzold)) deallocate(szzold)
-  if(allocated(sxyold)) deallocate(sxyold)
-  if(allocated(sxzold)) deallocate(sxzold)
-  if(allocated(syzold)) deallocate(syzold)
-
-
+     if(allocated(vxold)) deallocate(vxold)
+     if(allocated(vyold)) deallocate(vyold)
+     if(allocated(vzold)) deallocate(vzold)
+     if(allocated(sxxold)) deallocate(sxxold)
+     if(allocated(syyold)) deallocate(syyold)
+     if(allocated(szzold)) deallocate(szzold)
+     if(allocated(sxyold)) deallocate(sxyold)
+     if(allocated(sxzold)) deallocate(sxzold)
+     if(allocated(syzold)) deallocate(syzold)
+     
+     
   end do
-!  if (warning == 1) then      
+  !  if (warning == 1) then      
 !  if (myid==0) write(*,*)'WARNING automatic picking has been used it may be wrong...' 
 !  if (myid==0) write(6,*)'WARNING please verify.'
 !  end if
