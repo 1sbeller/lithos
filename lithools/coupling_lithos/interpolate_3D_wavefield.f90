@@ -544,15 +544,15 @@ program interpolate_3D_wavefield
         end if
         !   ind2 = 1
 
-        vxold1(:,:)  = convtmpvx(:,ind2:ind2+ntold-1) * dt
-        vyold1(:,:)  = convtmpvy(:,ind2:ind2+ntold-1) * dt
-        vzold1(:,:)  = convtmpvz(:,ind2:ind2+ntold-1) * dt
-        sxxold1(:,:) = convtmpsxx(:,ind2:ind2+ntold-1) * dt
-        syyold1(:,:) = convtmpsyy(:,ind2:ind2+ntold-1) * dt
-        szzold1(:,:) = convtmpszz(:,ind2:ind2+ntold-1) * dt
-        syzold1(:,:) = convtmpsyz(:,ind2:ind2+ntold-1) * dt
-        sxzold1(:,:) = convtmpsxz(:,ind2:ind2+ntold-1) * dt
-        sxyold1(:,:) = convtmpsxy(:,ind2:ind2+ntold-1) * dt
+        vxold1(:,:)  = convtmpvx(:,ind2:ind2+ntold-1) * dtold
+        vyold1(:,:)  = convtmpvy(:,ind2:ind2+ntold-1) * dtold
+        vzold1(:,:)  = convtmpvz(:,ind2:ind2+ntold-1) * dtold
+        sxxold1(:,:) = convtmpsxx(:,ind2:ind2+ntold-1) * dtold
+        syyold1(:,:) = convtmpsyy(:,ind2:ind2+ntold-1) * dtold
+        szzold1(:,:) = convtmpszz(:,ind2:ind2+ntold-1) * dtold
+        syzold1(:,:) = convtmpsyz(:,ind2:ind2+ntold-1) * dtold
+        sxzold1(:,:) = convtmpsxz(:,ind2:ind2+ntold-1) * dtold
+        sxyold1(:,:) = convtmpsxy(:,ind2:ind2+ntold-1) * dtold
 
         !* Deallocate
         deallocate(convtmpvx)
