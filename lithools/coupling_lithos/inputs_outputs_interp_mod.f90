@@ -288,7 +288,7 @@ contains
    
     do itnew = 1, ntwe
        do itold = 1, ntstf
-          stf(itnew) = stf(itnew) + tmpstf(itold) * mysinc(real(festf * itnew * dtold - itold))
+          stf(itnew) = stf(itnew) + tmpstf(itold) * mysinc(festf * (real(itnew-1) * dtstf - real(itold -1)*dtold))
        end do
     end do
     if(allocated(tmpstf)) deallocate(tmpstf)

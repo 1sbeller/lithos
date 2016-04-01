@@ -110,11 +110,14 @@ contains
 
     integer(kind=si), intent(in) :: itn, nto
     real(kind=cp) , intent(in) :: fo, dtn
+    real(kind=cp) :: dto
     real(kind=cp), dimension(nto), intent(out) :: tab_sinc  
     integer(kind=si) :: j
 
+    dto = 1. / fo
+
     do j=1,nto
-       tab_sinc(j) = mysinc(real(fo * itn * dtn - j))
+       tab_sinc(j) = mysinc(fo * (real(itn-1) * dtn - real(j-1)*dto))
     end do
     
   end subroutine comp_tab_sinc
