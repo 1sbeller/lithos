@@ -21,7 +21,7 @@ module interpolation_parameters_mod
   real(kind=cp), dimension(:,:,:), allocatable :: abs_bnd_normal
 
   !*** Coordinates
-  real(kind=cp), dimension(:), allocatable :: xcoord, ycoord, zcoord
+  real(kind=dp), dimension(:), allocatable :: xcoord, ycoord, zcoord
 
   !*** Arrays with AxiSEM wavefields
   real(kind=cp), dimension(:,:), allocatable :: vxold,  vyold,  vzold
