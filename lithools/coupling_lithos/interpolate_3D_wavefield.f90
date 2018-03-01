@@ -42,7 +42,6 @@ program interpolate_3D_wavefield
      end do
      close(155)
   end if
-  print *,'done 1'
 
   call MPI_bcast(part_info,6*npart,MPI_INTEGER,0,MPI_COMM_WORLD,ierr_mpi)
   call MPI_bcast(tab_box_rec,3*npart,MPI_INTEGER,0,MPI_COMM_WORLD,ierr_mpi)
@@ -160,7 +159,7 @@ program interpolate_3D_wavefield
 !!$     end if
      
      
-     write(6,*)'veriflala',nbrec,npts
+     if (myid == 0) write(6,*)'veriflala',nbrec,npts
 
      call scatter_data
 
@@ -771,8 +770,8 @@ program interpolate_3D_wavefield
         vel_inc2   = 0.
         stress_inc = 0.
      end if
-     if (allocated(tab_sinc)) deallocate(tab_sinc)
-     if (.not.allocated(tab_sinc)) allocate(tab_sinc(ntold))
+     !if (allocated(tab_sinc)) deallocate(tab_sinc)
+     !if (.not.allocated(tab_sinc)) allocate(tab_sinc(ntold))
      feold = 1./dtold
 
      if (myid==0) write(6,*)'Infos : feold, ntold, itbeg, itend, tbeg, tend, dtnew, dtold,ntnew'
@@ -782,8 +781,106 @@ program interpolate_3D_wavefield
      
      call MPI_barrier(MPI_COMM_WORLD,ierr_mpi)
 
-     !*** Loop over new time steps
+     !*** Prepare spline inteprolation
+     if (myid==0) write(6,*)'Compute spline...'
+     if (.not.allocated(tt1)) allocate(tt1(ntold))
+     if (.not.allocated(tt2)) allocate(tt2(ntnew))
      do itnew = 1, ntnew
+        tt2(itnew) = (itnew-1)*dtnew
+     end do
+     do itold = 1, ntold
+        tt1(itold) = (itold-1)*dtold
+     end do
+     ! 1d
+     if (.not.allocated(hi)) allocate(hi(ntold-1))
+     if (.not.allocated(ei)) allocate(ei(ntold))
+     if (.not.allocated(gi)) allocate(gi(ntold))
+     if (.not.allocated(ff)) allocate(ff(ntold))
+     hi  = 0.
+     ei  = 0.
+     gi  = 0.
+     ff  = 0.
+     if (allocated(splicoef)) deallocate(splicoef)
+     if (allocated(derfield)) deallocate(derfield)
+     if (allocated(rifield)) deallocate(rifield)
+     if (allocated(field)) deallocate(field)
+
+     if (.not.allocated(field)) allocate(field(9,nrec_to_store,ntold))
+     field(1,:,:) = vxold(:,:)
+     if (allocated(vxold)) deallocate(vxold)
+     field(2,:,:) = vyold(:,:)
+     if (allocated(vyold)) deallocate(vyold)
+     field(3,:,:) = vzold(:,:)
+     if (allocated(vzold)) deallocate(vzold)
+     field(4,:,:) = sxxold(:,:)
+     if (allocated(sxxold)) deallocate(sxxold)
+     field(5,:,:) = syyold(:,:)
+     if (allocated(syyold)) deallocate(syyold)
+     field(6,:,:) = szzold(:,:)
+     if (allocated(szzold)) deallocate(szzold)
+     field(7,:,:) = syzold(:,:)
+     if (allocated(syzold)) deallocate(syzold)
+     field(8,:,:) = sxzold(:,:)
+     if (allocated(sxzold)) deallocate(sxzold)
+     field(9,:,:) = sxyold(:,:)
+     if (allocated(sxyold)) deallocate(sxyold)
+     if (.not.allocated(splicoef)) allocate(splicoef(9,nrec_to_store,ntold,4))
+     if (.not.allocated(derfield)) allocate(derfield(9,nrec_to_store,ntold-1))
+     if (.not.allocated(rifield)) allocate(rifield(9,nrec_to_store,ntold))
+     if (allocated(fieldout)) deallocate(fieldout)
+     if(.not.allocated(fieldout)) allocate(fieldout(9,nrec_to_store))
+     fieldout = 0.
+     derfield = 0.
+     splicoef = 0.
+     rifield  = 0.
+
+     !*** Prepare tables
+     hi(1)  = tt1(2)-tt1(1)
+     ei(1)  = 0.
+     gi(1)  = 0.
+     ff(1)  = 1.
+     derfield(:,:,1) = (field(:,:,2)-field(:,:,1))/hi(1)
+     rifield(:,:,1)  = 0.
+     do i=2,ntold-1
+        hi(i)  = tt1(i+1)-tt1(i)
+        derfield(:,:,i) = (field(:,:,i+1)-field(:,:,i))/hi(i)
+        ei(i)  = hi(i-1)
+        gi(i)  = hi(i)
+        ff(i)  = 2.*(hi(i)+hi(i-1))
+        rifield(:,:,i)  = 3.*(derfield(:,:,i)-derfield(:,:,i-1))
+     end do
+     ff(ntold)  = 1.
+     hi(ntold)  = 0.
+     ei(ntold)  = 0.
+     gi(ntold)  = 0.
+!     derfield(:,:,ntold) = (field(:,:,ntold)-field(:,:,ntold))/hi(ntold-1)
+     rifield(:,:,ntold)  = 0.
+
+     ! tridiag solver
+     splicoef(:,:,:,1) = field(:,:,:) !a
+     do k=2,ntold
+        factor = ei(k)/ff(k-1)
+        ff(k)  = ff(k) - factor*gi(k-1)
+        rifield(:,:,k)  = rifield(:,:,k) - factor*rifield(:,:,k-1)
+     end do
+     splicoef(:,:,ntold,3) = rifield(:,:,ntold)/ff(ntold) !c
+     do k=1,ntold-1
+        l = ntold-k
+        splicoef(:,:,l,3) = (rifield(:,:,l)-gi(l)*splicoef(:,:,l+1,3))/ff(l) !c
+     end do
+     do i=1,ntold-1
+        splicoef(:,:,i,4) = (splicoef(:,:,i+1,3)-splicoef(:,:,i,3))/(3.*hi(i)) !d
+        splicoef(:,:,i,2) = derfield(:,:,i) -hi(i)*(2.*splicoef(:,:,i,3) + splicoef(:,:,i+1,3))/3. !b
+     end do
+     if (myid==0) write(6,*)'Done spline.'
+
+     !*** Loop over new time steps
+     iitl = 1
+     iitr = 2
+
+     do itnew = 1, ntnew
+
+        dx1 = tt2(itnew)-tt1(iitl)
 
         !*** Locate in buffer
         ibuf = modulo(itnew-1,tbuff) +1    ! Indice in buffer
@@ -798,20 +895,41 @@ program interpolate_3D_wavefield
  !       end if
 
         !*** Compute sinc kernel
-        call comp_tab_sinc(itnew,dtnew,feold,ntold,tab_sinc)
-        
+        !call comp_tab_sinc(itnew,dtnew,feold,ntold,tab_sinc)
+        if (tt2(itnew) <= tt1(1)) then
+           fieldout(:,:) = field(:,:,1)
+        elseif (tt2(itnew) >= tt1(ntold)) then
+           fieldout(:,:) = field(:,:,ntold)
+        else
+           if (tt2(itnew) > tt1(iitr)) then
+              iitl=iitl+1
+              iitr=iitr+1
+           end if
+           fieldout(:,:) = splicoef(:,:,iitl,1) + splicoef(:,:,iitl,2)*dx1 + splicoef(:,:,iitl,3)*dx1*dx1 + splicoef(:,:,iitl,4)*dx1*dx1*dx1
+        end if
+
         do ipt = 1, nrec_to_store
 
-           !*** Loop over old time steps
-           vx  = sum( vxold(ipt,:)  * tab_sinc(:) )
-           vy  = sum( vyold(ipt,:)  * tab_sinc(:) )
-           vz  = sum( vzold(ipt,:)  * tab_sinc(:) )
-           sxx = sum( sxxold(ipt,:) * tab_sinc(:) )
-           syy = sum( syyold(ipt,:) * tab_sinc(:) )
-           szz = sum( szzold(ipt,:) * tab_sinc(:) )
-           syz = sum( syzold(ipt,:) * tab_sinc(:) )
-           sxz = sum( sxzold(ipt,:) * tab_sinc(:) )
-           sxy = sum( sxyold(ipt,:) * tab_sinc(:) )
+           !*** Loop over old time steps 
+!!$           vx  = sum( vxold(ipt,:)  * tab_sinc(:) )
+!!$           vy  = sum( vyold(ipt,:)  * tab_sinc(:) )
+!!$           vz  = sum( vzold(ipt,:)  * tab_sinc(:) )
+!!$           sxx = sum( sxxold(ipt,:) * tab_sinc(:) )
+!!$           syy = sum( syyold(ipt,:) * tab_sinc(:) )
+!!$           szz = sum( szzold(ipt,:) * tab_sinc(:) )
+!!$           syz = sum( syzold(ipt,:) * tab_sinc(:) )
+!!$           sxz = sum( sxzold(ipt,:) * tab_sinc(:) )
+!!$           sxy = sum( sxyold(ipt,:) * tab_sinc(:) )
+           
+           vx  = fieldout(1,ipt)
+           vy  = fieldout(2,ipt)
+           vz  = fieldout(3,ipt)
+           sxx = fieldout(4,ipt)
+           syy = fieldout(5,ipt)
+           szz = fieldout(6,ipt)
+           syz = fieldout(7,ipt)
+           sxz = fieldout(8,ipt)
+           sxy = fieldout(9,ipt)
 
            !*** Compute traction for sem
            select case(fwdtool)

@@ -389,7 +389,7 @@ contains
     rec2elm2=-1
 
     PRINT *,'THERIS IS :',NBREC
-    
+        print *,'nelem : ',nel    
     !*** CONNECTION POINT <-> MESH------------
     do irec=1,nbrec
        scur=reciever_cyl(1,irec)
@@ -409,6 +409,7 @@ contains
              zmin=min(zmin, nodes_crd(inode,2))
              zmax=max(zmax, nodes_crd(inode,2))
           end do
+
           if ( scur > smin-eps .and. scur < smax + eps .and. zcur > zmin-eps .and. zcur < zmax + eps) then
              call find_xix_eta(nodes_crd,xi,eta,scur,zcur)
              rec2elm2(irec)=iel

@@ -38,13 +38,16 @@ contains
     character(len=256) :: line
     character(len=256) :: keyword, keyvalue
 
-    write(6, '(A)', advance='no')' Reading lithos.par for recon infos...'
+    
+print *,'lalalalalalalalalala'
+        write(6, '(A)', advance='no')' Reading lithos.par for recon infos...'
     open(unit=iin_file,file='lithos.par', status='old', action='read', iostat=ioerr)
     if (ioerr /= 0) stop 'Check input file ''lithos.par''! Is it still there?' 
     
     do 
        
        read(iin_file,fmt='(a256)',iostat=ioerr) line
+print *,line
        if (ioerr < 0) exit
        if (len(trim(line)) < 1 .or. line(1:1) == '#') cycle
        read(line,*) keyword, keyvalue
@@ -227,7 +230,7 @@ contains
 
        case('coupling_interp_stf')
           read(keyvalue, *) isconv
-          if (isconv == 1) then
+        if (isconv == 1) then
              read(line, *) keyword, isconv, ntstf, dtstf, stf_file
           end if
           

@@ -2,8 +2,8 @@
 
 clear
 module purge
-module load intel/15.0.3.187
-module load bullxmpi/1.2.8.4-mxm
+module load intel
+module load intelmpi
 #module load intel/15.0.0.090
 #module load intelmpi/5.0.1.035
 #module load bullmpi/1.2.8.1
@@ -13,7 +13,7 @@ module load bullxmpi/1.2.8.4-mxm
  
 ./clean.sh
 
-F90='mpif90 -O3 -xHost -assume byterecl ' #-traceback -check all -g -warn all'
+F90='mpif90 -O3 -xHost -assume byterecl -traceback ' #-check all -g -warn all'
 
 $F90 -c ../../common/precision_mod.f90
 $F90 -c ../../common/constants_mod.f90

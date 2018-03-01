@@ -36,6 +36,15 @@ module interpolation_parameters_mod
   real(kind=cp), dimension(:,:), allocatable :: sxxold2, syyold2, szzold2
   real(kind=cp), dimension(:,:), allocatable :: syzold2, sxzold2, sxyold2
 
+  !* For spline
+  real(kind=cp) :: factor, dx1
+  integer(kind=si) :: iitl, iitr, l
+  real(kind=cp), dimension(:), allocatable :: hi, ei, gi, ff, tt1, tt2
+  real(kind=cp), dimension(:,:), allocatable :: fieldout
+  real(kind=cp), dimension(:,:,:), allocatable :: derfield, rifield, field
+  real(kind=cp), dimension(:,:,:,:), allocatable :: splicoef
+
+
   real(kind=cp), dimension(:), allocatable   :: vpow, stalta, taper, convfilt
   real(kind=cp), dimension(:,:), allocatable :: data_tmp
 
