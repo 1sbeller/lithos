@@ -39,7 +39,7 @@ contains
     character(len=256) :: keyword, keyvalue
 
     
-print *,'lalalalalalalalalala'
+
         write(6, '(A)', advance='no')' Reading lithos.par for recon infos...'
     open(unit=iin_file,file='lithos.par', status='old', action='read', iostat=ioerr)
     if (ioerr /= 0) stop 'Check input file ''lithos.par''! Is it still there?' 

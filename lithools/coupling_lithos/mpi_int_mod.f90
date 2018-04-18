@@ -142,9 +142,13 @@ contains
 
     nrec_to_store = irecmax-irecmin+1
     
-    
-    print *,'check distrib ',myid,nb_received(myid+1),nrec_to_store
-    
+    if (myid == 0) then
+       print *,'check distrib ',myid,nb_received(myid+1),nrec_to_store
+       print *,i_inf(:)
+       print *,i_sup(:)
+       print *,nb_received(:)
+    end if
+
 
 
   end subroutine scatter_data
@@ -216,9 +220,9 @@ contains
     call MPI_bcast(abs_bnd_normal,3*ngllsquare*num_bnd_faces,MPI_REAL,0,MPI_COMM_WORLD,ierr_mpi)
     call MPI_bcast(abs_bnd_jacobian2Dw,ngllsquare*num_bnd_faces,MPI_REAL,0,MPI_COMM_WORLD,ierr_mpi)
 
-    call MPI_bcast(xcoord,nptsa,MPI_REAL,0,MPI_COMM_WORLD,ierr_mpi)
-    call MPI_bcast(ycoord,nptsa,MPI_REAL,0,MPI_COMM_WORLD,ierr_mpi) 
-    call MPI_bcast(zcoord,nptsa,MPI_REAL,0,MPI_COMM_WORLD,ierr_mpi)
+    call MPI_bcast(xcoord,nptsa,MPI_REAL8,0,MPI_COMM_WORLD,ierr_mpi)
+    call MPI_bcast(ycoord,nptsa,MPI_REAL8,0,MPI_COMM_WORLD,ierr_mpi) 
+    call MPI_bcast(zcoord,nptsa,MPI_REAL8,0,MPI_COMM_WORLD,ierr_mpi)
     call MPI_bcast(loc2glob,ngllx*nglly*ngllz*nelem,MPI_INTEGER,0,MPI_COMM_WORLD,ierr_mpi)
 
     !** Reals

@@ -61,7 +61,7 @@ program interpolate_3D_wavefield
         notvisited  = 1
         partvisited = ipart
      end if
-     call mpi_bcast(partvisited,1,MPI_INTEGER,0,MPI_COMM_WORLD,ierr_mpi)
+     !call mpi_bcast(partvisited,1,MPI_INTEGER,0,MPI_COMM_WORLD,ierr_mpi)
      call mpi_bcast(ngllsquare,1,MPI_INTEGER,0,MPI_COMM_WORLD,ierr_mpi)
      call mpi_bcast(ngll,1,MPI_INTEGER,0,MPI_COMM_WORLD,ierr_mpi)
 
@@ -323,27 +323,31 @@ program interpolate_3D_wavefield
 !     do itime = 1,oldlen
         if (myid ==0) then ! SEND
            
-           vxold1(:,:)  =  vxold2(i_inf(1):i_sup(1),:)
-           vyold1(:,:)  =  vyold2(i_inf(1):i_sup(1),:)
-           vzold1(:,:)  =  vzold2(i_inf(1):i_sup(1),:)
-           sxxold1(:,:) =  sxxold2(i_inf(1):i_sup(1),:)
-           syyold1(:,:) =  syyold2(i_inf(1):i_sup(1),:)
-           szzold1(:,:) =  szzold2(i_inf(1):i_sup(1),:)
-           sxyold1(:,:) =  sxyold2(i_inf(1):i_sup(1),:)
-           sxzold1(:,:) =  sxzold2(i_inf(1):i_sup(1),:)
-           syzold1(:,:) =  syzold2(i_inf(1):i_sup(1),:)
+           vxold1(1:nrec_to_store,1:oldlen)  =  vxold2(i_inf(1):i_sup(1),1:oldlen)
+           vyold1(1:nrec_to_store,1:oldlen)  =  vyold2(i_inf(1):i_sup(1),1:oldlen)
+           vzold1(1:nrec_to_store,1:oldlen)  =  vzold2(i_inf(1):i_sup(1),1:oldlen)
+           sxxold1(1:nrec_to_store,1:oldlen) =  sxxold2(i_inf(1):i_sup(1),1:oldlen)
+           syyold1(1:nrec_to_store,1:oldlen) =  syyold2(i_inf(1):i_sup(1),1:oldlen)
+           szzold1(1:nrec_to_store,1:oldlen) =  szzold2(i_inf(1):i_sup(1),1:oldlen)
+           sxyold1(1:nrec_to_store,1:oldlen) =  sxyold2(i_inf(1):i_sup(1),1:oldlen)
+           sxzold1(1:nrec_to_store,1:oldlen) =  sxzold2(i_inf(1):i_sup(1),1:oldlen)
+           syzold1(1:nrec_to_store,1:oldlen) =  syzold2(i_inf(1):i_sup(1),1:oldlen)
            
+           print *,'I have',i_inf(1),':',i_sup(1),'to',1,i_sup(1)-i_inf(1)+1
+
            do iproc=1,nb_proc-1
-              
-              call mpi_send( vxold2(i_inf(iproc+1):i_sup(iproc+1),:),nb_received_sv(iproc+1)*oldlen,MPI_REAL,iproc,etq1,MPI_COMM_WORLD,ierr_mpi)
-              call mpi_send( vyold2(i_inf(iproc+1):i_sup(iproc+1),:),nb_received_sv(iproc+1)*oldlen,MPI_REAL,iproc,etq2,MPI_COMM_WORLD,ierr_mpi)
-              call mpi_send( vzold2(i_inf(iproc+1):i_sup(iproc+1),:),nb_received_sv(iproc+1)*oldlen,MPI_REAL,iproc,etq3,MPI_COMM_WORLD,ierr_mpi)
-              call mpi_send(sxxold2(i_inf(iproc+1):i_sup(iproc+1),:),nb_received_sv(iproc+1)*oldlen,MPI_REAL,iproc,etq4,MPI_COMM_WORLD,ierr_mpi)
-              call mpi_send(syyold2(i_inf(iproc+1):i_sup(iproc+1),:),nb_received_sv(iproc+1)*oldlen,MPI_REAL,iproc,etq5,MPI_COMM_WORLD,ierr_mpi)
-              call mpi_send(szzold2(i_inf(iproc+1):i_sup(iproc+1),:),nb_received_sv(iproc+1)*oldlen,MPI_REAL,iproc,etq6,MPI_COMM_WORLD,ierr_mpi)
-              call mpi_send(sxyold2(i_inf(iproc+1):i_sup(iproc+1),:),nb_received_sv(iproc+1)*oldlen,MPI_REAL,iproc,etq7,MPI_COMM_WORLD,ierr_mpi)
-              call mpi_send(sxzold2(i_inf(iproc+1):i_sup(iproc+1),:),nb_received_sv(iproc+1)*oldlen,MPI_REAL,iproc,etq8,MPI_COMM_WORLD,ierr_mpi)
-              call mpi_send(syzold2(i_inf(iproc+1):i_sup(iproc+1),:),nb_received_sv(iproc+1)*oldlen,MPI_REAL,iproc,etq9,MPI_COMM_WORLD,ierr_mpi)
+             
+              print *,'I send',i_inf(iproc+1),':',i_sup(iproc+1),'to',iproc+1,i_sup(iproc+1)-i_inf(iproc+1)+1
+
+              call mpi_send( vxold2(i_inf(iproc+1):i_sup(iproc+1),1:oldlen),nb_received_sv(iproc+1)*oldlen,MPI_REAL,iproc,etq1,MPI_COMM_WORLD,ierr_mpi)
+              call mpi_send( vyold2(i_inf(iproc+1):i_sup(iproc+1),1:oldlen),nb_received_sv(iproc+1)*oldlen,MPI_REAL,iproc,etq2,MPI_COMM_WORLD,ierr_mpi)
+              call mpi_send( vzold2(i_inf(iproc+1):i_sup(iproc+1),1:oldlen),nb_received_sv(iproc+1)*oldlen,MPI_REAL,iproc,etq3,MPI_COMM_WORLD,ierr_mpi)
+              call mpi_send(sxxold2(i_inf(iproc+1):i_sup(iproc+1),1:oldlen),nb_received_sv(iproc+1)*oldlen,MPI_REAL,iproc,etq4,MPI_COMM_WORLD,ierr_mpi)
+              call mpi_send(syyold2(i_inf(iproc+1):i_sup(iproc+1),1:oldlen),nb_received_sv(iproc+1)*oldlen,MPI_REAL,iproc,etq5,MPI_COMM_WORLD,ierr_mpi)
+              call mpi_send(szzold2(i_inf(iproc+1):i_sup(iproc+1),1:oldlen),nb_received_sv(iproc+1)*oldlen,MPI_REAL,iproc,etq6,MPI_COMM_WORLD,ierr_mpi)
+              call mpi_send(sxyold2(i_inf(iproc+1):i_sup(iproc+1),1:oldlen),nb_received_sv(iproc+1)*oldlen,MPI_REAL,iproc,etq7,MPI_COMM_WORLD,ierr_mpi)
+              call mpi_send(sxzold2(i_inf(iproc+1):i_sup(iproc+1),1:oldlen),nb_received_sv(iproc+1)*oldlen,MPI_REAL,iproc,etq8,MPI_COMM_WORLD,ierr_mpi)
+              call mpi_send(syzold2(i_inf(iproc+1):i_sup(iproc+1),1:oldlen),nb_received_sv(iproc+1)*oldlen,MPI_REAL,iproc,etq9,MPI_COMM_WORLD,ierr_mpi)
               
            
 !!$                 
@@ -361,15 +365,15 @@ program interpolate_3D_wavefield
            
         else ! RECEIVE
            
-           call mpi_recv( vxold1(:,:),nb_received_sv(myid+1)*oldlen,MPI_REAL,0,etq1,MPI_COMM_WORLD,statut,ierr_mpi)
-           call mpi_recv( vyold1(:,:),nb_received_sv(myid+1)*oldlen,MPI_REAL,0,etq2,MPI_COMM_WORLD,statut,ierr_mpi)
-           call mpi_recv( vzold1(:,:),nb_received_sv(myid+1)*oldlen,MPI_REAL,0,etq3,MPI_COMM_WORLD,statut,ierr_mpi)
-           call mpi_recv(sxxold1(:,:),nb_received_sv(myid+1)*oldlen,MPI_REAL,0,etq4,MPI_COMM_WORLD,statut,ierr_mpi)
-           call mpi_recv(syyold1(:,:),nb_received_sv(myid+1)*oldlen,MPI_REAL,0,etq5,MPI_COMM_WORLD,statut,ierr_mpi)
-           call mpi_recv(szzold1(:,:),nb_received_sv(myid+1)*oldlen,MPI_REAL,0,etq6,MPI_COMM_WORLD,statut,ierr_mpi)
-           call mpi_recv(sxyold1(:,:),nb_received_sv(myid+1)*oldlen,MPI_REAL,0,etq7,MPI_COMM_WORLD,statut,ierr_mpi)
-           call mpi_recv(sxzold1(:,:),nb_received_sv(myid+1)*oldlen,MPI_REAL,0,etq8,MPI_COMM_WORLD,statut,ierr_mpi)
-           call mpi_recv(syzold1(:,:),nb_received_sv(myid+1)*oldlen,MPI_REAL,0,etq9,MPI_COMM_WORLD,statut,ierr_mpi)
+           call mpi_recv( vxold1(1:nrec_to_store,1:oldlen),nrec_to_store*oldlen,MPI_REAL,0,etq1,MPI_COMM_WORLD,statut,ierr_mpi)
+           call mpi_recv( vyold1(1:nrec_to_store,1:oldlen),nrec_to_store*oldlen,MPI_REAL,0,etq2,MPI_COMM_WORLD,statut,ierr_mpi)
+           call mpi_recv( vzold1(1:nrec_to_store,1:oldlen),nrec_to_store*oldlen,MPI_REAL,0,etq3,MPI_COMM_WORLD,statut,ierr_mpi)
+           call mpi_recv(sxxold1(1:nrec_to_store,1:oldlen),nrec_to_store*oldlen,MPI_REAL,0,etq4,MPI_COMM_WORLD,statut,ierr_mpi)
+           call mpi_recv(syyold1(1:nrec_to_store,1:oldlen),nrec_to_store*oldlen,MPI_REAL,0,etq5,MPI_COMM_WORLD,statut,ierr_mpi)
+           call mpi_recv(szzold1(1:nrec_to_store,1:oldlen),nrec_to_store*oldlen,MPI_REAL,0,etq6,MPI_COMM_WORLD,statut,ierr_mpi)
+           call mpi_recv(sxyold1(1:nrec_to_store,1:oldlen),nrec_to_store*oldlen,MPI_REAL,0,etq7,MPI_COMM_WORLD,statut,ierr_mpi)
+           call mpi_recv(sxzold1(1:nrec_to_store,1:oldlen),nrec_to_store*oldlen,MPI_REAL,0,etq8,MPI_COMM_WORLD,statut,ierr_mpi)
+           call mpi_recv(syzold1(1:nrec_to_store,1:oldlen),nrec_to_store*oldlen,MPI_REAL,0,etq9,MPI_COMM_WORLD,statut,ierr_mpi)
            
         end if
 
@@ -766,17 +770,35 @@ program interpolate_3D_wavefield
 !!! Add local versions
         if (allocated(mapipt)) deallocate(mapipt)
         if (.not.allocated(mapipt)) allocate(mapipt(2,ngllsquare*num_bnd_faces))
+        if (allocated(mapiptloc)) deallocate(mapiptloc)
+        if (.not.allocated(mapiptloc)) allocate(mapiptloc(2,nrec_to_store))
         mapipt = 0    
-
+        mapiptloc = 0
         !*** Map igll, iface to ipt
+        print *,'debug nrectostore, nggls*faces',nrec_to_store,ngllsquare*num_bnd_faces
+      
+!!$        do ipt=1,nrec_to_store
+!!$           
+!!$        end do
+!!$        
         ipt = 0
+        iptloc = 0
         do iface = 1, num_bnd_faces
            do igll = 1, ngllsquare
               ipt = ipt + 1
               mapipt(1,ipt) = igll
               mapipt(2,ipt) = iface
+              
+              if (ipt >= irecmin .and. ipt <= irecmax) then
+                 iptloc = iptloc + 1
+                 mapiptloc(1,iptloc) = igll
+                 mapiptloc(2,iptloc) = iface
+              end if
            end do
         end do
+
+        
+
      else
         if (allocated(vel_inc2)) deallocate(vel_inc2)
         if (allocated(stress_inc)) deallocate(stress_inc)
@@ -865,7 +887,7 @@ program interpolate_3D_wavefield
         rifield(:,:,i)  = 3.*(derfield(:,:,i)-derfield(:,:,i-1))
      end do
      ff(ntold)  = 1.
-     hi(ntold)  = 0.
+     !hi(ntold)  = 0.
      ei(ntold)  = 0.
      gi(ntold)  = 0.
 !     derfield(:,:,ntold) = (field(:,:,ntold)-field(:,:,ntold))/hi(ntold-1)
@@ -951,10 +973,22 @@ program interpolate_3D_wavefield
            case ('SEM') 
 
               !* 1. Indices
-              iptglob = ipt + i_inf(myid+1) - tab_box_rec(2,ipart)  !ipt + i_inf(myid+1) - 1 !irecmin + ipt - 1 
+              !iptglob = ipt + i_inf(myid+1) - tab_box_rec(2,ipart)  !ipt + i_inf(myid+1) - 1 !irecmin + ipt - 1 
               !iptglob = ipt + i_inf(myid+1) - 1 !tab_box_rec(2,ipart)  !ipt + i_inf(myid+1) - 1 !irecmin + ipt - 1 
-              igll    = mapipt(1,iptglob)
-              iface   = mapipt(2,iptglob)
+              
+              
+!!              iptglob = irecmin + ipt - 1
+!!$              if (iptglob > tab_box_rec(1,ipart)) then
+!!$                 print *,ipart,myid,irecmin,ipt, iptglob,tab_box_rec(1,ipart)
+!!$              end if
+!!              igll    = mapipt(1,iptglob)
+!!              iface   = mapipt(2,iptglob)
+              
+              igll  = mapiptloc(1,ipt)
+              iface = mapiptloc(2,ipt)
+
+              !igll    = mapipt(1,ipt)
+              !iface   = mapipt(2,ipt)
 
               !Get local indices for GLL point
               ielem = abs_bnd_ielem(iface)
@@ -1016,6 +1050,9 @@ program interpolate_3D_wavefield
            !*** Write everything (check engine)
            select case (fwdtool)
            case('SEM')
+
+              
+
               call MPI_allreduce(MPI_IN_PLACE,vel_inc,3*ngllsquare*num_bnd_faces*tbuff,MPI_REAL,MPI_SUM,MPI_COMM_WORLD,ierr_mpi)
               call MPI_allreduce(MPI_IN_PLACE,trac_inc,3*ngllsquare*num_bnd_faces*tbuff,MPI_REAL,MPI_SUM,MPI_COMM_WORLD,ierr_mpi)   
               if (myid ==0) then 

@@ -12,7 +12,7 @@ module interpolation_parameters_mod
 
   !*** Mapping arrays
   integer(kind=si), dimension(:),       allocatable :: abs_bnd_ielem, abs_bnd_tag
-  integer(kind=si), dimension(:,:),     allocatable :: mapipt
+  integer(kind=si), dimension(:,:),     allocatable :: mapipt, mapiptloc
   integer(kind=si), dimension(:,:,:),   allocatable :: abs_bnd_ijk
   integer(kind=si), dimension(:,:,:,:), allocatable :: loc2glob
 
@@ -60,7 +60,7 @@ module interpolation_parameters_mod
   character(len=250), dimension(3) :: output_veloc_name
   character(len=250), dimension(6) :: output_stress_name
   integer(kind=si), dimension(:), allocatable ::  ivx, ivy, ivz, isxx, isyy, iszz, isxy, isxz, isyz
-  integer(kind=si) :: nbrec, ntime, istap, itime, iptglob, isconv, ntstf
+  integer(kind=si) :: nbrec, ntime, istap, itime, iptglob, isconv, ntstf, iptloc
 
   integer(kind=si) :: nptsa, nelx, nely, nelz, nelem, ngllx, nglly, ngllz, nlta, nsta, itbeg, itend
   real(kind=cp)    :: thres, tbeg, tend, fmax, alph1
