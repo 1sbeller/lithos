@@ -378,7 +378,7 @@ contains
     allocate(tab_box_rec(1:3,1:npart))
 
     nbrec     = 0
-    istartrec = 1
+    istartrec = 0
     iendrec   = 0
     do ipart = 1, npart
 
@@ -394,14 +394,15 @@ contains
        close(10)
        
        if (nbreclocc > 0) then
+          istartrec = nbrec + 1 
           nbrec     = nbrec + nbreclocc
           iendrec   = nbrec
        end if
 
        tab_box_rec(1:3,ipart) = (/ nbreclocc, istartrec, iendrec /)
-       if (nbreclocc > 0) then
-          istartrec = nbrec + 1
-       end if
+!       if (nbreclocc > 0) then
+!          istartrec = nbrec + 1
+!       end if
        write(6,*)'nbrecloc, istart, iend ',tab_box_rec(:,ipart)   
 
     end do

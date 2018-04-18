@@ -9,7 +9,7 @@ program interpolate_3D_wavefield
 
   implicit none
 
-  integer(kind=si) :: warning=0, ipart, ind2, lit
+  integer(kind=si) :: warning=0, ipart, ind2, lit, notvisited, partvisited
   character(len=80) :: ficii
   integer(kind=si), parameter :: IIN=11
   character(len=5) :: myfileend 
@@ -42,9 +42,11 @@ program interpolate_3D_wavefield
      end do
      close(155)
   end if
-
+        
   call MPI_bcast(part_info,6*npart,MPI_INTEGER,0,MPI_COMM_WORLD,ierr_mpi)
   call MPI_bcast(tab_box_rec,3*npart,MPI_INTEGER,0,MPI_COMM_WORLD,ierr_mpi)
+
+  notvisited = 0
   do ipart = 1, npart
 
      !*** Get infos
@@ -55,6 +57,11 @@ program interpolate_3D_wavefield
      if (num_bnd_faces < 1) then 
         cycle
      end if
+     if (notvisited == 0) then
+        notvisited  = 1
+        partvisited = ipart
+     end if
+     call mpi_bcast(partvisited,1,MPI_INTEGER,0,MPI_COMM_WORLD,ierr_mpi)
      call mpi_bcast(ngllsquare,1,MPI_INTEGER,0,MPI_COMM_WORLD,ierr_mpi)
      call mpi_bcast(ngll,1,MPI_INTEGER,0,MPI_COMM_WORLD,ierr_mpi)
 
@@ -106,7 +113,7 @@ program interpolate_3D_wavefield
      end if
 
      !*** Inputs files
-     if (ipart ==1) then
+     if (ipart == partvisited) then
         if(myid == 0)  call define_axisem_dir !(ipart)
      end if
 
@@ -115,7 +122,7 @@ program interpolate_3D_wavefield
      call broadcast_all_data
 
      !*** Prepare reading of reconstructed AxiSEM outputs
-     if (ipart == 1) then
+     if (ipart == partvisited) then
         ntold = ntime   
         if (myid==0) write(6,*)'Must read ',nbrec,' points for ',ntime,' time steps.'
         if (myid==0) write(6,*)'Check ntold and ntime : ',ntold,ntime
@@ -211,7 +218,7 @@ program interpolate_3D_wavefield
      !--------------------------------------------------
      call MPI_barrier(MPI_COMM_WORLD,ierr_mpi)
 
-     if (ipart == 1) then  ! Read only some timestep of all points by master procs
+     if (ipart == partvisited) then  ! Read only some timestep of all points by master procs
         if (myid == 0) then
            if(.not.allocated(data_tmp)) allocate(data_tmp(nbrec,9))
            if (.not.allocated(vxold2)) allocate(vxold2(nbrec,oldlen))
@@ -299,9 +306,17 @@ program interpolate_3D_wavefield
         end do
 
      end if
-     
+ 
+!     print *,'check oldlen, lit: ',oldlen,lit
      i_inf = i_inf + tab_box_rec(2,ipart) -1
      i_sup = i_sup + tab_box_rec(2,ipart) -1
+
+!!$     print *,'================ I_INF I_SUP ================='
+!!$     print *,'part ,',ipart
+!!$     print *,i_inf
+!!$     print *,i_sup
+!!$     print *,'=============================================='
+     
 
      !*** Then send/receiv
      !*** Send-receive to scatter data
@@ -360,7 +375,7 @@ program interpolate_3D_wavefield
 
  !    end do
      
-     if (ipart == 1) then
+     if (ipart == partvisited) then
         if (myid==0) then
            do isim=1,nsim
               close(ivx(isim))
@@ -897,9 +912,9 @@ program interpolate_3D_wavefield
         !*** Compute sinc kernel
         !call comp_tab_sinc(itnew,dtnew,feold,ntold,tab_sinc)
         if (tt2(itnew) <= tt1(1)) then
-           fieldout(:,:) = field(:,:,1)
+           fieldout(:,:) = 0. !field(:,:,1)
         elseif (tt2(itnew) >= tt1(ntold)) then
-           fieldout(:,:) = field(:,:,ntold)
+           fieldout(:,:) = 0. !field(:,:,ntold)
         else
            if (tt2(itnew) > tt1(iitr)) then
               iitl=iitl+1
@@ -937,6 +952,7 @@ program interpolate_3D_wavefield
 
               !* 1. Indices
               iptglob = ipt + i_inf(myid+1) - tab_box_rec(2,ipart)  !ipt + i_inf(myid+1) - 1 !irecmin + ipt - 1 
+              !iptglob = ipt + i_inf(myid+1) - 1 !tab_box_rec(2,ipart)  !ipt + i_inf(myid+1) - 1 !irecmin + ipt - 1 
               igll    = mapipt(1,iptglob)
               iface   = mapipt(2,iptglob)
 

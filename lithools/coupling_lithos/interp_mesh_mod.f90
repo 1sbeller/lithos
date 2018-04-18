@@ -1,8 +1,9 @@
 module interp_mesh_mod
 
+  
   use precision_mod
   use global_parameters_mod, only: NGNOD, NGLLX, NGLLY
-
+  !use mpi_mod, only: finalize_mpi
   real(kind=dp) :: a, b, c, d, det_jacobian
 
   real(kind=dp), dimension(NGLLX) :: hxir, hpxir, xigll, wxgll
@@ -351,13 +352,13 @@ contains
     use global_parameters_mod
     
     real(kind=dp) :: xi, eta, scur, zcur
-    real(kind=dp) :: smin, smax, zmin, zmax
+    real(kind=dp) :: smin, smax, zmin, zmax, sel, zel, dist, dist2
 
     real(kind=dp), dimension(NGNOD,2) :: nodes_crd
     real(kind=dp), parameter          :: eps=1e-3_dp  !!-3
 
     integer(kind=si), dimension(8) :: IGRIDs, IGRIDz
-    integer(kind=si) :: irec, iel, inode, icheck
+    integer(kind=si) :: irec, iel, inode, icheck, elf
       
     ! conversion GLL point to 8-node control elements
     IGRIDs(1)=0
@@ -392,43 +393,76 @@ contains
         print *,'nelem : ',nel    
     !*** CONNECTION POINT <-> MESH------------
     do irec=1,nbrec
+
+       ! Get points coordinatesst
        scur=reciever_cyl(1,irec)
        zcur=reciever_cyl(3,irec)
-       do iel = 1, NEL
-          !*** Element
-       icheck = 0
-          smin=1e40_dp
-          smax=-1e40_dp    !-1e25_cp
-          zmin=1e40_dp  !smin
-          zmax=-1e40_dp !smax
-          do inode=1,NGNOD
-             nodes_crd(inode,1)=scoor(IGRIDs(inode),IGRIDz(inode),iel)
-             nodes_crd(inode,2)=zcoor(IGRIDs(inode),IGRIDz(inode),iel)
-             smin=min(smin, nodes_crd(inode,1))
-             smax=max(smax, nodes_crd(inode,1))
-             zmin=min(zmin, nodes_crd(inode,2))
-             zmax=max(zmax, nodes_crd(inode,2))
-          end do
 
-          if ( scur > smin-eps .and. scur < smax + eps .and. zcur > zmin-eps .and. zcur < zmax + eps) then
-             call find_xix_eta(nodes_crd,xi,eta,scur,zcur)
-             rec2elm2(irec)=iel
-             if (xi > -1.05 .and. xi < 1.05 .and. eta > -1.05 .and. eta < 1.05) then
-                rec2elm(irec)=iel
-                xi_rec(irec)=xi
-                eta_rec(irec)=eta
-                exit
-             end if
-          else
-                icheck = 1
+       ! Look for closest element
+       elf  = 0 
+       dist = 1e40_dp
+       do iel = 1, nel
+          sel = (scoor(IGRIDs(2),IGRIDz(2),iel) + scoor(IGRIDs(6),IGRIDz(6),iel)) * 0.5_dp
+          zel = (zcoor(IGRIDs(4),IGRIDz(4),iel) + zcoor(IGRIDs(8),IGRIDz(8),iel)) * 0.5_dp
+          dist2 = (scur-sel)**2 + (zcur-zel)**2
+          if (dist2 < dist) then
+             elf = iel
+             dist = dist2
           end if
        end do
-       if (icheck == 1) then 
-           write(6,*)scur,zcur
-       end if
+
+       ! Get element coordinates and find closest gll
+       do inode=1,NGNOD
+          nodes_crd(inode,1)=scoor(IGRIDs(inode),IGRIDz(inode),elf)
+          nodes_crd(inode,2)=zcoor(IGRIDs(inode),IGRIDz(inode),elf)
+       end do
+       call find_xix_eta(nodes_crd,xi,eta,scur,zcur)
+       
+       ! Save infos
+!       if (xi > 1.0 .or. xi < -1.0) then
+!          print *,'warning xi, scur, zcur, zfnd, zfnd',xi,
+       rec2elm(irec) = elf
+       xi_rec(irec)  = xi
+       eta_rec(irec) = eta
     end do
-    call check_rec2elm
-    ! END CONNECTION POINT <-> MESH ----
+
+!!$       do iel = 1, NEL
+!!$          !*** Element
+!!$          icheck = 0
+!!$          smin=1e40_dp
+!!$          smax=-1e40_dp    !-1e25_cp
+!!$          zmin=1e40_dp  !smin
+!!$          zmax=-1e40_dp !smax
+!!$          do inode=1,NGNOD
+!!$             nodes_crd(inode,1)=scoor(IGRIDs(inode),IGRIDz(inode),iel)
+!!$             nodes_crd(inode,2)=zcoor(IGRIDs(inode),IGRIDz(inode),iel)
+!!$             smin=min(smin, nodes_crd(inode,1))
+!!$             smax=max(smax, nodes_crd(inode,1))
+!!$             zmin=min(zmin, nodes_crd(inode,2))
+!!$             zmax=max(zmax, nodes_crd(inode,2))
+!!$          end do
+!!$
+!!$          if ( scur > smin-eps .and. scur < smax + eps .and. zcur > zmin-eps .and. zcur < zmax + eps) then
+!!$             call find_xix_eta(nodes_crd,xi,eta,scur,zcur)
+!!$             rec2elm2(irec)=iel
+!!$             if (xi >= -1.01 .and. xi <= 1.01 .and. eta >= -1.01 .and. eta <= 1.01) then
+!!$                rec2elm(irec)=iel
+!!$                xi_rec(irec)=xi
+!!$                eta_rec(irec)=eta
+!!$                icheck = 0
+!!$                exit
+!!$             end if
+!!$          else
+!!$                icheck = 1
+!!$          end if
+!!$       end do
+!!$       if (icheck == 1) then 
+!!$           write(6,*)scur,zcur
+!!$           
+!!$       end if
+!!$    end do
+!!$    call check_rec2elm
+!!$    ! END CONNECTION POINT <-> MESH ----
     
   contains
     
@@ -448,9 +482,12 @@ contains
             forgot_point2= forgot_point2+1
          end if
       end do
-      if (forgot_point > 0) write(*,*) 'forgot ', forgot_point2,' points'
-      if (forgot_point > 0) write(*,*) 'forgot ', forgot_point,' points'
-      if (forgot_point > 0) stop
+      if (forgot_point2 > 0 .or. forgot_point > 0) then
+         write(*,*) 'forgot ', forgot_point2,' elements'
+         write(*,*) 'forgot ', forgot_point,' points'
+        !call finalize_mpi
+        stop
+      end if
     end subroutine check_rec2elm
     !--------------------------------------------------
     
